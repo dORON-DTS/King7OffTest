@@ -23,6 +23,9 @@ interface PlayerStatsDialogProps {
   allTablesData: Table[];
 }
 
+// Add Enemy type above advancedStats useMemo
+type Enemy = { name: string; net: number; count: number };
+
 const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, playerData, allTablesData }) => {
   
   // Calculate Timeline Data and Matchup Data here using useMemo
@@ -139,7 +142,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
 
     // Best/Worst Enemy
     // For each opponent, sum net result in games played together
-    const enemyMap: Record<string, { name: string; net: number; count: number; } > = {};
+    const enemyMap: Record<string, Enemy> = {};
     games.forEach(g => {
       g.opponents.forEach(opp => {
         if (!enemyMap[opp.name]) enemyMap[opp.name] = { name: opp.name, net: 0, count: 0 };
@@ -149,8 +152,8 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
       });
     });
     // Best Enemy: highest positive net, Worst Enemy: lowest negative net
-    let bestEnemy: { name: string; net: number; count: number } | null = null;
-    let worstEnemy: { name: string; net: number; count: number } | null = null;
+    let bestEnemy: Enemy | null = null;
+    let worstEnemy: Enemy | null = null;
     let totalProfit = games.reduce((sum, g) => sum + (g.netResult > 0 ? g.netResult : 0), 0);
     let totalLoss = games.reduce((sum, g) => sum + (g.netResult < 0 ? -g.netResult : 0), 0);
     Object.values(enemyMap).forEach(e => {
@@ -158,8 +161,8 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
       if (e.net < 0 && (!worstEnemy || e.net < worstEnemy.net)) worstEnemy = e;
     });
     // Calculate percent
-    let bestEnemyPercent = bestEnemy !== null && totalProfit > 0 ? (bestEnemy.net / totalProfit) * 100 : null;
-    let worstEnemyPercent = worstEnemy !== null && totalLoss > 0 ? (-worstEnemy.net / totalLoss) * 100 : null;
+    let bestEnemyPercent = bestEnemy !== null && totalProfit > 0 ? ((bestEnemy as Enemy).net / totalProfit) * 100 : null;
+    let worstEnemyPercent = worstEnemy !== null && totalLoss > 0 ? (-(worstEnemy as Enemy).net / totalLoss) * 100 : null;
 
     return {
       roi,
