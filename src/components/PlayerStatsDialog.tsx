@@ -25,6 +25,17 @@ interface PlayerStatsDialogProps {
 
 // Add Enemy type above advancedStats useMemo
 type Enemy = { name: string; net: number; count: number };
+type AdvancedStats = {
+  roi: number | null;
+  maxWin: number;
+  maxLose: number;
+  currentStreakType: string;
+  currentStreakCount: number;
+  bestEnemy: Enemy | null;
+  bestEnemyPercent: number | null;
+  worstEnemy: Enemy | null;
+  worstEnemyPercent: number | null;
+};
 
 const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, playerData, allTablesData }) => {
   
@@ -76,7 +87,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
   }, [playerData]);
 
   // --- Advanced Stats Calculations ---
-  const advancedStats = useMemo(() => {
+  const advancedStats = useMemo<AdvancedStats | null>(() => {
     if (!playerData || !allTablesData) return null;
 
     // ROI
