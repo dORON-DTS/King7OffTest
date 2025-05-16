@@ -149,7 +149,8 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
       });
     });
     // Best Enemy: highest positive net, Worst Enemy: lowest negative net
-    let bestEnemy = null, worstEnemy = null;
+    let bestEnemy: { name: string; net: number; count: number } | null = null;
+    let worstEnemy: { name: string; net: number; count: number } | null = null;
     let totalProfit = games.reduce((sum, g) => sum + (g.netResult > 0 ? g.netResult : 0), 0);
     let totalLoss = games.reduce((sum, g) => sum + (g.netResult < 0 ? -g.netResult : 0), 0);
     Object.values(enemyMap).forEach(e => {
