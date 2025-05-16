@@ -60,7 +60,6 @@ const UserManagement: React.FC = () => {
       const data = await response.json();
       setUsers(data);
     } catch (error) {
-      console.error('Error fetching users:', error);
       setError('Error loading users');
     }
   };
@@ -95,7 +94,6 @@ const UserManagement: React.FC = () => {
       setNewRole('viewer');
       setShowAddUser(false);
     } catch (error) {
-      console.error('Error creating user:', error);
       setError('Error creating user');
     }
   };
@@ -132,7 +130,6 @@ const UserManagement: React.FC = () => {
       setDeleteConfirmOpen(false);
       setUserToDelete(null);
     } catch (error) {
-      console.error('Error deleting user:', error);
       setError('Error deleting user');
     }
   };
@@ -155,7 +152,6 @@ const UserManagement: React.FC = () => {
 
       await fetchUsers();
     } catch (error) {
-      console.error('Error updating role:', error);
       setError('Error updating role');
     }
   };

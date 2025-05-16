@@ -14,29 +14,6 @@ const TablesList: React.FC = () => {
     createTable('New Table', 1, 2);
   };
 
-  // Log in render
-  console.log('TablesList render');
-  console.log('window.innerWidth:', window.innerWidth);
-  console.log('tables:', tables);
-  alert('TablesList loaded: ' + tables.length);
-
-  // Log window width and grid width
-  useEffect(() => {
-    console.log('window.innerWidth (effect):', window.innerWidth);
-    if (gridRef.current) {
-      // @ts-ignore
-      console.log('Grid offsetWidth:', gridRef.current.offsetWidth);
-      // @ts-ignore
-      console.log('Grid clientWidth:', gridRef.current.clientWidth);
-      // @ts-ignore
-      console.log('Grid scrollWidth:', gridRef.current.scrollWidth);
-    }
-    console.log('Number of tables:', tables.length);
-    tables.forEach((table, i) => {
-      console.log(`Table ${i}:`, table.name);
-    });
-  }, [tables]);
-
   return (
     <Box sx={{ 
       p: { xs: 1, md: 0 },
