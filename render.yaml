@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: poker-management
+    env: node
+    buildCommand: |
+      npm ci
+      npm run prod:build
+    startCommand: npm run prod:start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/data/poker.db
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+    healthCheckPath: /
+    autoDeploy: true
+    plan: free
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block

@@ -1,0 +1,28 @@
+.tableCard {}
+.tableCardContent {}
+
+@media (min-width: 900px) {
+  .tableCard {
+    min-height: 140px !important;
+    max-height: 140px !important;
+    border-radius: 8px !important;
+    font-size: 0.7rem !important;
+    padding: 0.5rem !important;
+  }
+  .tableCardContent {
+    padding: 8px !important;
+  }
+  .tableCard h6, .tableCard .MuiTypography-h6 {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  .tableCard .MuiChip-root {
+    font-size: 0.7rem !important;
+    height: 20px !important;
+  }
+  .tableCard .MuiButton-root {
+    font-size: 0.7rem !important;
+    padding: 2px 8px !important;
+    min-height: 24px !important;
+  }
+} 

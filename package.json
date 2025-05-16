@@ -1,0 +1,68 @@
+{
+  "name": "poker-management",
+  "version": "1.9.8",
+  "private": true,
+  "dependencies": {
+    "@emotion/cache": "^11.11.0",
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.15.10",
+    "@mui/material": "^5.15.10",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "mkdirp": "^3.0.1",
+    "morgan": "^1.10.0",
+    "path-to-regexp": "^6.2.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.1",
+    "react-scripts": "5.0.1",
+    "recharts": "^2.15.3",
+    "serve": "^14.2.4",
+    "sqlite3": "^5.1.7",
+    "typescript": "^4.9.5",
+    "uuid": "^9.0.1",
+    "web-vitals": "^4.2.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "server": "node server.js",
+    "build": "react-scripts build",
+    "postinstall": "mkdirp data",
+    "prod:build": "npm run build",
+    "prod:start": "NODE_ENV=production node server.js",
+    "prod:deploy": "npm run prod:build && npm run prod:start"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=18.x",
+    "npm": ">=9.x"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.14",
+    "@types/uuid": "^10.0.0"
+  }
+}

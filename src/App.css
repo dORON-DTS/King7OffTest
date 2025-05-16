@@ -1,0 +1,57 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Styles for the AppBar logo */
+.app-logo {
+  height: 65px; /* Default height for mobile */
+  margin-right: 10px;
+  vertical-align: middle; /* Helps align with text */
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-logo:hover {
+  transform: rotate(360deg) scale(1.08);
+}
+
+/* Media query for larger screens */
+@media (min-width: 600px) {
+  .app-logo {
+    height: 80px; /* Larger height for desktop */
+  }
+}
