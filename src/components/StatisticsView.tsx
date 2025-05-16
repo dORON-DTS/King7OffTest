@@ -172,6 +172,12 @@ const getPlayerPotentialGames = (playerName: string, tables: Table[]): number =>
   return lastIdx - firstIdx + 1;
 };
 
+// Helper to get ordinal suffix
+function getOrdinal(n: number) {
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 const StatisticsView: React.FC = () => {
   const { tables: contextTables, isLoading: contextLoading, error: contextError, fetchTables } = usePoker();
   const { user } = useUser();
@@ -209,6 +215,9 @@ const StatisticsView: React.FC = () => {
     biggestAvgBuyIn: { value: 0, player: '-' },
     bestAvgResult: { value: 0, player: '-' },
   });
+
+  // Define which columns are negative (lowest is best)
+  const negativeColumns = ['largestLoss']; // Add more if needed
 
   // Function to handle sort request
   const handleRequestSort = (event: React.MouseEvent<unknown>, property: keyof PlayerStats) => {
@@ -1019,6 +1028,28 @@ const StatisticsView: React.FC = () => {
                           } else if (headCell.id === 'largestLoss') {
                             cellColor = '#f44336';
                           }
+                          // Ordinal logic
+                          let showOrdinal = false;
+                          if (orderBy !== headCell.id && [
+                            'netResult', 'tablesPlayed', 'totalBuyIn', 'totalCashOut', 'avgBuyIn', 'avgNetResult', 'largestWin', 'largestLoss'
+                          ].includes(headCell.id as string)) {
+                            showOrdinal = true;
+                          }
+                          // Calculate ordinal rank for this cell
+                          let ordinal = '';
+                          if (showOrdinal) {
+                            // Get all values for this column
+                            let values = stableSort(filteredPlayerStats, getComparator('desc', headCell.id));
+                            if (negativeColumns.includes(headCell.id as string)) {
+                              values = stableSort(filteredPlayerStats, getComparator('asc', headCell.id));
+                            }
+                            // Find the rank (1-based)
+                            const value = stat[headCell.id as keyof PlayerStats];
+                            let rank = values.findIndex(s => s[headCell.id as keyof PlayerStats] === value) + 1;
+                            if (rank > 0) {
+                              ordinal = getOrdinal(rank);
+                            }
+                          }
                           return (
                             <TableCell
                               key={headCell.id}
@@ -1042,6 +1073,9 @@ const StatisticsView: React.FC = () => {
                                 headCell.id === 'largestWin' ? formatStat(stat.largestWin) :
                                 headCell.id === 'largestLoss' ? formatStat(stat.largestLoss) :
                                 ''}
+                              {showOrdinal && ordinal && (
+                                <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{ordinal}</span>
+                              )}
                             </TableCell>
                           );
                         })}
