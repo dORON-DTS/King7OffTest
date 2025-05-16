@@ -219,6 +219,9 @@ const StatisticsView: React.FC = () => {
   // Define which columns are negative (lowest is best)
   const negativeColumns = ['largestLoss']; // Add more if needed
 
+  // Add state for best winning streak
+  const [bestWinStreak, setBestWinStreak] = useState<{ value: number; player: string }>({ value: 0, player: '-' });
+
   // Function to handle sort request
   const handleRequestSort = (event: React.MouseEvent<unknown>, property: keyof PlayerStats) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -566,6 +569,44 @@ const StatisticsView: React.FC = () => {
     });
   }, [staticTables, playerStats]);
 
+  // After playerStats calculation, add effect to calculate best winning streak
+  useEffect(() => {
+    // For each player, calculate their longest win streak
+    let maxStreak = 0;
+    let maxStreakPlayer = '-';
+    playerStats.forEach(player => {
+      // Gather all games for this player
+      const games = staticTables
+        .filter(table => table.players.some(p => p.name.toLowerCase() === player.name.toLowerCase()))
+        .map(table => {
+          const p = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+          const buyIn = p?.totalBuyIn || 0;
+          const cashOut = p?.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
+          const chips = p?.active ? (p?.chips || 0) : 0;
+          const net = cashOut + chips - buyIn;
+          return { netResult: net, date: new Date(table.createdAt) };
+        });
+      // Sort games by date ascending
+      games.sort((a, b) => a.date.getTime() - b.date.getTime());
+      // Calculate longest win streak
+      let streak = 0;
+      let maxPlayerStreak = 0;
+      games.forEach(g => {
+        if (g.netResult > 0) {
+          streak++;
+          if (streak > maxPlayerStreak) maxPlayerStreak = streak;
+        } else {
+          streak = 0;
+        }
+      });
+      if (maxPlayerStreak > maxStreak) {
+        maxStreak = maxPlayerStreak;
+        maxStreakPlayer = player.name;
+      }
+    });
+    setBestWinStreak({ value: maxStreak, player: maxStreakPlayer });
+  }, [playerStats, staticTables]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -725,20 +766,20 @@ const StatisticsView: React.FC = () => {
               transition: 'transform 0.2s, box-shadow 0.2s',
               m: { xs: 0.5, sm: 0 },
               '&:hover': {
-                boxShadow: '0 0 24px 4px #e53935',
+                boxShadow: '0 0 24px 4px #ffd700',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
             }}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="loss">❌</span> Biggest Single Game Loss
+                  <span role="img" aria-label="streak">🔥</span> Best Winning Streak
                 </Typography>
-                {singleGameStats.minLoss < 0 ? (
-                  <Typography variant="h5" sx={{ color: 'error.main', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                    {singleGameStats.minLossPlayer} ({singleGameStats.minLoss})
+                {bestWinStreak.value > 0 ? (
+                  <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    {bestWinStreak.player} ({bestWinStreak.value})
                   </Typography>
                 ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No single game losses yet</Typography>
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No win streaks yet</Typography>
                 )}
               </CardContent>
             </Card>
