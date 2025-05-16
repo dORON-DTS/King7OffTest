@@ -249,26 +249,55 @@ const LandingPage: React.FC = () => {
         </Box>
 
         {/* Navigation/Login Button */}
-        <Button
-          variant="contained"
-          size="large"
-          onClick={() => navigate(user ? '/tables' : '/tableslist')}
+        <Box
           sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 2,
             mt: { xs: 2, sm: 4 },
-            bgcolor: '#3498db',
-            color: '#fff',
-            fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
-            padding: { xs: '8px 16px', sm: '12px 24px', md: '16px 32px' },
-            '&:hover': {
-              bgcolor: '#2980b9'
-            },
-            boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
-            borderRadius: 2,
-            width: { xs: '80%', sm: 'auto' }
           }}
         >
-          {user ? 'GO TO TABLES LIST' : 'LOGIN'}
-        </Button>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => navigate('/statistics')}
+            sx={{
+              bgcolor: '#43a047',
+              color: '#fff',
+              fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
+              padding: { xs: '8px 16px', sm: '12px 24px', md: '16px 32px' },
+              '&:hover': {
+                bgcolor: '#388e3c'
+              },
+              boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+              borderRadius: 2,
+              width: { xs: '80%', sm: 'auto' }
+            }}
+          >
+            VIEW STATISTICS
+          </Button>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => navigate(user ? '/tables' : '/tableslist')}
+            sx={{
+              bgcolor: '#3498db',
+              color: '#fff',
+              fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
+              padding: { xs: '8px 16px', sm: '12px 24px', md: '16px 32px' },
+              '&:hover': {
+                bgcolor: '#2980b9'
+              },
+              boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+              borderRadius: 2,
+              width: { xs: '80%', sm: 'auto' }
+            }}
+          >
+            {user ? 'GO TO TABLES LIST' : 'LOGIN'}
+          </Button>
+        </Box>
       </Box>
     </Container>
   );
