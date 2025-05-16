@@ -604,19 +604,22 @@ const StatisticsView: React.FC = () => {
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={6} sm={3}>
             <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+              minHeight: { xs: 100, sm: 160 },
+              minWidth: { xs: 'unset', sm: 220 },
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               transition: 'transform 0.2s, box-shadow 0.2s',
+              m: { xs: 0.5, sm: 0 },
               '&:hover': {
                 boxShadow: '0 0 24px 4px #29b6f6',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
             }}>
-              <CardContent sx={{ width: '100%' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="games">🎮</span> Total Games Played
                 </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#29b6f6' }}>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#29b6f6', fontSize: { xs: '2rem', sm: '2.5rem' } }}>
                   {staticTables.length}
                 </Typography>
               </CardContent>
@@ -624,48 +627,54 @@ const StatisticsView: React.FC = () => {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+              minHeight: { xs: 100, sm: 160 },
+              minWidth: { xs: 'unset', sm: 220 },
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               transition: 'transform 0.2s, box-shadow 0.2s',
+              m: { xs: 0.5, sm: 0 },
               '&:hover': {
                 boxShadow: '0 0 24px 4px #29b6f6',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
             }}>
-              <CardContent sx={{ width: '100%' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="trophy">🏆</span> Most Games Played
                 </Typography>
                 {overallStats.mostPlayed ? (
                   <>
-                    <Typography variant="h5" sx={{ color: '#29b6f6', fontWeight: 'bold' }}>
+                    <Typography variant="h5" sx={{ color: '#29b6f6', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                       {overallStats.mostPlayed.name}
                     </Typography>
-                    <Typography variant="h6" sx={{ color: '#fff' }}>
+                    <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
                       {overallStats.mostPlayed.tablesPlayed}
                     </Typography>
                   </>
                 ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500' }}>-</Typography>
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>-</Typography>
                 )}
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={6} sm={3}>
             <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+              minHeight: { xs: 100, sm: 160 },
+              minWidth: { xs: 'unset', sm: 220 },
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               transition: 'transform 0.2s, box-shadow 0.2s',
+              m: { xs: 0.5, sm: 0 },
               '&:hover': {
                 boxShadow: '0 0 24px 4px #66bb6a',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
             }}>
-              <CardContent sx={{ width: '100%' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="money">💰</span> Total Buy In
                 </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#66bb6a' }}>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#66bb6a', fontSize: { xs: '2rem', sm: '2.5rem' } }}>
                   {animatedTotalBuyIn.toLocaleString()}
                 </Typography>
               </CardContent>
@@ -673,67 +682,76 @@ const StatisticsView: React.FC = () => {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+              minHeight: { xs: 100, sm: 160 },
+              minWidth: { xs: 'unset', sm: 220 },
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               transition: 'transform 0.2s, box-shadow 0.2s',
+              m: { xs: 0.5, sm: 0 },
               '&:hover': {
                 boxShadow: '0 0 24px 4px #43a047',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
             }}>
-              <CardContent sx={{ width: '100%' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="win">🏅</span> Biggest Single Game Win
                 </Typography>
                 {singleGameStats.maxWin > 0 ? (
-                  <Typography variant="h5" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                  <Typography variant="h5" sx={{ color: 'success.main', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                     {singleGameStats.maxWinPlayer} (+{singleGameStats.maxWin})
                   </Typography>
                 ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500' }}>No single game wins yet</Typography>
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No single game wins yet</Typography>
                 )}
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={6} sm={3}>
             <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+              minHeight: { xs: 100, sm: 160 },
+              minWidth: { xs: 'unset', sm: 220 },
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               transition: 'transform 0.2s, box-shadow 0.2s',
+              m: { xs: 0.5, sm: 0 },
               '&:hover': {
                 boxShadow: '0 0 24px 4px #e53935',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
             }}>
-              <CardContent sx={{ width: '100%' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="loss">❌</span> Biggest Single Game Loss
                 </Typography>
                 {singleGameStats.minLoss < 0 ? (
-                  <Typography variant="h5" sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                  <Typography variant="h5" sx={{ color: 'error.main', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                     {singleGameStats.minLossPlayer} ({singleGameStats.minLoss})
                   </Typography>
                 ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500' }}>No single game losses yet</Typography>
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No single game losses yet</Typography>
                 )}
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={6} sm={3}>
             <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+              minHeight: { xs: 100, sm: 160 },
+              minWidth: { xs: 'unset', sm: 220 },
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               transition: 'transform 0.2s, box-shadow 0.2s',
+              m: { xs: 0.5, sm: 0 },
               '&:hover': {
                 boxShadow: '0 0 24px 4px #ffb300',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
             }}>
-              <CardContent sx={{ width: '100%' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="single-buyin">💸</span> Biggest Single Game Buy-In
                 </Typography>
-                <Typography variant="h5" sx={{ color: '#ffb300', fontWeight: 'bold' }}>
+                <Typography variant="h5" sx={{ color: '#ffb300', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   {extraStats.biggestSingleBuyIn.player} ({extraStats.biggestSingleBuyIn.value})
                 </Typography>
               </CardContent>
@@ -741,19 +759,22 @@ const StatisticsView: React.FC = () => {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+              minHeight: { xs: 100, sm: 160 },
+              minWidth: { xs: 'unset', sm: 220 },
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               transition: 'transform 0.2s, box-shadow 0.2s',
+              m: { xs: 0.5, sm: 0 },
               '&:hover': {
                 boxShadow: '0 0 24px 4px #ab47bc',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
             }}>
-              <CardContent sx={{ width: '100%' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="avg-buyin">💳</span> Biggest Avg Buy-In
                 </Typography>
-                <Typography variant="h5" sx={{ color: '#ab47bc', fontWeight: 'bold' }}>
+                <Typography variant="h5" sx={{ color: '#ab47bc', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   {extraStats.biggestAvgBuyIn.player} ({Math.round(extraStats.biggestAvgBuyIn.value)})
                 </Typography>
               </CardContent>
@@ -761,19 +782,22 @@ const StatisticsView: React.FC = () => {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+              minHeight: { xs: 100, sm: 160 },
+              minWidth: { xs: 'unset', sm: 220 },
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               transition: 'transform 0.2s, box-shadow 0.2s',
+              m: { xs: 0.5, sm: 0 },
               '&:hover': {
                 boxShadow: '0 0 24px 4px #00bcd4',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
             }}>
-              <CardContent sx={{ width: '100%' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="avg-result">📈</span> Best Avg Result
                 </Typography>
-                <Typography variant="h5" sx={{ color: '#00bcd4', fontWeight: 'bold' }}>
+                <Typography variant="h5" sx={{ color: '#00bcd4', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   {extraStats.bestAvgResult.player} ({Math.round(extraStats.bestAvgResult.value)})
                 </Typography>
               </CardContent>
