@@ -569,45 +569,79 @@ const StatisticsView: React.FC = () => {
       >
         {/* Top Summary Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white' }}>
+          <Grid item xs={12} sm={3}>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>Total Buy In</Typography>
-                <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+                  <span role="img" aria-label="games">🎮</span> Total Games Played
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#29b6f6' }}>
+                  {staticTables.length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+                  <span role="img" aria-label="trophy">🏆</span> Most Games Played
+                </Typography>
+                {overallStats.mostPlayed ? (
+                  <>
+                    <Typography variant="h5" sx={{ color: '#29b6f6', fontWeight: 'bold' }}>
+                      {overallStats.mostPlayed.name}
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#fff' }}>
+                      {overallStats.mostPlayed.tablesPlayed}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500' }}>-</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+                  <span role="img" aria-label="money">💰</span> Total Buy In
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#66bb6a' }}>
                   {animatedTotalBuyIn.toLocaleString()}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white' }}>
+          <Grid item xs={12} sm={3}>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>Biggest Single Game Win / Loss</Typography>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+                  <span role="img" aria-label="win">🏅</span> Biggest Single Game Win
+                </Typography>
                 {singleGameStats.maxWin > 0 ? (
-                  <Typography variant="body1" sx={{ color: 'success.main' }}>
-                    {singleGameStats.maxWinPlayer} with +{singleGameStats.maxWin}
+                  <Typography variant="h5" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                    {singleGameStats.maxWinPlayer} (+{singleGameStats.maxWin})
                   </Typography>
                 ) : (
                   <Typography variant="body2" sx={{ color: 'grey.500' }}>No single game wins yet</Typography>
                 )}
-                {singleGameStats.minLoss < 0 ? (
-                  <Typography variant="body1" sx={{ color: 'error.main' }}>
-                    {singleGameStats.minLossPlayer} with {singleGameStats.minLoss}
-                  </Typography>
-                ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500' }}>No single game losses yet</Typography>
-                )}
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white' }}>
+          <Grid item xs={12} sm={3}>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>Played the Most</Typography>
-                {overallStats.mostPlayed ? (
-                  <Typography variant="h5">{overallStats.mostPlayed.name} ({overallStats.mostPlayed.tablesPlayed} tables)</Typography>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+                  <span role="img" aria-label="loss">❌</span> Biggest Single Game Loss
+                </Typography>
+                {singleGameStats.minLoss < 0 ? (
+                  <Typography variant="h5" sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                    {singleGameStats.minLossPlayer} ({singleGameStats.minLoss})
+                  </Typography>
                 ) : (
-                   <Typography variant="body2" sx={{ color: 'grey.500' }}>N/A</Typography>
+                  <Typography variant="body2" sx={{ color: 'grey.500' }}>No single game losses yet</Typography>
                 )}
               </CardContent>
             </Card>
