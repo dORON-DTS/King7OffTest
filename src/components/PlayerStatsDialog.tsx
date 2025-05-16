@@ -207,10 +207,10 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
       <DialogContent dividers sx={{ bgcolor: '#121212' }}> {/* Slightly different background for content */}
         <Grid container spacing={3}>
             {/* Section 1: Timeline Graph */}
-            <Grid item xs={12} lg={7}> {/* Adjusted grid size */}
-                <Paper elevation={3} sx={{ p: 2, minHeight: 220, height: 'auto', bgcolor: '#1e1e1e', color: 'white' }}>
+            <Grid item xs={12} lg={8}> {/* Wider on desktop */}
+                <Paper elevation={3} sx={{ p: 2, minHeight: { xs: 220, lg: 300 }, height: 'auto', bgcolor: '#1e1e1e', color: 'white' }}>
                      <Typography variant="h6" gutterBottom>Performance Over Time</Typography>
-                     <Box sx={{ height: 220 }}>
+                     <Box sx={{ height: { xs: 220, lg: 300 } }}>
                         {/* Added Recharts Line Chart */} 
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart
@@ -245,7 +245,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
             </Grid>
 
             {/* Section 2: Summary Stats */}
-            <Grid item xs={12} lg={5}> {/* Adjusted grid size */}
+            <Grid item xs={12} lg={4}> {/* Adjusted grid size for right column */}
                  <Paper elevation={3} sx={{ p: 2, minHeight: 220, height: 'auto', bgcolor: '#1e1e1e', color: 'white', mb: 2 }}>
                     <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>Summary</Typography>
                     <Grid container spacing={1.5}> {/* Use grid for alignment */}
