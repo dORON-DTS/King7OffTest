@@ -212,8 +212,6 @@ const TableDetail: React.FC = () => {
       setNewPlayerName(null);
       setNewPlayerNickname('');
       setNewPlayerChips(50);
-    } else {
-        console.error("Form validation failed or player name is missing.");
     }
   };
 

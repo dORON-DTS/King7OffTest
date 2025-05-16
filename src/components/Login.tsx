@@ -48,7 +48,6 @@ const Login: React.FC = () => {
 
   // Redirect if already logged in
   useEffect(() => {
-    console.log("user changed in Login:", user);
     if (user) {
       navigate('/', { replace: true });
     }
@@ -60,9 +59,6 @@ const Login: React.FC = () => {
 
     try {
       const apiUrl = process.env.REACT_APP_API_URL;
-      console.log('API URL:', apiUrl);
-      console.log('Full URL:', `${apiUrl}/api/login`);
-      
       const response = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: {
@@ -79,7 +75,6 @@ const Login: React.FC = () => {
 
       await login(data.token);
     } catch (err) {
-      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Login error');
     }
   };

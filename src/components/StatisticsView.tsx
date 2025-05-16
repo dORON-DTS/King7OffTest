@@ -350,8 +350,15 @@ const StatisticsView: React.FC = () => {
     const statsArray: (PlayerStats & { potentialGames: number })[] = Object.values(statsMap).map(stat => {
       // Calculate potential games for this player
       const potentialGames = getPlayerPotentialGames(stat.name, sortedTables);
+      // Calculate netResult, avgBuyIn, avgNetResult based on actual games played
+      const netResult = stat.totalCashOut - stat.totalBuyIn;
+      const avgBuyIn = stat.tablesPlayed > 0 ? stat.totalBuyIn / stat.tablesPlayed : 0;
+      const avgNetResult = stat.tablesPlayed > 0 ? netResult / stat.tablesPlayed : 0;
       return {
         ...stat,
+        netResult,
+        avgBuyIn,
+        avgNetResult,
         potentialGames,
       };
     });
