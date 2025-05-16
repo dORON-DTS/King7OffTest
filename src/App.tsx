@@ -9,7 +9,7 @@ import {
   Link as RouterLink,
   useLocation
 } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline, Container, AppBar, Toolbar, Typography, Button, CircularProgress, Avatar, Menu, MenuItem, IconButton, Box } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, Container, AppBar, Toolbar, Typography, Button, CircularProgress, Avatar, Menu, MenuItem, IconButton, Box, Tooltip } from '@mui/material';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { useUser } from './context/UserContext';
@@ -148,17 +148,19 @@ const AppLayout = () => {
             <Box sx={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
               {user ? (
                 <>
-                  <IconButton
-                    size="large"
-                    edge="end"
-                    color="inherit"
-                    onClick={handleMenu}
-                    sx={{ p: 0 }}
-                  >
-                    <Avatar sx={{ bgcolor: '#1976d2' }}>
-                      <PersonIcon />
-                    </Avatar>
-                  </IconButton>
+                  <Tooltip title={user.username} arrow>
+                    <IconButton
+                      size="large"
+                      edge="end"
+                      color="inherit"
+                      onClick={handleMenu}
+                      sx={{ p: 0 }}
+                    >
+                      <Avatar sx={{ bgcolor: '#1976d2' }}>
+                        {user.username && user.username[0].toUpperCase()}
+                      </Avatar>
+                    </IconButton>
+                  </Tooltip>
                   <Menu
                     anchorEl={anchorEl}
                     open={open}
