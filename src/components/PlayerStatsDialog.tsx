@@ -158,8 +158,8 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
       if (e.net < 0 && (!worstEnemy || e.net < worstEnemy.net)) worstEnemy = e;
     });
     // Calculate percent
-    let bestEnemyPercent = bestEnemy && totalProfit > 0 ? (bestEnemy.net / totalProfit) * 100 : null;
-    let worstEnemyPercent = worstEnemy && totalLoss > 0 ? (-worstEnemy.net / totalLoss) * 100 : null;
+    let bestEnemyPercent = bestEnemy !== null && totalProfit > 0 ? (bestEnemy.net / totalProfit) * 100 : null;
+    let worstEnemyPercent = worstEnemy !== null && totalLoss > 0 ? (-worstEnemy.net / totalLoss) * 100 : null;
 
     return {
       roi,
