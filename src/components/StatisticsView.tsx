@@ -155,6 +155,23 @@ interface HeadCell {
   width: string;
 }
 
+// Add helper to calculate potential games for each player
+const getPlayerPotentialGames = (playerName: string, tables: Table[]): number => {
+  // Get all tables sorted by date
+  const sortedTables = [...tables].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  // Find indexes of first and last appearance
+  let firstIdx = -1;
+  let lastIdx = -1;
+  sortedTables.forEach((table, idx) => {
+    if (table.players.some(p => p.name.toLowerCase() === playerName.toLowerCase())) {
+      if (firstIdx === -1) firstIdx = idx;
+      lastIdx = idx;
+    }
+  });
+  if (firstIdx === -1 || lastIdx === -1) return 0;
+  return lastIdx - firstIdx + 1;
+};
+
 const StatisticsView: React.FC = () => {
   const { tables: contextTables, isLoading: contextLoading, error: contextError, fetchTables } = usePoker();
   const { user } = useUser();
@@ -239,7 +256,7 @@ const StatisticsView: React.FC = () => {
 
   // Calculate player stats
   const playerStats = useMemo(() => {
-    const statsMap: { [key: string]: AggregatedPlayerStats } = {};
+    const statsMap: { [key: string]: AggregatedPlayerStats & { potentialGames?: number } } = {};
     // Variables to track overall single game max/min
     let overallMaxWin = 0;
     let overallMaxWinPlayer = '-';
@@ -330,21 +347,12 @@ const StatisticsView: React.FC = () => {
     });
 
     // Calculate final aggregate stats (Net, Avgs) and convert map to array
-    const statsArray: PlayerStats[] = Object.values(statsMap).map(stat => {
+    const statsArray: (PlayerStats & { potentialGames: number })[] = Object.values(statsMap).map(stat => {
+      // Calculate potential games for this player
+      const potentialGames = getPlayerPotentialGames(stat.name, sortedTables);
       return {
-        id: stat.id,
-        name: stat.name,
-        nickname: stat.nickname,
-        totalBuyIn: stat.totalBuyIn,
-        totalCashOut: stat.totalCashOut,
-        netResult: stat.totalCashOut - stat.totalBuyIn,
-        tablesPlayed: stat.tablesPlayed,
-        avgBuyIn: stat.tablesPlayed > 0 ? stat.totalBuyIn / stat.tablesPlayed : 0,
-        avgNetResult: stat.tablesPlayed > 0 ? (stat.totalCashOut - stat.totalBuyIn) / stat.tablesPlayed : 0,
-        largestWin: stat.largestWin,
-        largestLoss: stat.largestLoss,
-        gamesWon: stat.gamesWon,
-        gamesLost: stat.gamesLost,
+        ...stat,
+        potentialGames,
       };
     });
 
@@ -828,7 +836,7 @@ const StatisticsView: React.FC = () => {
                             >
                               {/* Render the correct value for each column */}
                               {headCell.id === 'netResult' ? formatResult(stat.netResult) :
-                                headCell.id === 'tablesPlayed' ? `${stat.tablesPlayed}/${inactiveTablesCount}` :
+                                headCell.id === 'tablesPlayed' ? `${stat.tablesPlayed}/${stat.potentialGames} (${stat.potentialGames > 0 ? Math.ceil((stat.tablesPlayed / stat.potentialGames) * 100) : 0}%)` :
                                 headCell.id === 'totalBuyIn' ? formatStat(stat.totalBuyIn) :
                                 headCell.id === 'totalCashOut' ? formatStat(stat.totalCashOut) :
                                 headCell.id === 'avgBuyIn' ? formatStat(stat.avgBuyIn) :
