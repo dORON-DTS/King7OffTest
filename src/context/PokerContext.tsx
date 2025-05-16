@@ -415,7 +415,19 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       
       if (response.ok) {
-        await fetchTables();
+        // Optimistically update the local state
+        setTables(prevTables => prevTables.map(t =>
+          t.id === tableId
+            ? {
+                ...t,
+                players: t.players.map(p =>
+                  p.id === playerId ? { ...p, showMe: !player.showMe } : p
+                )
+              }
+            : t
+        ));
+        // Optionally, sync with server in the background
+        fetchTables();
       } else {
         if (response.status === 401 || response.status === 403) {
           showTransientError('You do not have permission to perform this action');
