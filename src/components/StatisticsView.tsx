@@ -203,6 +203,13 @@ const StatisticsView: React.FC = () => {
   // Calculate the total number of inactive tables for the Games column
   const inactiveTablesCount = staticTables.length;
 
+  // Calculate extra stats for new cards
+  const [extraStats, setExtraStats] = useState({
+    biggestSingleBuyIn: { value: 0, player: '-' },
+    biggestAvgBuyIn: { value: 0, player: '-' },
+    bestAvgResult: { value: 0, player: '-' },
+  });
+
   // Function to handle sort request
   const handleRequestSort = (event: React.MouseEvent<unknown>, property: keyof PlayerStats) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -513,6 +520,43 @@ const StatisticsView: React.FC = () => {
     }
   ];
 
+  useEffect(() => {
+    let maxSingleBuyIn = 0;
+    let maxSingleBuyInPlayer = '-';
+    let maxAvgBuyIn = 0;
+    let maxAvgBuyInPlayer = '-';
+    let maxAvgResult = 0;
+    let maxAvgResultPlayer = '-';
+
+    // Biggest single game buy-in
+    staticTables.forEach(table => {
+      table.players.forEach(player => {
+        if ((player.totalBuyIn || 0) > maxSingleBuyIn) {
+          maxSingleBuyIn = player.totalBuyIn || 0;
+          maxSingleBuyInPlayer = player.name;
+        }
+      });
+    });
+
+    // Biggest avg buy-in & best avg result
+    playerStats.forEach(stat => {
+      if (stat.avgBuyIn > maxAvgBuyIn) {
+        maxAvgBuyIn = stat.avgBuyIn;
+        maxAvgBuyInPlayer = stat.name;
+      }
+      if (stat.avgNetResult > maxAvgResult) {
+        maxAvgResult = stat.avgNetResult;
+        maxAvgResultPlayer = stat.name;
+      }
+    });
+
+    setExtraStats({
+      biggestSingleBuyIn: { value: maxSingleBuyIn, player: maxSingleBuyInPlayer },
+      biggestAvgBuyIn: { value: maxAvgBuyIn, player: maxAvgBuyInPlayer },
+      bestAvgResult: { value: maxAvgResult, player: maxAvgResultPlayer },
+    });
+  }, [staticTables, playerStats]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -558,7 +602,7 @@ const StatisticsView: React.FC = () => {
       >
         {/* Top Summary Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={6} sm={3}>
             <Card sx={{
               bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -578,7 +622,7 @@ const StatisticsView: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={6} sm={3}>
             <Card sx={{
               bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -607,7 +651,7 @@ const StatisticsView: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={6} sm={3}>
             <Card sx={{
               bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -627,7 +671,7 @@ const StatisticsView: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={6} sm={3}>
             <Card sx={{
               bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -651,7 +695,7 @@ const StatisticsView: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={6} sm={3}>
             <Card sx={{
               bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -672,6 +716,66 @@ const StatisticsView: React.FC = () => {
                 ) : (
                   <Typography variant="body2" sx={{ color: 'grey.500' }}>No single game losses yet</Typography>
                 )}
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Card sx={{
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                boxShadow: '0 0 24px 4px #ffb300',
+                transform: { sm: 'scale(1.04)', xs: 'none' },
+              },
+            }}>
+              <CardContent sx={{ width: '100%' }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+                  <span role="img" aria-label="single-buyin">💸</span> Biggest Single Game Buy-In
+                </Typography>
+                <Typography variant="h5" sx={{ color: '#ffb300', fontWeight: 'bold' }}>
+                  {extraStats.biggestSingleBuyIn.player} ({extraStats.biggestSingleBuyIn.value})
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Card sx={{
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                boxShadow: '0 0 24px 4px #ab47bc',
+                transform: { sm: 'scale(1.04)', xs: 'none' },
+              },
+            }}>
+              <CardContent sx={{ width: '100%' }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+                  <span role="img" aria-label="avg-buyin">💳</span> Biggest Avg Buy-In
+                </Typography>
+                <Typography variant="h5" sx={{ color: '#ab47bc', fontWeight: 'bold' }}>
+                  {extraStats.biggestAvgBuyIn.player} ({Math.round(extraStats.biggestAvgBuyIn.value)})
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Card sx={{
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                boxShadow: '0 0 24px 4px #00bcd4',
+                transform: { sm: 'scale(1.04)', xs: 'none' },
+              },
+            }}>
+              <CardContent sx={{ width: '100%' }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
+                  <span role="img" aria-label="avg-result">📈</span> Best Avg Result
+                </Typography>
+                <Typography variant="h5" sx={{ color: '#00bcd4', fontWeight: 'bold' }}>
+                  {extraStats.bestAvgResult.player} ({Math.round(extraStats.bestAvgResult.value)})
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
