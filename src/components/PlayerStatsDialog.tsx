@@ -110,39 +110,36 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
         };
       });
 
+    // Sort games by date ascending (oldest to newest)
+    games.sort((a, b) => a.date.getTime() - b.date.getTime());
+
     // Streaks
-    let longestWin = 0, longestLose = 0, currentWin = 0, currentLose = 0, currentStreak = 0, currentType: 'win' | 'lose' | 'neutral' | null = null;
     let maxWin = 0, maxLose = 0;
+    let currentWin = 0, currentLose = 0;
+    // Calculate longest win/lose streaks
     games.forEach(g => {
       if (g.netResult > 0) {
         currentWin++;
-        currentLose = 0;
         if (currentWin > maxWin) maxWin = currentWin;
-        currentType = 'win';
-        currentStreak = currentWin;
+        currentLose = 0;
       } else if (g.netResult < 0) {
         currentLose++;
-        currentWin = 0;
         if (currentLose > maxLose) maxLose = currentLose;
-        currentType = 'lose';
-        currentStreak = currentLose;
+        currentWin = 0;
       } else {
         currentWin = 0;
         currentLose = 0;
-        currentType = 'neutral';
-        currentStreak = 1;
       }
     });
-    // Determine current streak (from last game)
-    let lastGame = games[games.length - 1];
+    // Calculate current streak from last game backwards
     let currentStreakType: string = 'None';
     let currentStreakCount = 0;
-    if (lastGame) {
-      if (lastGame.netResult > 0) {
+    if (games.length > 0) {
+      const lastResult = games[games.length - 1].netResult;
+      if (lastResult > 0) {
         currentStreakType = 'Win';
-        // Count backwards
         for (let i = games.length - 1; i >= 0 && games[i].netResult > 0; i--) currentStreakCount++;
-      } else if (lastGame.netResult < 0) {
+      } else if (lastResult < 0) {
         currentStreakType = 'Lose';
         for (let i = games.length - 1; i >= 0 && games[i].netResult < 0; i--) currentStreakCount++;
       } else {
@@ -211,9 +208,9 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
         <Grid container spacing={3}>
             {/* Section 1: Timeline Graph */}
             <Grid item xs={12} lg={7}> {/* Adjusted grid size */}
-                <Paper elevation={3} sx={{ p: 2, height: '100%', bgcolor: '#1e1e1e', color: 'white' }}>
+                <Paper elevation={3} sx={{ p: 2, minHeight: 220, height: 'auto', bgcolor: '#1e1e1e', color: 'white' }}>
                      <Typography variant="h6" gutterBottom>Performance Over Time</Typography>
-                     <Box sx={{ height: 350 }}>
+                     <Box sx={{ height: 220 }}>
                         {/* Added Recharts Line Chart */} 
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart
@@ -249,7 +246,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
 
             {/* Section 2: Summary Stats */}
             <Grid item xs={12} lg={5}> {/* Adjusted grid size */}
-                 <Paper elevation={3} sx={{ p: 2, height: '100%', bgcolor: '#1e1e1e', color: 'white' }}>
+                 <Paper elevation={3} sx={{ p: 2, minHeight: 220, height: 'auto', bgcolor: '#1e1e1e', color: 'white', mb: 2 }}>
                     <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>Summary</Typography>
                     <Grid container spacing={1.5}> {/* Use grid for alignment */}
                         {/* Row 1 */}
