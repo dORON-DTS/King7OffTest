@@ -257,11 +257,13 @@ const StatisticsView: React.FC = () => {
   // Calculate player stats
   const playerStats = useMemo(() => {
     const statsMap: { [key: string]: AggregatedPlayerStats & { potentialGames?: number } } = {};
-    // Variables to track overall single game max/min
+    // Variables to track overall single game max/min and their first occurrence
     let overallMaxWin = 0;
     let overallMaxWinPlayer = '-';
+    let overallMaxWinTableIdx = -1;
     let overallMinLoss = 0;
     let overallMinLossPlayer = '-';
+    let overallMinLossTableIdx = -1;
 
     // Sort tables by creation date ascending to process in order
     const sortedTables = [...staticTables]
@@ -269,17 +271,11 @@ const StatisticsView: React.FC = () => {
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
 
-    sortedTables.forEach(table => {
-      const tableTimestampMs = new Date(table.createdAt).getTime(); // Get table timestamp as number
-
-      // Skip active tables
-      if (table.isActive) {
-        return;
-      }
-
+    sortedTables.forEach((table, tableIdx) => {
+      const tableTimestampMs = new Date(table.createdAt).getTime();
+      if (table.isActive) return;
       table.players.forEach(player => {
         const playerIdentifier = player.name.toLowerCase();
-
         if (!statsMap[playerIdentifier]) {
           statsMap[playerIdentifier] = {
             id: player.id,
@@ -295,49 +291,42 @@ const StatisticsView: React.FC = () => {
             largestLoss: 0,
             gamesWon: 0,
             gamesLost: 0,
-            latestTableTimestamp: tableTimestampMs // Set initial timestamp (number)
+            latestTableTimestamp: tableTimestampMs
           };
         } else {
           const currentStats = statsMap[playerIdentifier];
-          // לא לעדכן nickname אם כבר קיים, רק להצגה מהטבלה האחרונה
-          if (tableTimestampMs >= (currentStats.latestTableTimestamp || 0)) { 
-            currentStats.nickname = player.nickname; 
-            currentStats.latestTableTimestamp = tableTimestampMs; // Update latest timestamp (number)
+          if (tableTimestampMs >= (currentStats.latestTableTimestamp || 0)) {
+            currentStats.nickname = player.nickname;
+            currentStats.latestTableTimestamp = tableTimestampMs;
           }
         }
-
-        // Calculate stats for THIS TABLE participation
         const tableBuyIn = player.totalBuyIn || 0;
         const tableCashOutTotal = player.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
         const tableCurrentChips = player.active ? (player.chips || 0) : 0;
         const tableTotalValue = tableCashOutTotal + tableCurrentChips;
         const tableNetResult = tableTotalValue - tableBuyIn;
-
-        // Aggregate overall stats
         const currentStats = statsMap[playerIdentifier];
         currentStats.totalBuyIn += tableBuyIn;
         currentStats.totalCashOut += tableTotalValue;
         currentStats.tablesPlayed += 1;
-
-        // Update largest win/loss FOR THE PLAYER (overall stats)
         if (tableNetResult > currentStats.largestWin) {
           currentStats.largestWin = tableNetResult;
         }
         if (tableNetResult < currentStats.largestLoss) {
           currentStats.largestLoss = tableNetResult;
         }
-
-        // Track overall single game max win / min loss
-        if (tableNetResult > overallMaxWin) {
-            overallMaxWin = tableNetResult;
-            overallMaxWinPlayer = player.name;
+        // Track overall single game max win / min loss (first occurrence only)
+        if (tableNetResult > overallMaxWin || (tableNetResult === overallMaxWin && overallMaxWinTableIdx === -1)) {
+          overallMaxWin = tableNetResult;
+          overallMaxWinPlayer = player.name;
+          overallMaxWinTableIdx = tableIdx;
         }
-        if (tableNetResult < overallMinLoss) {
-            overallMinLoss = tableNetResult;
-            overallMinLossPlayer = player.name;
+        // Only update min loss if it's a new minimum, or first occurrence
+        if (tableNetResult < overallMinLoss || (tableNetResult === overallMinLoss && overallMinLossTableIdx === -1)) {
+          overallMinLoss = tableNetResult;
+          overallMinLossPlayer = player.name;
+          overallMinLossTableIdx = tableIdx;
         }
-
-        // Update games won/lost
         if (tableNetResult > 0) {
           currentStats.gamesWon += 1;
         } else if (tableNetResult < 0) {
@@ -570,8 +559,8 @@ const StatisticsView: React.FC = () => {
         {/* Top Summary Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
-              <CardContent>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="games">🎮</span> Total Games Played
                 </Typography>
@@ -582,8 +571,8 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
-              <CardContent>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="trophy">🏆</span> Most Games Played
                 </Typography>
@@ -603,8 +592,8 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
-              <CardContent>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="money">💰</span> Total Buy In
                 </Typography>
@@ -615,8 +604,8 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
-              <CardContent>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="win">🏅</span> Biggest Single Game Win
                 </Typography>
@@ -631,8 +620,8 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3 }}>
-              <CardContent>
+            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="loss">❌</span> Biggest Single Game Loss
                 </Typography>
