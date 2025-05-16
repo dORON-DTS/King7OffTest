@@ -559,7 +559,15 @@ const StatisticsView: React.FC = () => {
         {/* Top Summary Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Card sx={{
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                boxShadow: '0 0 24px 4px #29b6f6',
+                transform: { sm: 'scale(1.04)', xs: 'none' },
+              },
+            }}>
               <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="games">🎮</span> Total Games Played
@@ -571,7 +579,15 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Card sx={{
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                boxShadow: '0 0 24px 4px #29b6f6',
+                transform: { sm: 'scale(1.04)', xs: 'none' },
+              },
+            }}>
               <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="trophy">🏆</span> Most Games Played
@@ -592,7 +608,15 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Card sx={{
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                boxShadow: '0 0 24px 4px #66bb6a',
+                transform: { sm: 'scale(1.04)', xs: 'none' },
+              },
+            }}>
               <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="money">💰</span> Total Buy In
@@ -604,7 +628,15 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Card sx={{
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                boxShadow: '0 0 24px 4px #43a047',
+                transform: { sm: 'scale(1.04)', xs: 'none' },
+              },
+            }}>
               <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="win">🏅</span> Biggest Single Game Win
@@ -620,7 +652,15 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={3}>
-            <Card sx={{ bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Card sx={{
+              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3, minHeight: 160, minWidth: 220,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                boxShadow: '0 0 24px 4px #e53935',
+                transform: { sm: 'scale(1.04)', xs: 'none' },
+              },
+            }}>
               <CardContent sx={{ width: '100%' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400' }}>
                   <span role="img" aria-label="loss">❌</span> Biggest Single Game Loss
