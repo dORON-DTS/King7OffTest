@@ -10,8 +10,8 @@ import {
   Grid,
   Paper,
   Tooltip,
-  InfoIcon
 } from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info';
 import { Table, PlayerStats } from '../types';
 // Import Recharts components
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
