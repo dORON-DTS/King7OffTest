@@ -208,8 +208,7 @@ const LandingPage: React.FC = () => {
             { rank: 'A', suit: '♣', color: '#2c3e50', delay: 8, x: 50, rotate: 4 },
             { rank: '10', suit: '♥', color: '#e74c3c', delay: 12.5, x: 100, rotate: 8 }
           ].map((card, index, arr) => {
-            // Fan out after all cards are dealt (animationKey triggers rerender)
-            const isFan = animationKey > 0; // Always fan after first cycle
+            const isFan = animationKey > 0;
             const isRiver = index === arr.length - 1;
             return (
               <Box
@@ -219,7 +218,7 @@ const LandingPage: React.FC = () => {
                   width: { xs: '50px', sm: '70px' },
                   height: { xs: '70px', sm: '100px' },
                   bottom: '15%',
-                  left: '50%',
+                  left: { xs: `calc(50% + ${card.x * 0.7}px)`, sm: `calc(50% + ${card.x}px)` },
                   bgcolor: '#fff',
                   borderRadius: '8px',
                   boxShadow: isRiver
@@ -228,19 +227,14 @@ const LandingPage: React.FC = () => {
                   animation: `${flipIn} 0.8s ${card.delay}s cubic-bezier(0.4, 0, 0.2, 1) forwards` +
                     (isRiver ? `, ${riverGlow} 1.2s ${card.delay + 0.6}s cubic-bezier(0.4,0,0.2,1) forwards, ${pulse} 1.2s ${card.delay + 0.6}s` : ''),
                   opacity: 0,
-                  '--slide-x': { xs: `${card.x * 0.7}px`, sm: `${card.x}px` },
-                  '--slide-y': { xs: '-80px', sm: '-120px' },
-                  '--rotate': '0deg',
-                  zIndex: 1,
+                  transform: 'translateX(-50%)' + (isFan ? ` translateY(-120px) rotate(${card.rotate}deg)` : ''),
+                  zIndex: index + 1,
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
                   alignItems: 'center',
                   color: card.color,
                   fontSize: { xs: '1.5rem', sm: '2rem' },
-                  transform: isFan
-                    ? `translate(calc(${card.x}px), -120px) rotate(${card.rotate}deg)`
-                    : undefined,
                   transition: isFan ? 'transform 0.7s cubic-bezier(0.4,0,0.2,1)' : undefined,
                   '&::before': {
                     content: `"${card.suit}"`,
