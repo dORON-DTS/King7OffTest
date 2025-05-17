@@ -8,17 +8,41 @@
     left: 0;
     z-index: 2;
     background: #1e1e1e;
+    box-shadow: 2px 0 6px -2px #0006;
   }
   .title-cell {
     position: sticky !important;
     left: 60px;
     z-index: 2;
     background: #1e1e1e;
+    box-shadow: 2px 0 6px -2px #0006;
   }
   .player-cell {
     position: sticky !important;
     left: 120px;
     z-index: 2;
     background: #1e1e1e;
+    box-shadow: 2px 0 6px -2px #0006;
+  }
+  .mobile-table-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    font-size: 0.85rem;
+    padding-bottom: 8px;
+  }
+  .mobile-scroll-hint {
+    position: absolute;
+    top: 8px;
+    right: 16px;
+    z-index: 10;
+    color: #aaa;
+    font-size: 1.2em;
+    pointer-events: none;
+    animation: bounce-arrow 1.2s infinite;
+  }
+  @keyframes bounce-arrow {
+    0%, 100% { transform: translateX(0); opacity: 0.7; }
+    50% { transform: translateX(-10px); opacity: 1; }
   }
 } 

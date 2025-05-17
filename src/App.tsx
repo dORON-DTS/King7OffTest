@@ -149,17 +149,17 @@ const AppLayout = () => {
               {user ? (
                 <>
                   <Tooltip title={user.username} arrow>
-                    <IconButton
-                      size="large"
-                      edge="end"
-                      color="inherit"
-                      onClick={handleMenu}
-                      sx={{ p: 0 }}
-                    >
-                      <Avatar sx={{ bgcolor: '#1976d2' }}>
+                  <IconButton
+                    size="large"
+                    edge="end"
+                    color="inherit"
+                    onClick={handleMenu}
+                    sx={{ p: 0 }}
+                  >
+                    <Avatar sx={{ bgcolor: '#1976d2' }}>
                         {user.username && user.username[0].toUpperCase()}
-                      </Avatar>
-                    </IconButton>
+                    </Avatar>
+                  </IconButton>
                   </Tooltip>
                   <Menu
                     anchorEl={anchorEl}

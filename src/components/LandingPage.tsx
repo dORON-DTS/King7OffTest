@@ -278,25 +278,25 @@ const LandingPage: React.FC = () => {
           >
             VIEW STATISTICS
           </Button>
-          <Button
-            variant="contained"
-            size="large"
-            onClick={() => navigate(user ? '/tables' : '/tableslist')}
-            sx={{
-              bgcolor: '#3498db',
-              color: '#fff',
-              fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
-              padding: { xs: '8px 16px', sm: '12px 24px', md: '16px 32px' },
-              '&:hover': {
-                bgcolor: '#2980b9'
-              },
-              boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
-              borderRadius: 2,
-              width: { xs: '80%', sm: 'auto' }
-            }}
-          >
-            {user ? 'GO TO TABLES LIST' : 'LOGIN'}
-          </Button>
+        <Button
+          variant="contained"
+          size="large"
+          onClick={() => navigate(user ? '/tables' : '/tableslist')}
+          sx={{
+            bgcolor: '#3498db',
+            color: '#fff',
+            fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
+            padding: { xs: '8px 16px', sm: '12px 24px', md: '16px 32px' },
+            '&:hover': {
+              bgcolor: '#2980b9'
+            },
+            boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+            borderRadius: 2,
+            width: { xs: '80%', sm: 'auto' }
+          }}
+        >
+          {user ? 'GO TO TABLES LIST' : 'LOGIN'}
+        </Button>
         </Box>
       </Box>
     </Container>

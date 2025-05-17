@@ -37,6 +37,12 @@ type AdvancedStats = {
   worstEnemyPercent: number | null;
 };
 
+// Helper to get ordinal suffix
+function getOrdinal(n: number) {
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, playerData, allTablesData }) => {
   
   // Calculate Timeline Data and Matchup Data here using useMemo
@@ -255,27 +261,35 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
                             <Typography variant="body1">Total Buy-In:</Typography>
                           </Tooltip>
                         </Grid>
-                        <Grid item xs={6}><Typography variant="body1" align="right">{formatStat(playerData.totalBuyIn)}</Typography></Grid>
+                        <Grid item xs={6}><Typography variant="body1" align="right">{formatStat(playerData.totalBuyIn)}{typeof playerData.totalBuyIn === 'number' && playerData.totalBuyIn > 0 && (
+                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(playerData.totalBuyIn)}</span>
+                        )}</Typography></Grid>
                         <Grid item xs={6}>
                           <Tooltip title="Total amount of all cash-outs from the table">
                             <Typography variant="body1">Total Value:</Typography>
                           </Tooltip>
                         </Grid>
-                        <Grid item xs={6}><Typography variant="body1" align="right">{formatStat(playerData.totalCashOut)}</Typography></Grid>
+                        <Grid item xs={6}><Typography variant="body1" align="right">{formatStat(playerData.totalCashOut)}{typeof playerData.totalCashOut === 'number' && playerData.totalCashOut > 0 && (
+                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(playerData.totalCashOut)}</span>
+                        )}</Typography></Grid>
                         {/* Row 2 */}
                         <Grid item xs={6}>
                           <Tooltip title="Total profit or loss (income minus expenses)">
                             <Typography variant="body1" sx={{ fontWeight: 'bold', color: playerData.netResult >= 0 ? 'success.light' : 'error.light' }}>Net Result:</Typography>
                           </Tooltip>
                         </Grid>
-                        <Grid item xs={6}><Typography variant="body1" align="right" sx={{ fontWeight: 'bold', color: playerData.netResult >= 0 ? 'success.light' : 'error.light' }}>{formatResult(playerData.netResult)}</Typography></Grid>
+                        <Grid item xs={6}><Typography variant="body1" align="right" sx={{ fontWeight: 'bold', color: playerData.netResult >= 0 ? 'success.light' : 'error.light' }}>{formatResult(playerData.netResult)}{typeof playerData.netResult === 'number' && playerData.netResult !== 0 && (
+                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(playerData.netResult)}</span>
+                        )}</Typography></Grid>
                         {/* Row 3 */}
                         <Grid item xs={6}>
                           <Tooltip title="Number of games the player participated in">
                             <Typography variant="body1">Tables Played:</Typography>
                           </Tooltip>
                         </Grid>
-                        <Grid item xs={6}><Typography variant="body1" align="right">{playerData.tablesPlayed}</Typography></Grid>
+                        <Grid item xs={6}><Typography variant="body1" align="right">{playerData.tablesPlayed}{typeof playerData.tablesPlayed === 'number' && playerData.tablesPlayed > 0 && (
+                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(playerData.tablesPlayed)}</span>
+                        )}</Typography></Grid>
                         {/* Row 4 */}
                         <Grid item xs={6}>
                           <Tooltip title="Number of games won versus lost">
@@ -296,28 +310,36 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
                             <Typography variant="body1">Avg Buy-In:</Typography>
                           </Tooltip>
                         </Grid>
-                        <Grid item xs={6}><Typography variant="body1" align="right">{formatStat(playerData.avgBuyIn, 2)}</Typography></Grid>
+                        <Grid item xs={6}><Typography variant="body1" align="right">{formatStat(playerData.avgBuyIn, 2)}{typeof playerData.avgBuyIn === 'number' && playerData.avgBuyIn > 0 && (
+                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(Math.round(playerData.avgBuyIn))}</span>
+                        )}</Typography></Grid>
                         {/* Row 7 */}
                         <Grid item xs={6}>
                           <Tooltip title="Average profit or loss per game">
                             <Typography variant="body1">Avg Net/Game:</Typography>
                           </Tooltip>
                         </Grid>
-                        <Grid item xs={6}><Typography variant="body1" align="right" sx={{ color: playerData.avgNetResult >= 0 ? 'success.light' : 'error.light' }}>{formatResult(playerData.avgNetResult, 2)}</Typography></Grid>
+                        <Grid item xs={6}><Typography variant="body1" align="right" sx={{ color: playerData.avgNetResult >= 0 ? 'success.light' : 'error.light' }}>{formatResult(playerData.avgNetResult, 2)}{typeof playerData.avgNetResult === 'number' && playerData.avgNetResult !== 0 && (
+                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(Math.round(playerData.avgNetResult))}</span>
+                        )}</Typography></Grid>
                         {/* Row 8 */}
                         <Grid item xs={6}>
                           <Tooltip title="Highest profit in a single game">
                             <Typography variant="body1" sx={{ color: 'success.main' }}>Largest Win:</Typography>
                           </Tooltip>
                         </Grid>
-                        <Grid item xs={6}><Typography variant="body1" align="right" sx={{ color: 'success.main' }}>{playerData.largestWin > 0 ? formatResult(playerData.largestWin) : '-'}</Typography></Grid>
+                        <Grid item xs={6}><Typography variant="body1" align="right" sx={{ color: 'success.main' }}>{playerData.largestWin > 0 ? formatResult(playerData.largestWin) : '-'}{typeof playerData.largestWin === 'number' && playerData.largestWin > 0 && (
+                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(playerData.largestWin)}</span>
+                        )}</Typography></Grid>
                         {/* Row 9 */}
                         <Grid item xs={6}>
                           <Tooltip title="Highest loss in a single game">
                             <Typography variant="body1" sx={{ color: 'error.main' }}>Largest Loss:</Typography>
                           </Tooltip>
                         </Grid>
-                        <Grid item xs={6}><Typography variant="body1" align="right" sx={{ color: 'error.main' }}>{playerData.largestLoss < 0 ? formatResult(playerData.largestLoss) : '-'}</Typography></Grid>
+                        <Grid item xs={6}><Typography variant="body1" align="right" sx={{ color: 'error.main' }}>{playerData.largestLoss < 0 ? formatResult(playerData.largestLoss) : '-'}{typeof playerData.largestLoss === 'number' && playerData.largestLoss < 0 && (
+                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(Math.abs(playerData.largestLoss))}</span>
+                        )}</Typography></Grid>
                     </Grid>
                  </Paper>
                  {/* Advanced Stats Section */}
@@ -331,21 +353,27 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
                            <Typography variant="body1">ROI (Return on Investment):</Typography>
                          </Tooltip>
                        </Grid>
-                       <Grid item xs={5}><Typography variant="body1" align="right">{advancedStats.roi !== null ? `${advancedStats.roi > 0 ? '+' : ''}${Math.round(advancedStats.roi)}%` : '-'}</Typography></Grid>
+                       <Grid item xs={5}><Typography variant="body1" align="right">{advancedStats.roi !== null ? `${advancedStats.roi > 0 ? '+' : ''}${Math.round(advancedStats.roi)}%` : '-'}{advancedStats.roi !== null && (
+                         <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(Math.abs(Math.round(advancedStats.roi || 0)))}</span>
+                       )}</Typography></Grid>
                        {/* Longest Win Streak */}
                        <Grid item xs={7}>
                          <Tooltip title="Maximum number of consecutive winning games">
                            <Typography variant="body1">Longest Win Streak:</Typography>
                          </Tooltip>
                        </Grid>
-                       <Grid item xs={5}><Typography variant="body1" align="right">{advancedStats.maxWin || '-'}</Typography></Grid>
+                       <Grid item xs={5}><Typography variant="body1" align="right">{advancedStats.maxWin || '-'}{advancedStats.maxWin ? (
+                         <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(advancedStats.maxWin)}</span>
+                       ) : null}</Typography></Grid>
                        {/* Longest Lose Streak */}
                        <Grid item xs={7}>
                          <Tooltip title="Maximum number of consecutive losing games">
                            <Typography variant="body1">Longest Lose Streak:</Typography>
                          </Tooltip>
                        </Grid>
-                       <Grid item xs={5}><Typography variant="body1" align="right">{advancedStats.maxLose || '-'}</Typography></Grid>
+                       <Grid item xs={5}><Typography variant="body1" align="right">{advancedStats.maxLose || '-'}{advancedStats.maxLose ? (
+                         <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{getOrdinal(advancedStats.maxLose)}</span>
+                       ) : null}</Typography></Grid>
                        {/* Current Streak */}
                        <Grid item xs={7}>
                          <Tooltip title="Current streak of wins or losses">
