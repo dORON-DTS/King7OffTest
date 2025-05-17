@@ -92,14 +92,15 @@ const TablesList: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               bgcolor: '#1e1e1e',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: table.isActive ? '2px solid #43a047' : '2px solid #90a4ae',
               borderRadius: 1,
               transition: 'all 0.3s ease',
               overflow: 'hidden',
+              boxShadow: table.isActive ? '0 0 20px 0px #43a047' : 'none',
               '&:hover': {
                 transform: 'translateY(-5px)',
-                boxShadow: '0 0 20px rgba(25,118,210,0.3)',
-                border: '1px solid rgba(25,118,210,0.5)'
+                boxShadow: table.isActive ? '0 0 24px 4px #43a047' : '0 0 24px 4px #cfd8dc',
+                border: table.isActive ? '2px solid #43a047' : '2px solid #cfd8dc',
               }
             }}
           >
