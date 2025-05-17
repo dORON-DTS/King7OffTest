@@ -1127,10 +1127,10 @@ const StatisticsView: React.FC = () => {
         {/* Table Container */}
         {isMobile ? (
           <div className={styles['mobile-stats-grid']} style={{ overflowX: 'auto' }}>
-            <div className={styles['mobile-stats-header']} style={{ minWidth: 900 }}>
+            <div className={styles['mobile-stats-header']} style={{ minWidth: 1200 }}>
               <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 60 }}>#</div>
-              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 140 }}>Player</div>
-              <div className={styles['mobile-stats-cell']} style={{ width: 90 }}>Title</div>
+              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>Player</div>
+              <div className={styles['mobile-stats-cell']} style={{ width: 110 }}>Title</div>
               {headCells.map((headCell) => {
                 const isNumeric = headCell.numeric;
                 const isSorted = orderBy === headCell.id;
@@ -1138,7 +1138,7 @@ const StatisticsView: React.FC = () => {
                   <div
                     key={headCell.id}
                     className={styles['mobile-stats-cell']}
-                    style={{ minWidth: 110, width: 110, cursor: isNumeric ? 'pointer' : 'default', userSelect: 'none', color: isSorted ? '#29b6f6' : undefined }}
+                    style={{ minWidth: 130, width: 130, cursor: isNumeric ? 'pointer' : 'default', userSelect: 'none', color: isSorted ? '#29b6f6' : undefined }}
                     onClick={isNumeric ? () => handleRequestSort(undefined as any, headCell.id) : undefined}
                   >
                     {headCell.label}
@@ -1150,17 +1150,17 @@ const StatisticsView: React.FC = () => {
               })}
             </div>
             {filteredRows.length === 0 ? (
-              <div className={styles['mobile-stats-row']} style={{ minWidth: 900 }}>
+              <div className={styles['mobile-stats-row']} style={{ minWidth: 1200 }}>
                 <div className={styles['mobile-stats-cell']} style={{ width: '100%' }}>
                   No players match the current filter.
                 </div>
               </div>
             ) : (
               stableSort(filteredRows, getComparator(order, orderBy)).map((stat, index) => (
-                <div className={styles['mobile-stats-row']} key={stat.id} style={{ minWidth: 900, cursor: 'pointer' }} onClick={() => handlePlayerRowClick(stat)}>
+                <div className={styles['mobile-stats-row']} key={stat.id} style={{ minWidth: 1200, cursor: 'pointer' }} onClick={() => handlePlayerRowClick(stat)}>
                   <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 60 }}>#{index + 1}</div>
-                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 140 }}>{stat.name}</div>
-                  <div className={styles['mobile-stats-cell']} style={{ width: 90 }}>{getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}</div>
+                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>{stat.name}</div>
+                  <div className={styles['mobile-stats-cell']} style={{ width: 110 }}>{getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}</div>
                   {headCells.map((headCell) => {
                     let cellColor = 'inherit';
                     if (headCell.id === 'netResult') {
@@ -1194,7 +1194,7 @@ const StatisticsView: React.FC = () => {
                       <div
                         key={headCell.id}
                         className={styles['mobile-stats-cell']}
-                        style={{ minWidth: 110, width: 110, color: cellColor }}
+                        style={{ minWidth: 130, width: 130, color: cellColor }}
                       >
                         {headCell.id === 'netResult' ? formatResult(stat.netResult) :
                           headCell.id === 'tablesPlayed' ? `${stat.tablesPlayed}/${stat.potentialGames} (${stat.potentialGames > 0 ? Math.ceil((stat.tablesPlayed / stat.potentialGames) * 100) : 0}%)` :
