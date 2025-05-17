@@ -107,13 +107,4 @@
     color: #fff;
     font-weight: bold;
   }
-  .mobile-stats-sticky3 {
-    position: sticky;
-    left: 150px;
-    z-index: 20;
-    background: #1e1e1e;
-    box-shadow: 2px 0 6px -2px #0006;
-    color: #fff;
-    font-weight: bold;
-  }
 } 

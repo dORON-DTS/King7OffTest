@@ -1121,8 +1121,8 @@ const StatisticsView: React.FC = () => {
           <div className={styles['mobile-stats-grid']} style={{ overflowX: 'auto' }}>
             <div className={styles['mobile-stats-header']} style={{ minWidth: 700 }}>
               <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 60 }}>#</div>
-              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 90 }}>Title</div>
-              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky3']}`} style={{ width: 120 }}>Player</div>
+              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 120 }}>Player</div>
+              <div className={styles['mobile-stats-cell']} style={{ width: 90 }}>Title</div>
               {headCells.map((headCell) => (
                 <div
                   key={headCell.id}
@@ -1143,8 +1143,8 @@ const StatisticsView: React.FC = () => {
               stableSort(filteredRows, getComparator(order, orderBy)).map((stat, index) => (
                 <div className={styles['mobile-stats-row']} key={stat.id} style={{ minWidth: 700, cursor: 'pointer' }} onClick={() => handlePlayerRowClick(stat)}>
                   <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 60 }}>#{index + 1}</div>
-                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 90 }}>{getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}</div>
-                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky3']}`} style={{ width: 120 }}>{stat.name}{stat.nickname && (<span style={{ fontSize: '0.85em', color: '#aaa', marginLeft: 4 }}>({stat.nickname})</span>)}</div>
+                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 120 }}>{stat.name}</div>
+                  <div className={styles['mobile-stats-cell']} style={{ width: 90 }}>{getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}</div>
                   {headCells.map((headCell) => {
                     let cellColor = 'inherit';
                     if (headCell.id === 'netResult') {
