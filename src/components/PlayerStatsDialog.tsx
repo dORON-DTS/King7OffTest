@@ -9,7 +9,8 @@ import {
   Box,
   Grid,
   Paper,
-  Tooltip
+  Tooltip,
+  InfoIcon
 } from '@mui/material';
 import { Table, PlayerStats } from '../types';
 // Import Recharts components
@@ -329,7 +330,12 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
             {/* Section 2: Summary Stats */}
             <Grid item xs={12} lg={4}> {/* Adjusted grid size for right column */}
                  <Paper elevation={3} sx={{ p: 2, minHeight: 220, height: 'auto', bgcolor: '#1e1e1e', color: 'white', mb: 2 }}>
-                    <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>Summary</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="h6" gutterBottom>Summary</Typography>
+                      <Tooltip title={`Ordinals are calculated only for players with at least ${MIN_GAMES_FOR_ORDINAL} games played.`}>
+                        <InfoIcon fontSize="small" sx={{ ml: 1, color: 'grey.500' }} />
+                      </Tooltip>
+                    </Box>
                     <Grid container spacing={1.5}> {/* Use grid for alignment */}
                         {/* Row 1 */}
                         <Grid item xs={6}>
