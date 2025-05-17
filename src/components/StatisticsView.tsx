@@ -642,6 +642,12 @@ const StatisticsView: React.FC = () => {
     setBestWinStreak({ value: maxStreak, player: maxStreakPlayer });
   }, [playerStats, staticTables]);
 
+  // Sorted player options for Autocomplete
+  const playerOptions = useMemo(() =>
+    [...playerStats.map(player => player.name)].sort((a, b) => a.localeCompare(b)),
+    [playerStats]
+  );
+
   // Filter players based on search query
   const filteredPlayers = useMemo(() => {
     if (!searchQuery.length) return filteredPlayerStats;
@@ -906,14 +912,18 @@ const StatisticsView: React.FC = () => {
           <Autocomplete
             multiple
             freeSolo
-            options={playerStats.map(player => player.name)}
+            options={playerOptions}
             value={searchQuery}
-            onChange={(_, newValue) => setSearchQuery(newValue)}
-            onInputChange={(_, newInputValue) => {
+            onChange={(_, newValue, reason) => {
+              setSearchQuery(newValue);
+            }}
+            onInputChange={(_, newInputValue, reason) => {
               if (newInputValue && !searchQuery.includes(newInputValue)) {
                 setSearchQuery([...searchQuery, newInputValue]);
               }
             }}
+            openOnFocus
+            disableCloseOnSelect
             renderInput={(params) => (
               <TextField
                 {...params}
