@@ -217,7 +217,7 @@ const LandingPage: React.FC = () => {
                   position: 'absolute',
                   width: { xs: '50px', sm: '70px' },
                   height: { xs: '70px', sm: '100px' },
-                  bottom: '15%',
+                  bottom: '25%',
                   left: { xs: `calc(50% + ${card.x * 0.7}px)`, sm: `calc(50% + ${card.x}px)` },
                   bgcolor: '#fff',
                   borderRadius: '8px',
