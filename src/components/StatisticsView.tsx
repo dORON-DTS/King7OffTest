@@ -273,6 +273,14 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
   );
 }
 
+// Helper to render ordinal with gold for 1st
+function renderOrdinal(ordinal: string) {
+  if (ordinal === '1st') {
+    return <span style={{ fontSize: '0.8em', color: '#FFD700', marginLeft: 4, fontWeight: 700 }}>1st</span>;
+  }
+  return <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{ordinal}</span>;
+}
+
 const StatisticsView: React.FC = () => {
   const { tables: contextTables, isLoading: contextLoading, error: contextError, fetchTables } = usePoker();
   const { user } = useUser();
@@ -1197,9 +1205,7 @@ const StatisticsView: React.FC = () => {
                           headCell.id === 'largestWin' ? formatStat(stat.largestWin) :
                           headCell.id === 'largestLoss' ? formatStat(stat.largestLoss) :
                           ''}
-                        {showOrdinal && ordinal && (
-                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{ordinal}</span>
-                        )}
+                        {showOrdinal && renderOrdinal(ordinal)}
                       </div>
                     );
                   })}
@@ -1424,9 +1430,7 @@ const StatisticsView: React.FC = () => {
                                   headCell.id === 'largestWin' ? formatStat(stat.largestWin) :
                                   headCell.id === 'largestLoss' ? formatStat(stat.largestLoss) :
                                   ''}
-                                {showOrdinal && ordinal && (
-                                  <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{ordinal}</span>
-                                )}
+                                {showOrdinal && renderOrdinal(ordinal)}
                               </TableCell>
                             );
                           })}
