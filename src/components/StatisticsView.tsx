@@ -22,7 +22,10 @@ import {
   CardContent,
   TextField,
   TableSortLabel,
-  TablePagination
+  TablePagination,
+  Autocomplete,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
@@ -189,6 +192,9 @@ const StatisticsView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<Order>('desc');
   const [orderBy, setOrderBy] = useState<keyof PlayerStats>('netResult');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Add state to track single game win/loss
   const [singleGameStats, setSingleGameStats] = useState<{ 
@@ -636,6 +642,16 @@ const StatisticsView: React.FC = () => {
     setBestWinStreak({ value: maxStreak, player: maxStreakPlayer });
   }, [playerStats, staticTables]);
 
+  // Filter players based on search query
+  const filteredPlayers = useMemo(() => {
+    if (!searchQuery) return filteredPlayerStats;
+    const query = searchQuery.toLowerCase();
+    return filteredPlayerStats.filter(player => 
+      player.name.toLowerCase().includes(query) || 
+      (player.nickname && player.nickname.toLowerCase().includes(query))
+    );
+  }, [filteredPlayerStats, searchQuery]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -884,6 +900,51 @@ const StatisticsView: React.FC = () => {
           </Grid>
         </Grid>
 
+        {/* Search Autocomplete */}
+        <Box sx={{ mb: 2, maxWidth: 300 }}>
+          <Autocomplete
+            freeSolo
+            options={playerStats.map(player => player.name)}
+            value={searchQuery}
+            onChange={(_, newValue) => setSearchQuery(newValue || '')}
+            onInputChange={(_, newInputValue) => setSearchQuery(newInputValue)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Search Player"
+                variant="outlined"
+                size="small"
+                fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.23)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'primary.main',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                  },
+                }}
+              />
+            )}
+            sx={{
+              '& .MuiAutocomplete-popupIndicator': {
+                color: 'rgba(255, 255, 255, 0.7)',
+              },
+              '& .MuiAutocomplete-clearIndicator': {
+                color: 'rgba(255, 255, 255, 0.7)',
+              },
+            }}
+          />
+        </Box>
+
         {/* Filter Input */}
         <Box sx={{ 
           mb: 2,
@@ -1027,14 +1088,14 @@ const StatisticsView: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredPlayerStats.length === 0 ? (
+                  {filteredPlayers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={headCells.length + 2} align="center" sx={{ color: 'grey.500' }}> 
                         No players match the current filter.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    stableSort(filteredPlayerStats, getComparator(order, orderBy))
+                    stableSort(filteredPlayers, getComparator(order, orderBy))
                       .map((stat, index) => {
                         return (
                           <TableRow
@@ -1116,9 +1177,9 @@ const StatisticsView: React.FC = () => {
                               let ordinal = '';
                               if (showOrdinal) {
                                 // Get all values for this column
-                                let values = stableSort(filteredPlayerStats, getComparator('desc', headCell.id));
+                                let values = stableSort(filteredPlayers, getComparator('desc', headCell.id));
                                 if (negativeColumns.includes(headCell.id as string)) {
-                                  values = stableSort(filteredPlayerStats, getComparator('asc', headCell.id));
+                                  values = stableSort(filteredPlayers, getComparator('asc', headCell.id));
                                 }
                                 // Find the rank (1-based)
                                 const value = stat[headCell.id as keyof PlayerStats];
@@ -1258,14 +1319,14 @@ const StatisticsView: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredPlayerStats.length === 0 ? (
+                {filteredPlayers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={headCells.length + 2} align="center" sx={{ color: 'grey.500' }}> 
                       No players match the current filter.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  stableSort(filteredPlayerStats, getComparator(order, orderBy))
+                  stableSort(filteredPlayers, getComparator(order, orderBy))
                     .map((stat, index) => {
                       return (
                         <TableRow
@@ -1347,9 +1408,9 @@ const StatisticsView: React.FC = () => {
                             let ordinal = '';
                             if (showOrdinal) {
                               // Get all values for this column
-                              let values = stableSort(filteredPlayerStats, getComparator('desc', headCell.id));
+                              let values = stableSort(filteredPlayers, getComparator('desc', headCell.id));
                               if (negativeColumns.includes(headCell.id as string)) {
-                                values = stableSort(filteredPlayerStats, getComparator('asc', headCell.id));
+                                values = stableSort(filteredPlayers, getComparator('asc', headCell.id));
                               }
                               // Find the rank (1-based)
                               const value = stat[headCell.id as keyof PlayerStats];
