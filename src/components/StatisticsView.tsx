@@ -1123,15 +1123,23 @@ const StatisticsView: React.FC = () => {
               <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 60 }}>#</div>
               <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 140 }}>Player</div>
               <div className={styles['mobile-stats-cell']} style={{ width: 90 }}>Title</div>
-              {headCells.map((headCell) => (
-                <div
-                  key={headCell.id}
-                  className={styles['mobile-stats-cell']}
-                  style={{ minWidth: 110, width: 110 }}
-                >
-                  {headCell.label}
-                </div>
-              ))}
+              {headCells.map((headCell) => {
+                const isNumeric = headCell.numeric;
+                const isSorted = orderBy === headCell.id;
+                return (
+                  <div
+                    key={headCell.id}
+                    className={styles['mobile-stats-cell']}
+                    style={{ minWidth: 110, width: 110, cursor: isNumeric ? 'pointer' : 'default', userSelect: 'none', color: isSorted ? '#29b6f6' : undefined }}
+                    onClick={isNumeric ? () => handleRequestSort(undefined as any, headCell.id) : undefined}
+                  >
+                    {headCell.label}
+                    {isSorted && (
+                      <span style={{ marginLeft: 4, fontSize: '1em' }}>{order === 'asc' ? '⬆️' : '⬇️'}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             {filteredRows.length === 0 ? (
               <div className={styles['mobile-stats-row']} style={{ minWidth: 900 }}>
