@@ -761,9 +761,12 @@ const StatisticsView: React.FC = () => {
   }, [filteredPlayers]);
 
   const filteredRows = useMemo(() => {
-    if (selectedPlayers.length === 0) return filteredPlayers;
-    return filteredPlayers.filter((player) => selectedPlayers.includes(player.name));
-  }, [filteredPlayers, selectedPlayers]);
+    if (selectedPlayers.length === 0) return filteredPlayerStats;
+    return filteredPlayerStats.filter((player) => selectedPlayers.includes(player.name));
+  }, [filteredPlayerStats, selectedPlayers]);
+
+  // Remove freeSolo and add inputValue state
+  const [inputValue, setInputValue] = useState('');
 
   if (loading || (user && contextLoading)) {
     return (
@@ -1017,23 +1020,17 @@ const StatisticsView: React.FC = () => {
         <Box sx={{ mb: 2, maxWidth: 300 }}>
           <Autocomplete
             multiple
-            freeSolo
             options={playerOptions}
-            value={searchQuery}
-            onChange={(_, newValue, reason) => {
-              setSearchQuery(newValue);
+            value={selectedPlayers}
+            inputValue={inputValue}
+            onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
+            onChange={(_, newValue) => {
+              setSelectedPlayers(newValue);
             }}
-            onInputChange={(_, newInputValue, reason) => {
-              if (newInputValue && !searchQuery.includes(newInputValue)) {
-                setSearchQuery([...searchQuery, newInputValue]);
-              }
-            }}
-            openOnFocus
-            disableCloseOnSelect
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Search Players"
+                label="Select Players"
                 variant="outlined"
                 size="small"
                 fullWidth
