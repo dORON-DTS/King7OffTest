@@ -55,10 +55,10 @@ const LandingPage: React.FC = () => {
       setCurrentQuote((prev) => (prev + 1) % pokerQuotes.length);
     }, 6500);
 
-    // Reset animation every 12 seconds
+    // Reset animation every 14 seconds (to allow last card to show)
     const animationInterval = setInterval(() => {
       setAnimationKey(prev => prev + 1);
-    }, 12000);
+    }, 14000);
 
     return () => {
       clearInterval(quoteInterval);
