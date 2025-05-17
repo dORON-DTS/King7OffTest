@@ -1028,6 +1028,7 @@ const StatisticsView: React.FC = () => {
         <Box sx={{ mb: 2, maxWidth: 300 }}>
           <Autocomplete
             multiple
+            disableCloseOnSelect
             options={playerOptions}
             value={selectedPlayers}
             inputValue={inputValue}
