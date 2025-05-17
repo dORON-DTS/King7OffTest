@@ -1117,233 +1117,87 @@ const StatisticsView: React.FC = () => {
         </Box>
 
         {/* Table Container */}
-        {window.innerWidth <= 600 ? (
-          <div ref={tableScrollRef} className={styles['mobile-table-scroll']} style={{ position: 'relative' }}>
-            {showScrollHint && (
-              <span className={styles['mobile-scroll-hint']}>
-                החלק הצידה &rarr;
-              </span>
-            )}
-            <TableContainer
-              sx={{
-                maxHeight: 'calc(100vh - 250px)',
-                overflow: 'auto',
-                '& .MuiTableCell-root': {
-                  borderBottom: '1px solid rgba(81, 81, 81, 1)'
-                }
-              }}
-            >
-              <MuiTable stickyHeader>
-                <TableHead>
-                  <TableRow className={styles['sticky-header']}>
-                    <TableCell
-                      align="center"
-                      className={`position-cell ${styles['position-cell']}`}
-                      sx={{
-                        width: '60px',
-                        maxWidth: '60px',
-                        whiteSpace: 'nowrap',
-                        borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                        bgcolor: '#1e1e1e',
-                      }}
-                    >
-                      Position
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      className={`title-cell ${styles['title-cell']}`}
-                      sx={{
-                        width: '60px',
-                        maxWidth: '60px',
-                        whiteSpace: 'nowrap',
-                        borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                        bgcolor: '#1e1e1e',
-                      }}
-                    >
-                      Title
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      className={`player-cell ${styles['player-cell']}`}
-                      sx={{
-                        width: '120px',
-                        maxWidth: '120px',
-                        whiteSpace: 'nowrap',
-                        borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                        bgcolor: '#1e1e1e',
-                      }}
-                    >
-                      Player
-                    </TableCell>
-                    {headCells.map((headCell) => (
-                      <TableCell
+        {isMobile ? (
+          <div className={styles['mobile-stats-grid']} style={{ overflowX: 'auto' }}>
+            <div className={styles['mobile-stats-header']} style={{ minWidth: 700 }}>
+              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 60 }}>#</div>
+              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 90 }}>Title</div>
+              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky3']}`} style={{ width: 120 }}>Player</div>
+              {headCells.map((headCell) => (
+                <div
+                  key={headCell.id}
+                  className={styles['mobile-stats-cell']}
+                  style={{ minWidth: 90, width: 90 }}
+                >
+                  {headCell.label}
+                </div>
+              ))}
+            </div>
+            {filteredRows.length === 0 ? (
+              <div className={styles['mobile-stats-row']} style={{ minWidth: 700 }}>
+                <div className={styles['mobile-stats-cell']} style={{ width: '100%' }}>
+                  No players match the current filter.
+                </div>
+              </div>
+            ) : (
+              stableSort(filteredRows, getComparator(order, orderBy)).map((stat, index) => (
+                <div className={styles['mobile-stats-row']} key={stat.id} style={{ minWidth: 700, cursor: 'pointer' }} onClick={() => handlePlayerRowClick(stat)}>
+                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 60 }}>#{index + 1}</div>
+                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 90 }}>{getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}</div>
+                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky3']}`} style={{ width: 120 }}>{stat.name}{stat.nickname && (<span style={{ fontSize: '0.85em', color: '#aaa', marginLeft: 4 }}>({stat.nickname})</span>)}</div>
+                  {headCells.map((headCell) => {
+                    let cellColor = 'inherit';
+                    if (headCell.id === 'netResult') {
+                      cellColor = stat.netResult > 0 ? '#4caf50' : stat.netResult < 0 ? '#f44336' : 'inherit';
+                    } else if (headCell.id === 'avgNetResult') {
+                      cellColor = stat.avgNetResult > 0 ? '#4caf50' : stat.avgNetResult < 0 ? '#f44336' : 'inherit';
+                    } else if (headCell.id === 'largestWin') {
+                      cellColor = '#4caf50';
+                    } else if (headCell.id === 'largestLoss') {
+                      cellColor = '#f44336';
+                    }
+                    let showOrdinal = false;
+                    if (orderBy !== headCell.id && [
+                      'netResult', 'tablesPlayed', 'totalBuyIn', 'totalCashOut', 'avgBuyIn', 'avgNetResult', 'largestWin', 'largestLoss'
+                    ].includes(headCell.id as string)) {
+                      showOrdinal = true;
+                    }
+                    let ordinal = '';
+                    if (showOrdinal) {
+                      let values = stableSort(filteredRows, getComparator('desc', headCell.id));
+                      if (negativeColumns.includes(headCell.id as string)) {
+                        values = stableSort(filteredRows, getComparator('asc', headCell.id));
+                      }
+                      const value = stat[headCell.id as keyof PlayerStats];
+                      let rank = values.findIndex(s => s[headCell.id as keyof PlayerStats] === value) + 1;
+                      if (rank > 0) {
+                        ordinal = getOrdinal(rank);
+                      }
+                    }
+                    return (
+                      <div
                         key={headCell.id}
-                        align={headCell.numeric ? 'right' : 'center'}
-                        sx={{
-                          position: 'sticky',
-                          top: 0,
-                          zIndex: 1,
-                          bgcolor: '#1e1e1e',
-                          width: '90px',
-                          maxWidth: '90px',
-                          padding: '8px 16px',
-                          whiteSpace: 'nowrap',
-                          borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                        }}
+                        className={styles['mobile-stats-cell']}
+                        style={{ minWidth: 90, width: 90, color: cellColor }}
                       >
-                        <TableSortLabel
-                          active={orderBy === headCell.id}
-                          direction={orderBy === headCell.id ? order : 'asc'}
-                          onClick={(event) => handleRequestSort(event, headCell.id)}
-                        >
-                          {headCell.label}
-                          {orderBy === headCell.id ? (
-                            <Box component="span" sx={visuallyHidden}>
-                              {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
-                            </Box>
-                          ) : null}
-                        </TableSortLabel>
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredRows.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={headCells.length + 2} align="center" sx={{ color: 'grey.500' }}> 
-                        No players match the current filter.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    stableSort(filteredRows, getComparator(order, orderBy))
-                      .map((stat, index) => {
-                        return (
-                          <TableRow
-                            hover
-                            tabIndex={-1}
-                            key={stat.id}
-                            onClick={() => handlePlayerRowClick(stat)}
-                            sx={{ 
-                              cursor: 'pointer',
-                              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
-                              bgcolor: 'background.paper'
-                            }}
-                          >
-                            <TableCell
-                              align="center"
-                              className={`position-cell ${styles['position-cell']}`}
-                              sx={{
-                                width: '60px',
-                                maxWidth: '60px',
-                                whiteSpace: 'nowrap',
-                                borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                                bgcolor: '#1e1e1e',
-                              }}
-                            >
-                              #{index + 1}
-                            </TableCell>
-                            <TableCell
-                              align="center"
-                              className={`title-cell ${styles['title-cell']}`}
-                              sx={{
-                                width: '60px',
-                                maxWidth: '60px',
-                                whiteSpace: 'nowrap',
-                                borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                                bgcolor: '#1e1e1e',
-                              }}
-                            >
-                              {getMedalForPlayer(stat.id) || ''}
-                              {getSheepForPlayer(stat.id) || ''}
-                            </TableCell>
-                            <TableCell
-                              align="center"
-                              className={`player-cell ${styles['player-cell']}`}
-                              sx={{
-                                width: '120px',
-                                maxWidth: '120px',
-                                whiteSpace: 'nowrap',
-                                borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                                bgcolor: '#1e1e1e',
-                              }}
-                            >
-                              {stat.name}
-                              {stat.nickname && (
-                                <span style={{ fontSize: '0.85em', color: '#aaa', marginLeft: 4 }}>
-                                  ({stat.nickname})
-                                </span>
-                              )}
-                            </TableCell>
-                            {headCells.map((headCell) => {
-                              // Dynamic coloring logic
-                              let cellColor = 'inherit';
-                              if (headCell.id === 'netResult') {
-                                cellColor = stat.netResult > 0 ? '#4caf50' : stat.netResult < 0 ? '#f44336' : 'inherit';
-                              } else if (headCell.id === 'avgNetResult') {
-                                cellColor = stat.avgNetResult > 0 ? '#4caf50' : stat.avgNetResult < 0 ? '#f44336' : 'inherit';
-                              } else if (headCell.id === 'largestWin') {
-                                cellColor = '#4caf50';
-                              } else if (headCell.id === 'largestLoss') {
-                                cellColor = '#f44336';
-                              }
-                              // Ordinal logic
-                              let showOrdinal = false;
-                              if (orderBy !== headCell.id && [
-                                'netResult', 'tablesPlayed', 'totalBuyIn', 'totalCashOut', 'avgBuyIn', 'avgNetResult', 'largestWin', 'largestLoss'
-                              ].includes(headCell.id as string)) {
-                                showOrdinal = true;
-                              }
-                              // Calculate ordinal rank for this cell
-                              let ordinal = '';
-                              if (showOrdinal) {
-                                // Get all values for this column
-                                let values = stableSort(filteredRows, getComparator('desc', headCell.id));
-                                if (negativeColumns.includes(headCell.id as string)) {
-                                  values = stableSort(filteredRows, getComparator('asc', headCell.id));
-                                }
-                                // Find the rank (1-based)
-                                const value = stat[headCell.id as keyof PlayerStats];
-                                let rank = values.findIndex(s => s[headCell.id as keyof PlayerStats] === value) + 1;
-                                if (rank > 0) {
-                                  ordinal = getOrdinal(rank);
-                                }
-                              }
-                              return (
-                                <TableCell
-                                  key={headCell.id}
-                                  align={headCell.numeric ? 'right' : 'center'}
-                                  sx={{
-                                    width: '90px',
-                                    maxWidth: '90px',
-                                    whiteSpace: 'nowrap',
-                                    borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                                    bgcolor: '#1e1e1e',
-                                    color: cellColor,
-                                  }}
-                                >
-                                  {/* Render the correct value for each column */}
-                                  {headCell.id === 'netResult' ? formatResult(stat.netResult) :
-                                    headCell.id === 'tablesPlayed' ? `${stat.tablesPlayed}/${stat.potentialGames} (${stat.potentialGames > 0 ? Math.ceil((stat.tablesPlayed / stat.potentialGames) * 100) : 0}%)` :
-                                    headCell.id === 'totalBuyIn' ? formatStat(stat.totalBuyIn) :
-                                    headCell.id === 'totalCashOut' ? formatStat(stat.totalCashOut) :
-                                    headCell.id === 'avgBuyIn' ? formatStat(stat.avgBuyIn) :
-                                    headCell.id === 'avgNetResult' ? formatStat(stat.avgNetResult) :
-                                    headCell.id === 'largestWin' ? formatStat(stat.largestWin) :
-                                    headCell.id === 'largestLoss' ? formatStat(stat.largestLoss) :
-                                    ''}
-                                  {showOrdinal && ordinal && (
-                                    <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{ordinal}</span>
-                                  )}
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        );
-                      })
-                  )}
-                </TableBody>
-              </MuiTable>
-            </TableContainer>
+                        {headCell.id === 'netResult' ? formatResult(stat.netResult) :
+                          headCell.id === 'tablesPlayed' ? `${stat.tablesPlayed}/${stat.potentialGames} (${stat.potentialGames > 0 ? Math.ceil((stat.tablesPlayed / stat.potentialGames) * 100) : 0}%)` :
+                          headCell.id === 'totalBuyIn' ? formatStat(stat.totalBuyIn) :
+                          headCell.id === 'totalCashOut' ? formatStat(stat.totalCashOut) :
+                          headCell.id === 'avgBuyIn' ? formatStat(stat.avgBuyIn) :
+                          headCell.id === 'avgNetResult' ? formatStat(stat.avgNetResult) :
+                          headCell.id === 'largestWin' ? formatStat(stat.largestWin) :
+                          headCell.id === 'largestLoss' ? formatStat(stat.largestLoss) :
+                          ''}
+                        {showOrdinal && ordinal && (
+                          <span style={{ fontSize: '0.8em', color: '#aaa', marginLeft: 4 }}>{ordinal}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))
+            )}
           </div>
         ) : (
           <TableContainer
