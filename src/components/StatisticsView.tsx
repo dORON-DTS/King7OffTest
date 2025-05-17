@@ -194,7 +194,7 @@ const StatisticsView: React.FC = () => {
   const [orderBy, setOrderBy] = useState<keyof PlayerStats>('netResult');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string[]>([]);
 
   // Add state to track single game win/loss
   const [singleGameStats, setSingleGameStats] = useState<{ 
@@ -644,11 +644,12 @@ const StatisticsView: React.FC = () => {
 
   // Filter players based on search query
   const filteredPlayers = useMemo(() => {
-    if (!searchQuery) return filteredPlayerStats;
-    const query = searchQuery.toLowerCase();
+    if (!searchQuery.length) return filteredPlayerStats;
     return filteredPlayerStats.filter(player => 
-      player.name.toLowerCase().includes(query) || 
-      (player.nickname && player.nickname.toLowerCase().includes(query))
+      searchQuery.some(query => 
+        player.name.toLowerCase().includes(query.toLowerCase()) || 
+        (player.nickname && player.nickname.toLowerCase().includes(query.toLowerCase()))
+      )
     );
   }, [filteredPlayerStats, searchQuery]);
 
@@ -903,15 +904,20 @@ const StatisticsView: React.FC = () => {
         {/* Search Autocomplete */}
         <Box sx={{ mb: 2, maxWidth: 300 }}>
           <Autocomplete
+            multiple
             freeSolo
             options={playerStats.map(player => player.name)}
             value={searchQuery}
-            onChange={(_, newValue) => setSearchQuery(newValue || '')}
-            onInputChange={(_, newInputValue) => setSearchQuery(newInputValue)}
+            onChange={(_, newValue) => setSearchQuery(newValue)}
+            onInputChange={(_, newInputValue) => {
+              if (newInputValue && !searchQuery.includes(newInputValue)) {
+                setSearchQuery([...searchQuery, newInputValue]);
+              }
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Search Player"
+                label="Search Players"
                 variant="outlined"
                 size="small"
                 fullWidth
@@ -940,6 +946,16 @@ const StatisticsView: React.FC = () => {
               },
               '& .MuiAutocomplete-clearIndicator': {
                 color: 'rgba(255, 255, 255, 0.7)',
+              },
+              '& .MuiChip-root': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                '& .MuiChip-deleteIcon': {
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&:hover': {
+                    color: 'white',
+                  },
+                },
               },
             }}
           />
