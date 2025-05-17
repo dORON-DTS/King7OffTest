@@ -450,8 +450,8 @@ const SharedTableView: React.FC = () => {
               Buy Ins
             </Typography>
             <List>
-              {selectedPlayer && selectedPlayer.buyIns && selectedPlayer.buyIns.length > 0 ? (
-                selectedPlayer.buyIns.map((buyIn, index) => (
+              {selectedPlayer && selectedPlayer.buyIns && selectedPlayer.buyIns.filter(buyIn => buyIn.amount > 0).length > 0 ? (
+                selectedPlayer.buyIns.filter(buyIn => buyIn.amount > 0).map((buyIn, index) => (
                   <React.Fragment key={buyIn.id || index}>
                     <ListItem sx={{
                       bgcolor: 'rgba(33, 150, 243, 0.1)',
