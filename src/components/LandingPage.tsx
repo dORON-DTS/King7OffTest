@@ -32,7 +32,16 @@ const pokerQuotes = [
   "Trust everyone, but always cut the cards. - Benny Binion",
   "The beautiful thing about poker is that everybody thinks they can play. - Chris Moneymaker",
   "Fold and live to fold again. - Stu Ungar",
-  "Poker is war. People pretend it is a game. - Doyle Brunson"
+  "Poker is war. People pretend it is a game. - Doyle Brunson",
+  "The commonest mistake in history is underestimating your opponent; it happens at the poker table all the time. - David Shoup",
+  "Poker may be a branch of psychological warfare, an art form or indeed a way of life, but it is also merely a game, in which money is simply the means of keeping score. - Anthony Holden",
+  "A man with money is no match against a man on a mission. - Doyle Brunson",
+  "The smarter you play, the luckier you'll be. - Mark Pilarski",
+  "In the long run there's no luck in poker, but the short run is longer than most people know. - Rick Bennet",
+  "Poker is a hard way to make an easy living. - Doyle Brunson",
+  "You will show your poker greatness by the hands you fold, not the hands you play. - Dan Reed",
+  "Luck is what happens when preparation meets opportunity. - Seneca",
+  "The cardinal sin in poker, worse than playing dead cards, worse even than not figuring your odds correctly, is becoming emotionally involved. - Anonymous"
 ];
 
 const LandingPage: React.FC = () => {
@@ -178,7 +187,7 @@ const LandingPage: React.FC = () => {
             { rank: 'Q', suit: '♠', color: '#2c3e50', delay: 4.2, x: -50 },
             { rank: 'J', suit: '♦', color: '#e74c3c', delay: 4.4, x: 0 },
             { rank: 'A', suit: '♣', color: '#2c3e50', delay: 8, x: 50 },
-            { rank: '10', suit: '♥', color: '#e74c3c', delay: 11.5, x: 100 }
+            { rank: '10', suit: '♥', color: '#e74c3c', delay: 12.5, x: 100 }
           ].map((card, index) => (
             <Box
               key={`community-${index}`}
