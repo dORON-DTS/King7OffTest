@@ -1032,51 +1032,42 @@ const StatisticsView: React.FC = () => {
             >
               <MuiTable stickyHeader>
                 <TableHead>
-                  <TableRow>
+                  <TableRow className={styles['sticky-header']}>
                     <TableCell
+                      align="center"
+                      className={`position-cell ${styles['position-cell']}`}
                       sx={{
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 1,
-                        bgcolor: '#1e1e1e',
                         width: '60px',
                         maxWidth: '60px',
-                        padding: '8px 16px',
                         whiteSpace: 'nowrap',
                         borderBottom: '1px solid rgba(81, 81, 81, 1)',
+                        bgcolor: '#1e1e1e',
                       }}
-                      align="center"
                     >
                       Position
                     </TableCell>
                     <TableCell
                       align="center"
+                      className={`title-cell ${styles['title-cell']}`}
                       sx={{
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 1,
-                        bgcolor: '#1e1e1e',
                         width: '60px',
                         maxWidth: '60px',
-                        padding: '8px 16px',
                         whiteSpace: 'nowrap',
                         borderBottom: '1px solid rgba(81, 81, 81, 1)',
+                        bgcolor: '#1e1e1e',
                       }}
                     >
                       Title
                     </TableCell>
                     <TableCell
                       align="center"
+                      className={`player-cell ${styles['player-cell']}`}
                       sx={{
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 1,
-                        bgcolor: '#1e1e1e',
                         width: '120px',
                         maxWidth: '120px',
-                        padding: '8px 16px',
                         whiteSpace: 'nowrap',
                         borderBottom: '1px solid rgba(81, 81, 81, 1)',
+                        bgcolor: '#1e1e1e',
                       }}
                     >
                       Player

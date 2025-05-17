@@ -3,24 +3,30 @@
 .player-cell {}
 
 @media (max-width: 600px) {
+  .sticky-header {
+    position: sticky !important;
+    top: 0;
+    z-index: 5;
+    background: #1e1e1e;
+  }
   .position-cell {
     position: sticky !important;
     left: 0;
-    z-index: 2;
+    z-index: 6;
     background: #1e1e1e;
     box-shadow: 2px 0 6px -2px #0006;
   }
   .title-cell {
     position: sticky !important;
     left: 60px;
-    z-index: 2;
+    z-index: 6;
     background: #1e1e1e;
     box-shadow: 2px 0 6px -2px #0006;
   }
   .player-cell {
     position: sticky !important;
     left: 120px;
-    z-index: 2;
+    z-index: 6;
     background: #1e1e1e;
     box-shadow: 2px 0 6px -2px #0006;
   }
