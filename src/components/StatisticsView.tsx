@@ -30,6 +30,7 @@ import {
   FormControlLabel,
   Switch,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import PlayerStatsDialog from './PlayerStatsDialog';
