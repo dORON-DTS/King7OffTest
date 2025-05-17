@@ -92,8 +92,8 @@ function getAllPlayerStats(allTablesData: Table[]): PlayerStats[] {
 // Helper to get rank for a stat
 function getStatOrdinal(allStats: PlayerStats[], player: PlayerStats, key: keyof PlayerStats, negative = false) {
   const sorted = [...allStats].sort((a, b) => {
-    if (negative) return a[key] - b[key];
-    return b[key] - a[key];
+    if (negative) return (a[key] as number) - (b[key] as number);
+    return (b[key] as number) - (a[key] as number);
   });
   const value = player[key];
   const rank = sorted.findIndex(s => s[key] === value) + 1;
