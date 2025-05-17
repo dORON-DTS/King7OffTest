@@ -26,6 +26,9 @@ import {
   Autocomplete,
   useTheme,
   useMediaQuery,
+  Checkbox,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
@@ -179,6 +182,94 @@ const getPlayerPotentialGames = (playerName: string, tables: Table[]): number =>
 function getOrdinal(n: number) {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+interface EnhancedTableToolbarProps {
+  numSelected: number;
+  onFilterChange: (filter: string) => void;
+  onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  rowCount: number;
+  selectedPlayers: string[];
+  onPlayerSelect: (players: string[]) => void;
+  allPlayers: string[];
+}
+
+function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
+  const {
+    numSelected,
+    onFilterChange,
+    onSelectAllClick,
+    rowCount,
+    selectedPlayers,
+    onPlayerSelect,
+    allPlayers,
+  } = props;
+
+  return (
+    <Toolbar
+      sx={{
+        pl: { sm: 2 },
+        pr: { xs: 1, sm: 1 },
+        ...(numSelected > 0 && {
+          bgcolor: (theme) =>
+            alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+        }),
+      }}
+    >
+      {numSelected > 0 ? (
+        <Typography
+          sx={{ flex: '1 1 100%' }}
+          color="inherit"
+          variant="subtitle1"
+          component="div"
+        >
+          {numSelected} selected
+        </Typography>
+      ) : (
+        <Typography
+          sx={{ flex: '1 1 100%' }}
+          variant="h6"
+          id="tableTitle"
+          component="div"
+        >
+          Statistics
+        </Typography>
+      )}
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Autocomplete
+          multiple
+          id="player-filter"
+          options={allPlayers}
+          value={selectedPlayers}
+          onChange={(event, newValue) => {
+            onPlayerSelect(newValue);
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              variant="outlined"
+              label="Select Players"
+              size="small"
+              sx={{ minWidth: 200 }}
+            />
+          )}
+          size="small"
+          sx={{ minWidth: 200 }}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              onChange={onSelectAllClick}
+              checked={rowCount > 0 && numSelected === rowCount}
+              indeterminate={numSelected > 0 && numSelected < rowCount}
+            />
+          }
+          label="Select All"
+        />
+      </Box>
+    </Toolbar>
+  );
 }
 
 const StatisticsView: React.FC = () => {
@@ -659,6 +750,20 @@ const StatisticsView: React.FC = () => {
     );
   }, [filteredPlayerStats, searchQuery]);
 
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const allPlayers = useMemo(() => {
+    const players = new Set<string>();
+    filteredPlayers.forEach((player) => {
+      if (player.name) players.add(player.name);
+    });
+    return Array.from(players).sort();
+  }, [filteredPlayers]);
+
+  const filteredRows = useMemo(() => {
+    if (selectedPlayers.length === 0) return filteredPlayers;
+    return filteredPlayers.filter((player) => selectedPlayers.includes(player.name));
+  }, [filteredPlayers, selectedPlayers]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -1105,14 +1210,14 @@ const StatisticsView: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredPlayers.length === 0 ? (
+                  {filteredRows.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={headCells.length + 2} align="center" sx={{ color: 'grey.500' }}> 
                         No players match the current filter.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    stableSort(filteredPlayers, getComparator(order, orderBy))
+                    stableSort(filteredRows, getComparator(order, orderBy))
                       .map((stat, index) => {
                         return (
                           <TableRow
@@ -1194,9 +1299,9 @@ const StatisticsView: React.FC = () => {
                               let ordinal = '';
                               if (showOrdinal) {
                                 // Get all values for this column
-                                let values = stableSort(filteredPlayers, getComparator('desc', headCell.id));
+                                let values = stableSort(filteredRows, getComparator('desc', headCell.id));
                                 if (negativeColumns.includes(headCell.id as string)) {
-                                  values = stableSort(filteredPlayers, getComparator('asc', headCell.id));
+                                  values = stableSort(filteredRows, getComparator('asc', headCell.id));
                                 }
                                 // Find the rank (1-based)
                                 const value = stat[headCell.id as keyof PlayerStats];
@@ -1336,14 +1441,14 @@ const StatisticsView: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredPlayers.length === 0 ? (
+                {filteredRows.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={headCells.length + 2} align="center" sx={{ color: 'grey.500' }}> 
                       No players match the current filter.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  stableSort(filteredPlayers, getComparator(order, orderBy))
+                  stableSort(filteredRows, getComparator(order, orderBy))
                     .map((stat, index) => {
                       return (
                         <TableRow
@@ -1425,9 +1530,9 @@ const StatisticsView: React.FC = () => {
                             let ordinal = '';
                             if (showOrdinal) {
                               // Get all values for this column
-                              let values = stableSort(filteredPlayers, getComparator('desc', headCell.id));
+                              let values = stableSort(filteredRows, getComparator('desc', headCell.id));
                               if (negativeColumns.includes(headCell.id as string)) {
-                                values = stableSort(filteredPlayers, getComparator('asc', headCell.id));
+                                values = stableSort(filteredRows, getComparator('asc', headCell.id));
                               }
                               // Find the rank (1-based)
                               const value = stat[headCell.id as keyof PlayerStats];
