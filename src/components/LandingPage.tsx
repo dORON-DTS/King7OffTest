@@ -26,6 +26,25 @@ const fadeInOut = keyframes`
   15%, 85% { opacity: 1; transform: translateY(0); }
 `;
 
+// Add flip and glow keyframes
+const flipIn = keyframes`
+  0% { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+  60% { transform: rotateY(-10deg) scale(1.05); opacity: 1; }
+  80% { transform: rotateY(5deg) scale(0.98); }
+  100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+`;
+
+const riverGlow = keyframes`
+  0% { box-shadow: 0 0 0 0 #FFD70044; }
+  60% { box-shadow: 0 0 24px 8px #FFD700cc; }
+  100% { box-shadow: 0 0 12px 4px #FFD70088; }
+`;
+
+const pulse = keyframes`
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+`;
+
 const pokerQuotes = [
   "If you can't spot the sucker in your first half hour at the table, then you are the sucker. - Rounders",
   "Life is not always a matter of holding good cards, but sometimes, playing a poor hand well. - Jack London",
@@ -183,51 +202,63 @@ const LandingPage: React.FC = () => {
 
           {/* Community Cards */}
           {[
-            { rank: 'K', suit: '♥', color: '#e74c3c', delay: 4, x: -100 },
-            { rank: 'Q', suit: '♠', color: '#2c3e50', delay: 4.2, x: -50 },
-            { rank: 'J', suit: '♦', color: '#e74c3c', delay: 4.4, x: 0 },
-            { rank: 'A', suit: '♣', color: '#2c3e50', delay: 8, x: 50 },
-            { rank: '10', suit: '♥', color: '#e74c3c', delay: 12.5, x: 100 }
-          ].map((card, index) => (
-            <Box
-              key={`community-${index}`}
-              sx={{
-                position: 'absolute',
-                width: { xs: '50px', sm: '70px' },
-                height: { xs: '70px', sm: '100px' },
-                bottom: '15%',
-                left: '50%',
-                bgcolor: '#fff',
-                borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                animation: `${slideCard} 0.8s ${card.delay}s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
-                opacity: 0,
-                '--slide-x': { xs: `${card.x * 0.7}px`, sm: `${card.x}px` },
-                '--slide-y': { xs: '-80px', sm: '-120px' },
-                '--rotate': '0deg',
-                zIndex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                color: card.color,
-                fontSize: { xs: '1.5rem', sm: '2rem' },
-                '&::before': {
-                  content: `"${card.suit}"`,
+            { rank: 'K', suit: '♥', color: '#e74c3c', delay: 4, x: -100, rotate: -8 },
+            { rank: 'Q', suit: '♠', color: '#2c3e50', delay: 4.2, x: -50, rotate: -4 },
+            { rank: 'J', suit: '♦', color: '#e74c3c', delay: 4.4, x: 0, rotate: 0 },
+            { rank: 'A', suit: '♣', color: '#2c3e50', delay: 8, x: 50, rotate: 4 },
+            { rank: '10', suit: '♥', color: '#e74c3c', delay: 12.5, x: 100, rotate: 8 }
+          ].map((card, index, arr) => {
+            // Fan out after all cards are dealt (animationKey triggers rerender)
+            const isFan = animationKey > 0; // Always fan after first cycle
+            const isRiver = index === arr.length - 1;
+            return (
+              <Box
+                key={`community-${index}`}
+                sx={{
                   position: 'absolute',
-                  top: { xs: '4px', sm: '8px' },
-                  left: { xs: '4px', sm: '8px' },
-                  fontSize: { xs: '0.8rem', sm: '1.2rem' }
-                },
-                '&::after': {
-                  content: `"${card.rank}"`,
-                  position: 'absolute',
-                  fontSize: { xs: '1.8rem', sm: '2.5rem' },
-                  fontWeight: 'bold'
-                }
-              }}
-            />
-          ))}
+                  width: { xs: '50px', sm: '70px' },
+                  height: { xs: '70px', sm: '100px' },
+                  bottom: '15%',
+                  left: '50%',
+                  bgcolor: '#fff',
+                  borderRadius: '8px',
+                  boxShadow: isRiver
+                    ? '0 0 12px 4px #FFD70088, 0 2px 8px rgba(0,0,0,0.3)'
+                    : '0 2px 8px rgba(0,0,0,0.3)',
+                  animation: `${flipIn} 0.8s ${card.delay}s cubic-bezier(0.4, 0, 0.2, 1) forwards` +
+                    (isRiver ? `, ${riverGlow} 1.2s ${card.delay + 0.6}s cubic-bezier(0.4,0,0.2,1) forwards, ${pulse} 1.2s ${card.delay + 0.6}s` : ''),
+                  opacity: 0,
+                  '--slide-x': { xs: `${card.x * 0.7}px`, sm: `${card.x}px` },
+                  '--slide-y': { xs: '-80px', sm: '-120px' },
+                  '--rotate': '0deg',
+                  zIndex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  color: card.color,
+                  fontSize: { xs: '1.5rem', sm: '2rem' },
+                  transform: isFan
+                    ? `translate(calc(${card.x}px), -120px) rotate(${card.rotate}deg)`
+                    : undefined,
+                  transition: isFan ? 'transform 0.7s cubic-bezier(0.4,0,0.2,1)' : undefined,
+                  '&::before': {
+                    content: `"${card.suit}"`,
+                    position: 'absolute',
+                    top: { xs: '4px', sm: '8px' },
+                    left: { xs: '4px', sm: '8px' },
+                    fontSize: { xs: '0.8rem', sm: '1.2rem' }
+                  },
+                  '&::after': {
+                    content: `"${card.rank}"`,
+                    position: 'absolute',
+                    fontSize: { xs: '1.8rem', sm: '2.5rem' },
+                    fontWeight: 'bold'
+                  }
+                }}
+              />
+            );
+          })}
         </Box>
 
         {/* Rotating Quotes */}
