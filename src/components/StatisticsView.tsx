@@ -1238,14 +1238,14 @@ const StatisticsView: React.FC = () => {
                     Position
                   </TableCell>
                   <TableCell
-                    align="center"
+                    align="left"
                     sx={{
                       position: 'sticky',
                       top: 0,
                       zIndex: 1,
                       bgcolor: '#1e1e1e',
-                      width: '120px',
-                      maxWidth: '120px',
+                      width: '160px',
+                      maxWidth: '160px',
                       padding: '8px 16px',
                       whiteSpace: 'nowrap',
                       borderBottom: '1px solid rgba(81, 81, 81, 1)',
@@ -1325,10 +1325,10 @@ const StatisticsView: React.FC = () => {
                             {getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}
                           </TableCell>
                           <TableCell
-                            align="center"
+                            align="left"
                             sx={{
-                              width: '120px',
-                              maxWidth: '120px',
+                              width: '160px',
+                              maxWidth: '160px',
                               whiteSpace: 'nowrap',
                               borderBottom: '1px solid rgba(81, 81, 81, 1)',
                               bgcolor: '#1e1e1e',
