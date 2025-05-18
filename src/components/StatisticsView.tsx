@@ -1130,26 +1130,17 @@ const StatisticsView: React.FC = () => {
         {isMobile ? (
           <div className={styles['mobile-stats-grid']} style={{ overflowX: 'auto' }}>
             <div className={styles['mobile-stats-header']} style={{ minWidth: 1200 }}>
-              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 60 }}>#</div>
+              <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 100 }}>Position</div>
               <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>Player</div>
-              <div className={styles['mobile-stats-cell']} style={{ width: 110 }}>Title</div>
-              {headCells.map((headCell) => {
-                const isNumeric = headCell.numeric;
-                const isSorted = orderBy === headCell.id;
-                return (
-                  <div
-                    key={headCell.id}
-                    className={styles['mobile-stats-cell']}
-                    style={{ minWidth: 130, width: 130, cursor: isNumeric ? 'pointer' : 'default', userSelect: 'none', color: isSorted ? '#29b6f6' : undefined }}
-                    onClick={isNumeric ? () => handleRequestSort(undefined as any, headCell.id) : undefined}
-                  >
-                    {headCell.label}
-                    {isSorted && (
-                      <span style={{ marginLeft: 4, fontSize: '1em' }}>{order === 'asc' ? '⬆️' : '⬇️'}</span>
-                    )}
-                  </div>
-                );
-              })}
+              {headCells.map((headCell) => (
+                <div
+                  key={headCell.id}
+                  className={styles['mobile-stats-cell']}
+                  style={{ minWidth: 130, width: 130 }}
+                >
+                  {headCell.label}
+                </div>
+              ))}
             </div>
             {filteredRows.length === 0 ? (
               <div className={styles['mobile-stats-row']} style={{ minWidth: 1200 }}>
@@ -1160,9 +1151,11 @@ const StatisticsView: React.FC = () => {
             ) : (
               stableSort(filteredRows, getComparator(order, orderBy)).map((stat, index) => (
                 <div className={styles['mobile-stats-row']} key={stat.id} style={{ minWidth: 1200, cursor: 'pointer' }} onClick={() => handlePlayerRowClick(stat)}>
-                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 60 }}>#{index + 1}</div>
+                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky']}`} style={{ width: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                    #{index + 1}
+                    {getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}
+                  </div>
                   <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>{stat.name}</div>
-                  <div className={styles['mobile-stats-cell']} style={{ width: 110 }}>{getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}</div>
                   {headCells.map((headCell) => {
                     let cellColor = 'inherit';
                     if (headCell.id === 'netResult') {
@@ -1234,8 +1227,8 @@ const StatisticsView: React.FC = () => {
                       top: 0,
                       zIndex: 1,
                       bgcolor: '#1e1e1e',
-                      width: '60px',
-                      maxWidth: '60px',
+                      width: '100px',
+                      maxWidth: '100px',
                       padding: '8px 16px',
                       whiteSpace: 'nowrap',
                       borderBottom: '1px solid rgba(81, 81, 81, 1)',
@@ -1243,22 +1236,6 @@ const StatisticsView: React.FC = () => {
                     align="center"
                   >
                     Position
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      position: 'sticky',
-                      top: 0,
-                      zIndex: 1,
-                      bgcolor: '#1e1e1e',
-                      width: '60px',
-                      maxWidth: '60px',
-                      padding: '8px 16px',
-                      whiteSpace: 'nowrap',
-                      borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                    }}
-                  >
-                    Title
                   </TableCell>
                   <TableCell
                     align="center"
@@ -1311,7 +1288,7 @@ const StatisticsView: React.FC = () => {
               <TableBody>
                 {filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={headCells.length + 2} align="center" sx={{ color: 'grey.500' }}> 
+                    <TableCell colSpan={headCells.length + 1} align="center" sx={{ color: 'grey.500' }}> 
                       No players match the current filter.
                     </TableCell>
                   </TableRow>
@@ -1332,34 +1309,23 @@ const StatisticsView: React.FC = () => {
                         >
                           <TableCell
                             align="center"
-                            className={`position-cell ${styles['position-cell']}`}
                             sx={{
-                              width: '60px',
-                              maxWidth: '60px',
+                              width: '100px',
+                              maxWidth: '100px',
                               whiteSpace: 'nowrap',
                               borderBottom: '1px solid rgba(81, 81, 81, 1)',
                               bgcolor: '#1e1e1e',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 1
                             }}
                           >
                             #{index + 1}
+                            {getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}
                           </TableCell>
                           <TableCell
                             align="center"
-                            className={`title-cell ${styles['title-cell']}`}
-                            sx={{
-                              width: '60px',
-                              maxWidth: '60px',
-                              whiteSpace: 'nowrap',
-                              borderBottom: '1px solid rgba(81, 81, 81, 1)',
-                              bgcolor: '#1e1e1e',
-                            }}
-                          >
-                            {getMedalForPlayer(stat.id) || ''}
-                            {getSheepForPlayer(stat.id) || ''}
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            className={`player-cell ${styles['player-cell']}`}
                             sx={{
                               width: '120px',
                               maxWidth: '120px',
@@ -1369,14 +1335,8 @@ const StatisticsView: React.FC = () => {
                             }}
                           >
                             {stat.name}
-                            {stat.nickname && (
-                              <span style={{ fontSize: '0.85em', color: '#aaa', marginLeft: 4 }}>
-                                ({stat.nickname})
-                              </span>
-                            )}
                           </TableCell>
                           {headCells.map((headCell) => {
-                            // Dynamic coloring logic
                             let cellColor = 'inherit';
                             if (headCell.id === 'netResult') {
                               cellColor = stat.netResult > 0 ? '#4caf50' : stat.netResult < 0 ? '#f44336' : 'inherit';
@@ -1387,22 +1347,18 @@ const StatisticsView: React.FC = () => {
                             } else if (headCell.id === 'largestLoss') {
                               cellColor = '#f44336';
                             }
-                            // Ordinal logic
                             let showOrdinal = false;
                             if (orderBy !== headCell.id && [
                               'netResult', 'tablesPlayed', 'totalBuyIn', 'totalCashOut', 'avgBuyIn', 'avgNetResult', 'largestWin', 'largestLoss'
                             ].includes(headCell.id as string)) {
                               showOrdinal = true;
                             }
-                            // Calculate ordinal rank for this cell
                             let ordinal = '';
                             if (showOrdinal) {
-                              // Get all values for this column
                               let values = stableSort(filteredRows, getComparator('desc', headCell.id));
                               if (negativeColumns.includes(headCell.id as string)) {
                                 values = stableSort(filteredRows, getComparator('asc', headCell.id));
                               }
-                              // Find the rank (1-based)
                               const value = stat[headCell.id as keyof PlayerStats];
                               let rank = values.findIndex(s => s[headCell.id as keyof PlayerStats] === value) + 1;
                               if (rank > 0) {
@@ -1422,7 +1378,6 @@ const StatisticsView: React.FC = () => {
                                   color: cellColor,
                                 }}
                               >
-                                {/* Render the correct value for each column */}
                                 {headCell.id === 'netResult' ? formatResult(stat.netResult) :
                                   headCell.id === 'tablesPlayed' ? `${stat.tablesPlayed}/${stat.potentialGames} (${stat.potentialGames > 0 ? Math.ceil((stat.tablesPlayed / stat.potentialGames) * 100) : 0}%)` :
                                   headCell.id === 'totalBuyIn' ? formatStat(stat.totalBuyIn) :
