@@ -1244,9 +1244,10 @@ const StatisticsView: React.FC = () => {
                       top: 0,
                       zIndex: 1,
                       bgcolor: '#1e1e1e',
-                      width: '160px',
-                      maxWidth: '160px',
-                      padding: '8px 16px',
+                      width: '120px',
+                      maxWidth: '120px',
+                      minWidth: '90px',
+                      padding: '6px 10px',
                       whiteSpace: 'nowrap',
                       borderBottom: '1px solid rgba(81, 81, 81, 1)',
                     }}
@@ -1264,7 +1265,8 @@ const StatisticsView: React.FC = () => {
                         bgcolor: '#1e1e1e',
                         width: '90px',
                         maxWidth: '90px',
-                        padding: '8px 16px',
+                        minWidth: '70px',
+                        padding: '6px 10px',
                         whiteSpace: 'nowrap',
                         borderBottom: '1px solid rgba(81, 81, 81, 1)',
                       }}
@@ -1326,11 +1328,13 @@ const StatisticsView: React.FC = () => {
                           <TableCell
                             align="left"
                             sx={{
-                              width: '160px',
-                              maxWidth: '160px',
+                              width: '120px',
+                              maxWidth: '120px',
+                              minWidth: '90px',
                               whiteSpace: 'nowrap',
                               borderBottom: '1px solid rgba(81, 81, 81, 1)',
                               bgcolor: '#1e1e1e',
+                              padding: '6px 10px',
                             }}
                           >
                             {stat.name}
@@ -1371,6 +1375,8 @@ const StatisticsView: React.FC = () => {
                                 sx={{
                                   width: '90px',
                                   maxWidth: '90px',
+                                  minWidth: '70px',
+                                  padding: '6px 10px',
                                   whiteSpace: 'nowrap',
                                   borderBottom: '1px solid rgba(81, 81, 81, 1)',
                                   bgcolor: '#1e1e1e',
