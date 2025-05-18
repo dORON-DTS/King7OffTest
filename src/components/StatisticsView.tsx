@@ -1310,19 +1310,18 @@ const StatisticsView: React.FC = () => {
                           <TableCell
                             align="center"
                             sx={{
-                              width: '100px',
-                              maxWidth: '100px',
+                              width: '70px',
+                              maxWidth: '70px',
+                              minWidth: '60px',
                               whiteSpace: 'nowrap',
                               borderBottom: '1px solid rgba(81, 81, 81, 1)',
                               bgcolor: '#1e1e1e',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: 1
                             }}
                           >
-                            #{index + 1}
-                            {getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                              #{index + 1}
+                              {getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}
+                            </Box>
                           </TableCell>
                           <TableCell
                             align="left"
