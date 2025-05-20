@@ -211,9 +211,9 @@ const SharedTableView: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3, bgcolor: '#121212', minHeight: '100vh' }}>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, bgcolor: '#121212', minHeight: '100vh' }}>
       {/* Title */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2, md: 3 } }}>
         <Typography variant="h4" sx={{ flexGrow: 1, color: 'white' }}>
           {table.name || 'Unnamed Table'}
         </Typography>
@@ -233,7 +233,7 @@ const SharedTableView: React.FC = () => {
       </Box>
 
       {/* Info Cards */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mb: { xs: 1, sm: 2, md: 3 } }}>
         <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ 
             height: '100%', 
@@ -244,7 +244,7 @@ const SharedTableView: React.FC = () => {
               transform: 'scale(1.02)'
             }
           }}>
-            <CardContent sx={{ p: 1.5 }}>
+            <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
               <Typography variant="subtitle2" gutterBottom>Total Buy In</Typography>
               <Typography variant="h5">{totalBuyInAmount}</Typography>
             </CardContent>
@@ -260,7 +260,7 @@ const SharedTableView: React.FC = () => {
               transform: 'scale(1.02)'
             }
           }}>
-            <CardContent sx={{ p: 1.5 }}>
+            <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
               <Typography variant="subtitle2" gutterBottom>Avg Buy In</Typography>
               <Typography variant="h5">{Math.round(avgBuyInPerPlayer)}</Typography>
             </CardContent>
@@ -276,7 +276,7 @@ const SharedTableView: React.FC = () => {
               transform: 'scale(1.02)'
             }
           }}>
-            <CardContent sx={{ p: 1.5 }}>
+            <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
               <Typography variant="subtitle2" gutterBottom>Players</Typography>
               <Typography variant="h5">{players.length}</Typography>
             </CardContent>
@@ -292,7 +292,7 @@ const SharedTableView: React.FC = () => {
               transform: 'scale(1.02)'
             }
           }}>
-            <CardContent sx={{ p: 1.5 }}>
+            <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
               <Typography variant="subtitle2" gutterBottom>Status</Typography>
               <Typography variant="h5">
                 {table.isActive ? 'Active' : 'Inactive'}
@@ -303,13 +303,13 @@ const SharedTableView: React.FC = () => {
       </Grid>
 
       {/* Table Info */}
-      <Box sx={{ mb: 3 }}>
-        <Paper sx={{ p: 2, mb: 3, bgcolor: '#232323', color: 'white', display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
-          <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
+      <Box sx={{ mb: { xs: 1, sm: 2, md: 3 } }}>
+        <Paper sx={{ p: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2, md: 3 }, bgcolor: '#232323', color: 'white', display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 3 }, flexWrap: 'wrap' }}>
+          <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: { xs: 1, sm: 2 } }}>
             <EventIcon sx={{ fontSize: 20, color: 'grey.400' }} />
             {new Date(table.createdAt).toLocaleString('he-IL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
           </Typography>
-          <Typography variant="body1" sx={{ color: 'grey.400', mr: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="body1" sx={{ color: 'grey.400', mr: { xs: 1, sm: 2 }, display: 'flex', alignItems: 'center', gap: 1 }}>
             <MonetizationOnIcon sx={{ fontSize: 18, color: '#388e3c' }} />
             Small Blind: {table.smallBlind} | Big Blind: {table.bigBlind}
           </Typography>
@@ -330,6 +330,7 @@ const SharedTableView: React.FC = () => {
         sx={{ 
           bgcolor: '#1e1e1e', 
           overflowX: 'auto',
+          mb: { xs: 1, sm: 2, md: 3 },
           '&::-webkit-scrollbar': {
             height: '8px',
           },
