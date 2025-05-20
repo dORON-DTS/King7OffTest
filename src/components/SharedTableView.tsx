@@ -39,12 +39,66 @@ import EventIcon from '@mui/icons-material/Event';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import WbSunnyIcon from '@mui/icons-material/WbSunny';
+import CloudIcon from '@mui/icons-material/Cloud';
+import OpacityIcon from '@mui/icons-material/Opacity';
+import NightlightIcon from '@mui/icons-material/Nightlight';
 
 // Define Feedback type
 interface FeedbackState {
   message: string;
   severity: 'success' | 'error';
 }
+
+// WeatherInfo component
+const WeatherInfo: React.FC<{ date: string | Date, location?: string }> = ({ date, location }) => {
+  const [weather, setWeather] = useState<{ icon: React.ReactNode, temp: number, desc: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Use OpenWeatherMap API
+    const apiKey = process.env.REACT_APP_WEATHER_API_KEY;
+    // Default to Tel Aviv if no location
+    const city = location || 'Tel Aviv';
+    // Get unix timestamp for the date (evening hour)
+    const dt = typeof date === 'string' ? new Date(date) : date;
+    const targetTimestamp = Math.floor(new Date(dt.setHours(20,0,0,0)).getTime() / 1000);
+
+    // Get coordinates for city (hardcoded for TLV)
+    const lat = 32.0853;
+    const lon = 34.7818;
+
+    // Fetch 5-day/3-hour forecast
+    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=he`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.list) throw new Error('No forecast data');
+        // Find the forecast closest to the target date/time
+        const closest = data.list.reduce((prev: any, curr: any) => {
+          return Math.abs(curr.dt - targetTimestamp) < Math.abs(prev.dt - targetTimestamp) ? curr : prev;
+        });
+        // Map weather code to icon
+        let icon: React.ReactNode = <WbSunnyIcon sx={{ color: '#FFD600' }} />;
+        if (closest.weather[0].main === 'Clouds') icon = <CloudIcon sx={{ color: '#90caf9' }} />;
+        if (closest.weather[0].main === 'Rain') icon = <OpacityIcon sx={{ color: '#2196f3' }} />;
+        if (closest.weather[0].icon.includes('n')) icon = <NightlightIcon sx={{ color: '#1565c0' }} />;
+        setWeather({
+          icon,
+          temp: Math.round(closest.main.temp),
+          desc: closest.weather[0].description
+        });
+      })
+      .catch(err => setError('Weather unavailable'));
+  }, [date, location]);
+
+  if (error) return null;
+  if (!weather) return <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}><CloudIcon sx={{ fontSize: 18, color: '#90caf9' }} />...</Typography>;
+  return (
+    <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
+      {weather.icon} {weather.temp}°C
+    </Typography>
+  );
+};
 
 const SharedTableView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -257,15 +311,17 @@ const SharedTableView: React.FC = () => {
             {new Date(table.createdAt).toLocaleString('he-IL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
           </Typography>
           <Typography variant="body1" sx={{ color: 'grey.400', mr: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <MonetizationOnIcon sx={{ fontSize: 18, color: 'gold' }} />
+            <MonetizationOnIcon sx={{ fontSize: 18, color: '#388e3c' }} />
             Small Blind: {table.smallBlind} | Big Blind: {table.bigBlind}
           </Typography>
           {table.location && (
             <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <LocationOnIcon sx={{ fontSize: 18, color: 'red' }} />
+              <LocationOnIcon sx={{ fontSize: 18, color: '#2196f3' }} />
               {table.location}
             </Typography>
           )}
+          {/* Weather info */}
+          <WeatherInfo date={table.createdAt} location={table.location} />
         </Paper>
       </Box>
 
