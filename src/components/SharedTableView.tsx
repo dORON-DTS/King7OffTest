@@ -56,36 +56,35 @@ const WeatherInfo: React.FC<{ date: string | Date, location?: string }> = ({ dat
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Use OpenWeatherMap API
+    // Use WeatherAPI.com
     const apiKey = process.env.REACT_APP_WEATHER_API_KEY;
-    // Default to Tel Aviv if no location
     const city = location || 'Tel Aviv';
-    // Get unix timestamp for the date (evening hour)
+    // Format date as YYYY-MM-DD
     const dt = typeof date === 'string' ? new Date(date) : date;
-    const targetTimestamp = Math.floor(new Date(dt.setHours(20,0,0,0)).getTime() / 1000);
+    const yyyy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
 
-    // Get coordinates for city (hardcoded for TLV)
-    const lat = 32.0853;
-    const lon = 34.7818;
-
-    // Fetch 5-day/3-hour forecast
-    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=he`)
+    // WeatherAPI: forecast for specific date
+    fetch(`https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(city)}&dt=${dateStr}&lang=he`)
       .then(res => res.json())
       .then(data => {
-        if (!data.list) throw new Error('No forecast data');
-        // Find the forecast closest to the target date/time
-        const closest = data.list.reduce((prev: any, curr: any) => {
-          return Math.abs(curr.dt - targetTimestamp) < Math.abs(prev.dt - targetTimestamp) ? curr : prev;
-        });
-        // Map weather code to icon
+        if (!data.forecast || !data.forecast.forecastday || !data.forecast.forecastday[0]) throw new Error('No forecast data');
+        // Try to get the evening hour (20:00), fallback to avgtemp_c
+        let hourData = data.forecast.forecastday[0].hour.find((h: any) => h.time.endsWith('20:00'));
+        if (!hourData) hourData = data.forecast.forecastday[0].day;
+        // Map WeatherAPI icon to MUI icon
         let icon: React.ReactNode = <WbSunnyIcon sx={{ color: '#FFD600' }} />;
-        if (closest.weather[0].main === 'Clouds') icon = <CloudIcon sx={{ color: '#90caf9' }} />;
-        if (closest.weather[0].main === 'Rain') icon = <OpacityIcon sx={{ color: '#2196f3' }} />;
-        if (closest.weather[0].icon.includes('n')) icon = <NightlightIcon sx={{ color: '#1565c0' }} />;
+        const code = hourData.condition.code;
+        const isNight = hourData.is_day === 0;
+        if (code === 1000 && isNight) icon = <NightlightIcon sx={{ color: '#1565c0' }} />;
+        else if ([1003, 1006, 1009].includes(code)) icon = <CloudIcon sx={{ color: '#90caf9' }} />;
+        else if ([1063, 1150, 1153, 1180, 1183, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) icon = <OpacityIcon sx={{ color: '#2196f3' }} />;
         setWeather({
           icon,
-          temp: Math.round(closest.main.temp),
-          desc: closest.weather[0].description
+          temp: Math.round(hourData.temp_c || hourData.avgtemp_c),
+          desc: hourData.condition.text
         });
       })
       .catch(err => setError('Weather unavailable'));
