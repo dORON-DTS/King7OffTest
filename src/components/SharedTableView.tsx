@@ -50,39 +50,56 @@ interface FeedbackState {
   severity: 'success' | 'error';
 }
 
-// WeatherInfo component
-const WeatherInfo: React.FC<{ date: string | Date, location?: string }> = ({ date, location }) => {
-  const [weather, setWeather] = useState<{ icon: React.ReactNode, temp: number, desc: string } | null>(null);
+// WeatherCardInfo component
+const WeatherCardInfo: React.FC<{ date: string | Date, location?: string }> = ({ date, location }) => {
+  const [weather, setWeather] = useState<null | {
+    icon: React.ReactNode,
+    hour: string,
+    dayOfWeek: string,
+    maxTemp: number,
+    minTemp: number,
+    temp: number,
+    desc: string
+  }>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Use WeatherAPI.com
     const apiKey = process.env.REACT_APP_WEATHER_API_KEY;
     const city = location || 'Tel Aviv';
-    // Format date as YYYY-MM-DD
     const dt = typeof date === 'string' ? new Date(date) : date;
     const yyyy = dt.getFullYear();
     const mm = String(dt.getMonth() + 1).padStart(2, '0');
     const dd = String(dt.getDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
-
-    // WeatherAPI: forecast for specific date
     fetch(`https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(city)}&dt=${dateStr}&lang=he`)
       .then(res => res.json())
       .then(data => {
         if (!data.forecast || !data.forecast.forecastday || !data.forecast.forecastday[0]) throw new Error('No forecast data');
-        // Try to get the evening hour (20:00), fallback to avgtemp_c
-        let hourData = data.forecast.forecastday[0].hour.find((h: any) => h.time.endsWith('20:00'));
-        if (!hourData) hourData = data.forecast.forecastday[0].day;
-        // Map WeatherAPI icon to MUI icon
-        let icon: React.ReactNode = <WbSunnyIcon sx={{ color: '#FFD600' }} />;
+        const forecastDay = data.forecast.forecastday[0];
+        // ננסה להביא את השעה 21:00, אם אין ניקח 20:00, ואם אין ניקח את ממוצע היום
+        let hourData = forecastDay.hour.find((h: any) => h.time.endsWith('21:00')) ||
+                       forecastDay.hour.find((h: any) => h.time.endsWith('20:00')) ||
+                       forecastDay.day;
+        // אייקון
+        let icon: React.ReactNode = <WbSunnyIcon sx={{ color: '#FFD600', fontSize: 32 }} />;
         const code = hourData.condition.code;
         const isNight = hourData.is_day === 0;
-        if (code === 1000 && isNight) icon = <NightlightIcon sx={{ color: '#1565c0' }} />;
-        else if ([1003, 1006, 1009].includes(code)) icon = <CloudIcon sx={{ color: '#90caf9' }} />;
-        else if ([1063, 1150, 1153, 1180, 1183, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) icon = <OpacityIcon sx={{ color: '#2196f3' }} />;
+        if (code === 1000 && isNight) icon = <NightlightIcon sx={{ color: '#1565c0', fontSize: 32 }} />;
+        else if ([1003, 1006, 1009].includes(code)) icon = <CloudIcon sx={{ color: '#90caf9', fontSize: 32 }} />;
+        else if ([1063, 1150, 1153, 1180, 1183, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) icon = <OpacityIcon sx={{ color: '#2196f3', fontSize: 32 }} />;
+        // יום בשבוע
+        const dayOfWeek = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
+        // שעה
+        const hour = hourData.time ? hourData.time.split(' ')[1].slice(0, 5) : '';
+        // טמפ' מקס/מינימום
+        const maxTemp = Math.round(forecastDay.day.maxtemp_c);
+        const minTemp = Math.round(forecastDay.day.mintemp_c);
         setWeather({
           icon,
+          hour,
+          dayOfWeek,
+          maxTemp,
+          minTemp,
           temp: Math.round(hourData.temp_c || hourData.avgtemp_c),
           desc: hourData.condition.text
         });
@@ -91,11 +108,22 @@ const WeatherInfo: React.FC<{ date: string | Date, location?: string }> = ({ dat
   }, [date, location]);
 
   if (error) return null;
-  if (!weather) return <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}><CloudIcon sx={{ fontSize: 18, color: '#90caf9' }} />...</Typography>;
+  if (!weather) return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 60 }}>
+      <CloudIcon sx={{ fontSize: 32, color: '#90caf9' }} />
+      <Typography variant="body2" sx={{ color: 'grey.400' }}>...</Typography>
+    </Box>
+  );
   return (
-    <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
-      {weather.icon} {weather.temp}°C
-    </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 60 }}>
+      <Typography variant="body2" sx={{ color: 'grey.400', fontSize: '0.85rem' }}>{weather.hour}</Typography>
+      <Typography variant="body2" sx={{ color: 'grey.400', fontSize: '0.85rem' }}>{weather.dayOfWeek}</Typography>
+      {weather.icon}
+      <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+        <Typography variant="h6" sx={{ color: '#FFD600', fontSize: '1.1rem', lineHeight: 1 }}>{weather.maxTemp}°</Typography>
+        <Typography variant="h6" sx={{ color: 'grey.400', fontSize: '1.1rem', lineHeight: 1 }}>{weather.minTemp}°</Typography>
+      </Box>
+    </Box>
   );
 };
 
@@ -320,7 +348,7 @@ const SharedTableView: React.FC = () => {
             </Typography>
           )}
           {/* Weather info */}
-          <WeatherInfo date={table.createdAt} location={table.location} />
+          <WeatherCardInfo date={table.createdAt} location={table.location} />
         </Paper>
       </Box>
 
