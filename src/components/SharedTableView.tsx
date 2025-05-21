@@ -71,7 +71,9 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string }> = ({
     const mm = String(dt.getMonth() + 1).padStart(2, '0');
     const dd = String(dt.getDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
-    fetch(`https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(city)}&dt=${dateStr}&lang=he`)
+    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(city)}&dt=${dateStr}&lang=he`;
+    console.log('[WeatherCardInfo] Fetching weather:', { url, city, dateStr });
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         if (!data.forecast || !data.forecast.forecastday || !data.forecast.forecastday[0]) throw new Error('No forecast data');
@@ -80,6 +82,8 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string }> = ({
         let hourData = forecastDay.hour.find((h: any) => h.time.endsWith('21:00')) ||
                        forecastDay.hour.find((h: any) => h.time.endsWith('20:00')) ||
                        forecastDay.day;
+        console.log('[WeatherCardInfo] forecastDay.day:', forecastDay.day);
+        console.log('[WeatherCardInfo] hourData:', hourData);
         // אייקון
         let icon: React.ReactNode = <WbSunnyIcon sx={{ color: '#FFD600', fontSize: 32 }} />;
         const code = hourData.condition.code;
