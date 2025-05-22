@@ -21,7 +21,7 @@ interface PokerContextType {
   error: string | null;
   updateTable: (
     tableId: string,
-    data: { name: string; smallBlind: number; bigBlind: number; location: string; createdAt: Date }
+    data: { name: string; smallBlind: number; bigBlind: number; location: string; createdAt: Date; food?: string }
   ) => Promise<void>;
 }
 
@@ -440,7 +440,7 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateTable = async (
     tableId: string,
-    data: { name: string; smallBlind: number; bigBlind: number; location: string; createdAt: Date }
+    data: { name: string; smallBlind: number; bigBlind: number; location: string; createdAt: Date; food?: string }
   ) => {
     console.log('[UPDATE TABLE] Attempting to update table:', { tableId, data });
     try {
@@ -462,7 +462,8 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           smallBlind: Number(data.smallBlind),
           bigBlind: Number(data.bigBlind),
           location: data.location || '',
-          createdAt: data.createdAt.toISOString()
+          createdAt: data.createdAt.toISOString(),
+          food: data.food || ''
         }),
       });
 

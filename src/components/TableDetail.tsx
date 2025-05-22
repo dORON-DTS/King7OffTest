@@ -84,7 +84,8 @@ const TableDetail: React.FC = () => {
     smallBlind: '',
     bigBlind: '',
     location: '',
-    date: new Date()
+    date: new Date(),
+    food: ''
   });
   const [editFormErrors, setEditFormErrors] = useState<EditFormErrors>({});
 
@@ -98,7 +99,8 @@ const TableDetail: React.FC = () => {
         smallBlind: table.smallBlind?.toString() || '',
         bigBlind: table.bigBlind?.toString() || '',
         location: table.location || '',
-        date: new Date(table.createdAt)
+        date: new Date(table.createdAt),
+        food: table.food || ''
       });
       setEditFormErrors({});
     }
@@ -349,28 +351,51 @@ const TableDetail: React.FC = () => {
   };
 
   // ולידציה בסיסית
-  const validateEditForm = () => {
-    const errors: any = {};
-    if (!editForm.name.trim()) errors.name = 'Name required';
-    if (!editForm.smallBlind || isNaN(Number(editForm.smallBlind)) || Number(editForm.smallBlind) <= 0) errors.smallBlind = 'Small blind must be positive';
-    if (!editForm.bigBlind || isNaN(Number(editForm.bigBlind)) || Number(editForm.bigBlind) <= 0) errors.bigBlind = 'Big blind must be positive';
-    if (Number(editForm.bigBlind) < Number(editForm.smallBlind)) errors.bigBlind = 'Big blind must be at least small blind';
+  const validateEditForm = (): boolean => {
+    const errors: EditFormErrors = {};
+    
+    if (!editForm.name.trim()) {
+      errors.name = 'Table name is required';
+    }
+    
+    const smallBlind = Number(editForm.smallBlind);
+    if (!editForm.smallBlind || isNaN(smallBlind) || smallBlind <= 0) {
+      errors.smallBlind = 'Small blind must be a positive number';
+    }
+    
+    const bigBlind = Number(editForm.bigBlind);
+    if (!editForm.bigBlind || isNaN(bigBlind) || bigBlind <= 0) {
+      errors.bigBlind = 'Big blind must be a positive number';
+    } else if (bigBlind < smallBlind) {
+      errors.bigBlind = 'Big blind must be at least equal to small blind';
+    }
+
+    if (editForm.food && !table?.players.find(p => p.id === editForm.food)) {
+      errors.food = 'Selected player is not in the table';
+    }
+    
     setEditFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   // שמירה (TODO: לממש עדכון לשרת)
-  const handleEditSave = async () => {
-    if (!validateEditForm()) return;
-    if (!id) return;
-    await updateTable(id, {
-      name: editForm.name,
-      smallBlind: Number(editForm.smallBlind),
-      bigBlind: Number(editForm.bigBlind),
-      location: editForm.location,
-      createdAt: editForm.date,
-    });
-    setEditDialogOpen(false);
+  const handleEditSubmit = async () => {
+    if (validateEditForm() && id) {
+      try {
+        await updateTable(id, {
+          name: editForm.name,
+          smallBlind: Number(editForm.smallBlind),
+          bigBlind: Number(editForm.bigBlind),
+          location: editForm.location,
+          createdAt: editForm.date,
+          food: editForm.food
+        });
+        setEditDialogOpen(false);
+      } catch (error) {
+        console.error('Error updating table:', error);
+        showTransientError('Failed to update table');
+      }
+    }
   };
 
   const showTransientError = (message: string) => {
@@ -458,6 +483,11 @@ const TableDetail: React.FC = () => {
                 {table.isActive ? 'Deactivate' : 'Activate'}
               </Button>
             </Box>
+            {table.food && (
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                Food: {table.players.find(p => p.id === table.food)?.name || 'Unknown'}
+              </Typography>
+            )}
           </Grid>
           <Grid item xs={12}>
             <Divider sx={{ my: 1 }} />
@@ -968,6 +998,26 @@ const TableDetail: React.FC = () => {
             sx={{ mb: 2 }}
             placeholder="Optional"
           />
+          <Autocomplete
+            options={table.players}
+            getOptionLabel={(option) => option.name}
+            value={table.players.find(p => p.id === editForm.food) || null}
+            onChange={(_, newValue) => {
+              setEditForm(prev => ({
+                ...prev,
+                food: newValue?.id || ''
+              }));
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Food"
+                fullWidth
+                sx={{ mb: 2 }}
+                placeholder="Select player responsible for food"
+              />
+            )}
+          />
           <TextField
             label="Date"
             type="datetime-local"
@@ -980,7 +1030,7 @@ const TableDetail: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditSave} variant="contained" color="primary">Save</Button>
+          <Button onClick={handleEditSubmit} variant="contained" color="primary">Save</Button>
         </DialogActions>
       </Dialog>
     </Box>

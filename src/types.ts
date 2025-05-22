@@ -35,6 +35,7 @@ export interface Table {
   isActive: boolean;
   creatorId: string;
   location?: string;
+  food?: string;
 }
 
 export interface PlayerStats {
@@ -63,6 +64,7 @@ export interface EditForm {
   bigBlind: string;
   location: string;
   date: Date;
+  food: string;
 }
 
 export interface EditFormErrors {
@@ -72,6 +74,7 @@ export interface EditFormErrors {
   bigBlind?: string;
   location?: string;
   date?: string;
+  food?: string;
 }
 
 export interface CreateTableFormData {
