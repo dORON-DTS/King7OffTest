@@ -451,11 +451,9 @@ const TableDetail: React.FC = () => {
       <Paper sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6">Table Info</Typography>
-          {table.isActive && (
-            <IconButton size="small" onClick={() => setEditDialogOpen(true)}>
-              <EditIcon />
-            </IconButton>
-          )}
+          <IconButton size="small" onClick={() => setEditDialogOpen(true)}>
+            <EditIcon />
+          </IconButton>
         </Box>
         <Grid container spacing={2}>
           <Grid item xs={6} sm={4}>
