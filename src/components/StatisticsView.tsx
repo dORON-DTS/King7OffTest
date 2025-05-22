@@ -945,10 +945,10 @@ const StatisticsView: React.FC = () => {
         sx={{
           flexGrow: 1,
           p: { xs: 0.5, sm: 3 },
-          px: { xs: 1.5, sm: 3 },
-          width: '100vw',
-          maxWidth: '100vw',
-          overflow: 'auto',
+          px: { xs: 0.5, sm: 3 },
+          width: '100%',
+          maxWidth: '100%',
+          overflowX: 'hidden',
           boxSizing: 'border-box',
           margin: 0,
           '&::-webkit-scrollbar': {
@@ -967,7 +967,7 @@ const StatisticsView: React.FC = () => {
           }
         }}
       >
-        <Grid container spacing={1} sx={{ mb: 4, width: '100%', mx: 0, px: 0 }}>
+        <Grid container spacing={0.5} sx={{ mb: 4, width: '100%', mx: 0, px: 0 }}>
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
