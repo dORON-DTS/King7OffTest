@@ -945,6 +945,7 @@ const StatisticsView: React.FC = () => {
         sx={{
           flexGrow: 1,
           p: { xs: 0.5, sm: 3 },
+          px: { xs: 1.5, sm: 3 },
           width: '100vw',
           maxWidth: '100vw',
           overflow: 'auto',
