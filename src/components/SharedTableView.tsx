@@ -65,14 +65,14 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string }> = ({
 
   useEffect(() => {
     const apiKey = process.env.REACT_APP_WEATHER_API_KEY;
-    const city = location || 'Tel Aviv';
+    // תמיד Tel Aviv
+    const city = 'Tel Aviv';
     const dt = typeof date === 'string' ? new Date(date) : date;
     const yyyy = dt.getFullYear();
     const mm = String(dt.getMonth() + 1).padStart(2, '0');
     const dd = String(dt.getDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
     const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(city)}&dt=${dateStr}&lang=he`;
-    console.log('[WeatherCardInfo] Fetching weather:', { url, city, dateStr });
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -82,8 +82,6 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string }> = ({
         let hourData = forecastDay.hour.find((h: any) => h.time.endsWith('21:00')) ||
                        forecastDay.hour.find((h: any) => h.time.endsWith('20:00')) ||
                        forecastDay.day;
-        console.log('[WeatherCardInfo] forecastDay.day:', forecastDay.day);
-        console.log('[WeatherCardInfo] hourData:', hourData);
         // אייקון
         let icon: React.ReactNode = <WbSunnyIcon sx={{ color: '#FFD600', fontSize: 32 }} />;
         const code = hourData.condition.code;
@@ -113,17 +111,15 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string }> = ({
 
   if (error) return null;
   if (!weather) return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 60 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 60, minHeight: 32 }}>
       <CloudIcon sx={{ fontSize: 32, color: '#90caf9' }} />
-      <Typography variant="body2" sx={{ color: 'grey.400' }}>...</Typography>
+      <Typography variant="body2" sx={{ color: 'grey.400', ml: 0.5 }}>...</Typography>
     </Box>
   );
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 60 }}>
-      <Typography variant="body2" sx={{ color: 'grey.400', fontSize: '0.85rem' }}>{weather.hour}</Typography>
-      <Typography variant="body2" sx={{ color: 'grey.400', fontSize: '0.85rem' }}>{weather.dayOfWeek}</Typography>
+    <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 60, minHeight: 32 }}>
       {weather.icon}
-      <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+      <Box sx={{ display: 'flex', gap: 0.5, ml: 0.5 }}>
         <Typography variant="h6" sx={{ color: '#FFD600', fontSize: '1.1rem', lineHeight: 1 }}>{weather.maxTemp}°</Typography>
         <Typography variant="h6" sx={{ color: 'grey.400', fontSize: '1.1rem', lineHeight: 1 }}>{weather.minTemp}°</Typography>
       </Box>
