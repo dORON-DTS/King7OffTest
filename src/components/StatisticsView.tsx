@@ -909,12 +909,12 @@ const StatisticsView: React.FC = () => {
     boxShadow: 3,
     minHeight: { xs: 120, sm: 160 },
     minWidth: { xs: 'unset', sm: 220 },
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     transition: 'transform 0.2s, box-shadow 0.2s',
-    m: { xs: 0.5, sm: 0 },
     '&:hover': {
       boxShadow: '0 0 24px 4px #29b6f6',
       transform: { sm: 'scale(1.04)', xs: 'none' },
@@ -944,10 +944,12 @@ const StatisticsView: React.FC = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 1, sm: 3 },
-          width: '100%',
-          maxWidth: '100%',
+          p: { xs: 0.5, sm: 3 },
+          width: '100vw',
+          maxWidth: '100vw',
           overflow: 'auto',
+          boxSizing: 'border-box',
+          margin: 0,
           '&::-webkit-scrollbar': {
             width: '8px',
             height: '8px',
@@ -964,8 +966,7 @@ const StatisticsView: React.FC = () => {
           }
         }}
       >
-        {/* Top Summary Cards */}
-        <Grid container spacing={{ xs: 1, sm: 3 }} sx={{ mb: 4, mx: { xs: 0, sm: 0 } }}>
+        <Grid container spacing={1} sx={{ mb: 4, width: '100%', mx: 0, px: 0 }}>
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
