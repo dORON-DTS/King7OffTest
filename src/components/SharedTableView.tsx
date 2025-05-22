@@ -52,7 +52,7 @@ interface FeedbackState {
 }
 
 // WeatherCardInfo component
-const WeatherCardInfo: React.FC<{ date: string | Date, location?: string }> = ({ date, location }) => {
+const WeatherCardInfo: React.FC<{ date: string | Date, location?: string, iconSize?: number }> = ({ date, location, iconSize = 32 }) => {
   const [weather, setWeather] = useState<null | {
     icon: React.ReactNode,
     hour: string,
@@ -84,12 +84,12 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string }> = ({
                        forecastDay.hour.find((h: any) => h.time.endsWith('20:00')) ||
                        forecastDay.day;
         // אייקון
-        let icon: React.ReactNode = <WbSunnyIcon sx={{ color: '#FFD600', fontSize: 32 }} />;
+        let icon: React.ReactNode = <WbSunnyIcon sx={{ color: '#FFD600', fontSize: iconSize }} />;
         const code = hourData.condition.code;
         const isNight = hourData.is_day === 0;
-        if (code === 1000 && isNight) icon = <NightlightIcon sx={{ color: '#1565c0', fontSize: 32 }} />;
-        else if ([1003, 1006, 1009].includes(code)) icon = <CloudIcon sx={{ color: '#90caf9', fontSize: 32 }} />;
-        else if ([1063, 1150, 1153, 1180, 1183, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) icon = <OpacityIcon sx={{ color: '#2196f3', fontSize: 32 }} />;
+        if (code === 1000 && isNight) icon = <NightlightIcon sx={{ color: '#1565c0', fontSize: iconSize }} />;
+        else if ([1003, 1006, 1009].includes(code)) icon = <CloudIcon sx={{ color: '#90caf9', fontSize: iconSize }} />;
+        else if ([1063, 1150, 1153, 1180, 1183, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) icon = <OpacityIcon sx={{ color: '#2196f3', fontSize: iconSize }} />;
         // יום בשבוע
         const dayOfWeek = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
         // שעה
@@ -108,7 +108,7 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string }> = ({
         });
       })
       .catch(err => setError('Weather unavailable'));
-  }, [date, location]);
+  }, [date, location, iconSize]);
 
   if (error) return null;
   if (!weather) return (
@@ -334,29 +334,31 @@ const SharedTableView: React.FC = () => {
       {/* Table Info */}
       <Box sx={{ mb: { xs: 1, sm: 2, md: 3 } }}>
         <Paper sx={{ p: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2, md: 3 }, bgcolor: '#232323', color: 'white', display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 3 }, flexWrap: 'wrap' }}>
-          <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: { xs: 1, sm: 2 } }}>
+          <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1, mr: { xs: 1, sm: 2 } }}>
             <EventIcon sx={{ fontSize: 20, color: 'grey.400' }} />
             {new Date(table.createdAt).toLocaleString('he-IL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
           </Typography>
           <Typography variant="body1" sx={{ color: 'grey.400', mr: { xs: 1, sm: 2 }, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <MonetizationOnIcon sx={{ fontSize: 18, color: '#388e3c' }} />
+            <MonetizationOnIcon sx={{ fontSize: 18, color: 'grey.400' }} />
             Small Blind: {table.smallBlind} | Big Blind: {table.bigBlind}
           </Typography>
           {table.location && (
             <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <LocationOnIcon sx={{ fontSize: 18, color: '#2196f3' }} />
+              <LocationOnIcon sx={{ fontSize: 18, color: 'grey.400' }} />
               {table.location}
             </Typography>
           )}
-          {/* Food info */}
+          {/* Weather info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WeatherCardInfo date={table.createdAt} location={table.location} iconSize={20} />
+          </Box>
+          {/* Food info - always last */}
           {table.food && (
-            <Typography variant="body1" sx={{ color: 'orange', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FastfoodIcon sx={{ fontSize: 20, color: 'orange' }} />
+            <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FastfoodIcon sx={{ fontSize: 20, color: 'grey.400' }} />
               Food ordered by: {table.players.find(p => p.id === table.food)?.name || 'Unknown'}
             </Typography>
           )}
-          {/* Weather info */}
-          <WeatherCardInfo date={table.createdAt} location={table.location} />
         </Paper>
       </Box>
 
