@@ -966,15 +966,119 @@ const StatisticsView: React.FC = () => {
       >
         {/* Top Summary Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* All stat cards in a single grid, 2 per row on mobile, 4 per row on desktop */}
-          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Total Games Played...</CardContent></Card></Grid>
-          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Most Games Played...</CardContent></Card></Grid>
-          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Total Buy In...</CardContent></Card></Grid>
-          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Biggest Single Game Win...</CardContent></Card></Grid>
-          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Best Winning Streak...</CardContent></Card></Grid>
-          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Biggest Single Game Buy-In...</CardContent></Card></Grid>
-          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Biggest Avg Buy-In...</CardContent></Card></Grid>
-          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Best Avg Result...</CardContent></Card></Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="games">🎮</span> Total Games Played
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#29b6f6', fontSize: { xs: '2rem', sm: '2.5rem' } }}>
+                  {staticTables.length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="trophy">🏆</span> Most Games Played
+                </Typography>
+                {overallStats.mostPlayed ? (
+                  <>
+                    <Typography variant="h5" sx={{ color: '#29b6f6', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                      {overallStats.mostPlayed.name}
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+                      {overallStats.mostPlayed.tablesPlayed}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>-</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="money">💰</span> Total Buy In
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#66bb6a', fontSize: { xs: '2rem', sm: '2.5rem' } }}>
+                  {animatedTotalBuyIn.toLocaleString()}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="win">🏅</span> Biggest Single Game Win
+                </Typography>
+                {singleGameStats.maxWin > 0 ? (
+                  <Typography variant="h5" sx={{ color: 'success.main', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    {singleGameStats.maxWinPlayer} (+{singleGameStats.maxWin})
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No single game wins yet</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="streak">🔥</span> Best Winning Streak
+                </Typography>
+                {bestWinStreak.value > 0 ? (
+                  <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    {bestWinStreak.player} ({bestWinStreak.value})
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No win streaks yet</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="single-buyin">💸</span> Biggest Single Game Buy-In
+                </Typography>
+                <Typography variant="h5" sx={{ color: '#ffb300', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  {extraStats.biggestSingleBuyIn.player} ({extraStats.biggestSingleBuyIn.value})
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="avg-buyin">💳</span> Biggest Avg Buy-In
+                </Typography>
+                <Typography variant="h5" sx={{ color: '#ab47bc', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  {extraStats.biggestAvgBuyIn.player} ({Math.round(extraStats.biggestAvgBuyIn.value)})
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="avg-result">📈</span> Best Avg Result
+                </Typography>
+                <Typography variant="h5" sx={{ color: '#00bcd4', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  {extraStats.bestAvgResult.player} ({Math.round(extraStats.bestAvgResult.value)})
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
           {/* Best Current Streak - clickable only if 2+ players */}
           <Grid item xs={12} sm={6} md={3}>
             <Card
