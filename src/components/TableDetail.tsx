@@ -403,6 +403,8 @@ const TableDetail: React.FC = () => {
     setTimeout(() => setErrorMessage(null), 3000);
   };
 
+  const sortedPlayers = [...(table?.players || [])].sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <Box sx={{ p: 2, maxWidth: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -997,7 +999,7 @@ const TableDetail: React.FC = () => {
             placeholder="Optional"
           />
           <Autocomplete
-            options={table.players}
+            options={sortedPlayers}
             getOptionLabel={(option) => option.name}
             value={table.players.find(p => p.id === editForm.food) || null}
             onChange={(_, newValue) => {
