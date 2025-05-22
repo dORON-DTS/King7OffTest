@@ -901,6 +901,26 @@ const StatisticsView: React.FC = () => {
   // Remove freeSolo and add inputValue state
   const [inputValue, setInputValue] = useState('');
 
+  // Add statCardSx at the top of the file for consistent card sizing
+  const statCardSx = {
+    bgcolor: '#1e1e1e',
+    color: 'white',
+    textAlign: 'center',
+    boxShadow: 3,
+    minHeight: { xs: 120, sm: 160 },
+    minWidth: { xs: 'unset', sm: 220 },
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'transform 0.2s, box-shadow 0.2s',
+    m: { xs: 0.5, sm: 0 },
+    '&:hover': {
+      boxShadow: '0 0 24px 4px #29b6f6',
+      transform: { sm: 'scale(1.04)', xs: 'none' },
+    },
+  };
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -946,279 +966,65 @@ const StatisticsView: React.FC = () => {
       >
         {/* Top Summary Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-              minHeight: { xs: 100, sm: 160 },
-              minWidth: { xs: 'unset', sm: 220 },
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              m: { xs: 0.5, sm: 0 },
-              '&:hover': {
-                boxShadow: '0 0 24px 4px #29b6f6',
-                transform: { sm: 'scale(1.04)', xs: 'none' },
-              },
-            }}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+          {/* All stat cards in a single grid, 2 per row on mobile, 4 per row on desktop */}
+          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Total Games Played...</CardContent></Card></Grid>
+          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Most Games Played...</CardContent></Card></Grid>
+          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Total Buy In...</CardContent></Card></Grid>
+          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Biggest Single Game Win...</CardContent></Card></Grid>
+          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Best Winning Streak...</CardContent></Card></Grid>
+          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Biggest Single Game Buy-In...</CardContent></Card></Grid>
+          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Biggest Avg Buy-In...</CardContent></Card></Grid>
+          <Grid item xs={12} sm={6} md={3}><Card sx={statCardSx}><CardContent>...Best Avg Result...</CardContent></Card></Grid>
+          {/* Best Current Streak - clickable only if 2+ players */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={statCardSx}
+              {...(bestCurrentStreak.players.length > 1 ? { onClick: () => setIsStreakDialogOpen(true), style: { cursor: 'pointer' } } : {})}
+            >
+              <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="games">🎮</span> Total Games Played
+                  <span role="img" aria-label="current-streak">⚡</span> Best Current Streak
                 </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#29b6f6', fontSize: { xs: '2rem', sm: '2.5rem' } }}>
-                  {staticTables.length}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-              minHeight: { xs: 100, sm: 160 },
-              minWidth: { xs: 'unset', sm: 220 },
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              m: { xs: 0.5, sm: 0 },
-              '&:hover': {
-                boxShadow: '0 0 24px 4px #29b6f6',
-                transform: { sm: 'scale(1.04)', xs: 'none' },
-              },
-            }}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="trophy">🏆</span> Most Games Played
-                </Typography>
-                {overallStats.mostPlayed ? (
+                {bestCurrentStreak.value > 0 ? (
                   <>
-                    <Typography variant="h5" sx={{ color: '#29b6f6', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                      {overallStats.mostPlayed.name}
+                    <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                      {bestCurrentStreak.players.length === 1 ? bestCurrentStreak.players[0] : `${bestCurrentStreak.players.length} Players`}
                     </Typography>
                     <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
-                      {overallStats.mostPlayed.tablesPlayed}
+                      {bestCurrentStreak.value} Games
                     </Typography>
                   </>
                 ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>-</Typography>
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No active streaks</Typography>
                 )}
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-              minHeight: { xs: 100, sm: 160 },
-              minWidth: { xs: 'unset', sm: 220 },
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              m: { xs: 0.5, sm: 0 },
-              '&:hover': {
-                boxShadow: '0 0 24px 4px #66bb6a',
-                transform: { sm: 'scale(1.04)', xs: 'none' },
-              },
-            }}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+          {/* King Of Food Orders */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={statCardSx}
+              onClick={foodOrderKing.count > 0 ? () => setIsFoodKingDialogOpen(true) : undefined}
+              style={foodOrderKing.count > 0 ? { cursor: 'pointer' } : {}}
+            >
+              <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="money">💰</span> Total Buy In
+                  <span role="img" aria-label="food-king">🍔</span> King Of Food Orders
                 </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#66bb6a', fontSize: { xs: '2rem', sm: '2.5rem' } }}>
-                  {animatedTotalBuyIn.toLocaleString()}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-              minHeight: { xs: 100, sm: 160 },
-              minWidth: { xs: 'unset', sm: 220 },
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              m: { xs: 0.5, sm: 0 },
-              '&:hover': {
-                boxShadow: '0 0 24px 4px #43a047',
-                transform: { sm: 'scale(1.04)', xs: 'none' },
-              },
-            }}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="win">🏅</span> Biggest Single Game Win
-                </Typography>
-                {singleGameStats.maxWin > 0 ? (
-                  <Typography variant="h5" sx={{ color: 'success.main', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                    {singleGameStats.maxWinPlayer} (+{singleGameStats.maxWin})
-                  </Typography>
+                {foodOrderKing.count > 0 ? (
+                  <>
+                    <Typography variant="h5" sx={{ color: '#ff9800', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                      {foodOrderKing.player}
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+                      {foodOrderKing.count} Orders
+                    </Typography>
+                  </>
                 ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No single game wins yet</Typography>
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No food orders yet</Typography>
                 )}
               </CardContent>
             </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-              minHeight: { xs: 100, sm: 160 },
-              minWidth: { xs: 'unset', sm: 220 },
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              m: { xs: 0.5, sm: 0 },
-              '&:hover': {
-                boxShadow: '0 0 24px 4px #ffd700',
-                transform: { sm: 'scale(1.04)', xs: 'none' },
-              },
-              cursor: 'pointer'
-            }}
-            onClick={() => bestCurrentStreak.value > 0 && setIsStreakDialogOpen(true)}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="streak">🔥</span> Best Winning Streak
-                </Typography>
-                {bestWinStreak.value > 0 ? (
-                  <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                    {bestWinStreak.player} ({bestWinStreak.value})
-                  </Typography>
-                ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No win streaks yet</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-              minHeight: { xs: 100, sm: 160 },
-              minWidth: { xs: 'unset', sm: 220 },
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              m: { xs: 0.5, sm: 0 },
-              '&:hover': {
-                boxShadow: '0 0 24px 4px #ffb300',
-                transform: { sm: 'scale(1.04)', xs: 'none' },
-              },
-            }}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="single-buyin">💸</span> Biggest Single Game Buy-In
-                </Typography>
-                <Typography variant="h5" sx={{ color: '#ffb300', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  {extraStats.biggestSingleBuyIn.player} ({extraStats.biggestSingleBuyIn.value})
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-              minHeight: { xs: 100, sm: 160 },
-              minWidth: { xs: 'unset', sm: 220 },
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              m: { xs: 0.5, sm: 0 },
-              '&:hover': {
-                boxShadow: '0 0 24px 4px #ab47bc',
-                transform: { sm: 'scale(1.04)', xs: 'none' },
-              },
-            }}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="avg-buyin">💳</span> Biggest Avg Buy-In
-                </Typography>
-                <Typography variant="h5" sx={{ color: '#ab47bc', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  {extraStats.biggestAvgBuyIn.player} ({Math.round(extraStats.biggestAvgBuyIn.value)})
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{
-              bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-              minHeight: { xs: 100, sm: 160 },
-              minWidth: { xs: 'unset', sm: 220 },
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              m: { xs: 0.5, sm: 0 },
-              '&:hover': {
-                boxShadow: '0 0 24px 4px #00bcd4',
-                transform: { sm: 'scale(1.04)', xs: 'none' },
-              },
-            }}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="avg-result">📈</span> Best Avg Result
-                </Typography>
-                <Typography variant="h5" sx={{ color: '#00bcd4', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  {extraStats.bestAvgResult.player} ({Math.round(extraStats.bestAvgResult.value)})
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mb: { xs: 1, sm: 2, md: 3 } }}>
-            <Grid item xs={6} sm={3}>
-              <Card sx={{
-                bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-                minHeight: { xs: 100, sm: 160 },
-                minWidth: { xs: 'unset', sm: 220 },
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                m: { xs: 0.5, sm: 0 },
-                '&:hover': {
-                  boxShadow: '0 0 24px 4px #ffd700',
-                  transform: { sm: 'scale(1.04)', xs: 'none' },
-                },
-                cursor: 'pointer'
-              }}
-              onClick={() => bestCurrentStreak.value > 0 && setIsStreakDialogOpen(true)}>
-                <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                  <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                    <span role="img" aria-label="current-streak">⚡</span> Best Current Streak
-                  </Typography>
-                  {bestCurrentStreak.value > 0 ? (
-                    <>
-                      <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                        {bestCurrentStreak.players.length === 1 ? bestCurrentStreak.players[0] : `${bestCurrentStreak.players.length} Players`}
-                      </Typography>
-                      <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
-                        {bestCurrentStreak.value} Games
-                      </Typography>
-                    </>
-                  ) : (
-                    <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No active streaks</Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={6} sm={3}>
-              <Card sx={{
-                bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
-                minHeight: { xs: 100, sm: 160 },
-                minWidth: { xs: 'unset', sm: 220 },
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                m: { xs: 0.5, sm: 0 },
-                '&:hover': {
-                  boxShadow: '0 0 24px 4px #ff9800',
-                  transform: { sm: 'scale(1.04)', xs: 'none' },
-                },
-                cursor: 'pointer'
-              }}
-              onClick={() => foodOrderKing.count > 0 && setIsFoodKingDialogOpen(true)}>
-                <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                  <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                    <span role="img" aria-label="food-king">🍔</span> Food Order King
-                  </Typography>
-                  {foodOrderKing.count > 0 ? (
-                    <>
-                      <Typography variant="h5" sx={{ color: '#ff9800', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                        {foodOrderKing.player}
-                      </Typography>
-                      <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
-                        {foodOrderKing.count} Orders
-                      </Typography>
-                    </>
-                  ) : (
-                    <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No food orders yet</Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
           </Grid>
         </Grid>
 
@@ -1669,7 +1475,7 @@ const StatisticsView: React.FC = () => {
         <DialogTitle sx={{ borderBottom: 1, borderColor: 'grey.800', pb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <span role="img" aria-label="food-king">🍔</span>
-            <Typography variant="h6">Food Order History</Typography>
+            <Typography variant="h6">King Of Food Orders</Typography>
           </Box>
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
