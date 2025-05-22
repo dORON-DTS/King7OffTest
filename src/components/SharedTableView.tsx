@@ -335,16 +335,16 @@ const SharedTableView: React.FC = () => {
       <Box sx={{ mb: { xs: 1, sm: 2, md: 3 } }}>
         <Paper sx={{ p: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2, md: 3 }, bgcolor: '#232323', color: 'white', display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 3 }, flexWrap: 'wrap' }}>
           <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1, mr: { xs: 1, sm: 2 } }}>
-            <EventIcon sx={{ fontSize: 20, color: 'grey.400' }} />
+            <EventIcon sx={{ fontSize: 20, color: 'white' }} />
             {new Date(table.createdAt).toLocaleString('he-IL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
           </Typography>
           <Typography variant="body1" sx={{ color: 'grey.400', mr: { xs: 1, sm: 2 }, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <MonetizationOnIcon sx={{ fontSize: 18, color: 'grey.400' }} />
+            <MonetizationOnIcon sx={{ fontSize: 18, color: '#388e3c' }} />
             Small Blind: {table.smallBlind} | Big Blind: {table.bigBlind}
           </Typography>
           {table.location && (
             <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <LocationOnIcon sx={{ fontSize: 18, color: 'grey.400' }} />
+              <LocationOnIcon sx={{ fontSize: 18, color: '#2196f3' }} />
               {table.location}
             </Typography>
           )}
@@ -355,7 +355,7 @@ const SharedTableView: React.FC = () => {
           {/* Food info - always last */}
           {table.food && (
             <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FastfoodIcon sx={{ fontSize: 20, color: 'grey.400' }} />
+              <FastfoodIcon sx={{ fontSize: 20, color: '#FFD600' }} />
               Food ordered by: {table.players.find(p => p.id === table.food)?.name || 'Unknown'}
             </Typography>
           )}
