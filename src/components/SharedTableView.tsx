@@ -43,6 +43,7 @@ import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import CloudIcon from '@mui/icons-material/Cloud';
 import OpacityIcon from '@mui/icons-material/Opacity';
 import NightlightIcon from '@mui/icons-material/Nightlight';
+import FastfoodIcon from '@mui/icons-material/Fastfood';
 
 // Define Feedback type
 interface FeedbackState {
@@ -345,6 +346,13 @@ const SharedTableView: React.FC = () => {
             <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
               <LocationOnIcon sx={{ fontSize: 18, color: '#2196f3' }} />
               {table.location}
+            </Typography>
+          )}
+          {/* Food info */}
+          {table.food && (
+            <Typography variant="body1" sx={{ color: 'orange', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FastfoodIcon sx={{ fontSize: 20, color: 'orange' }} />
+              Food ordered by: {table.players.find(p => p.id === table.food)?.name || 'Unknown'}
             </Typography>
           )}
           {/* Weather info */}
