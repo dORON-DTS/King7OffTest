@@ -30,6 +30,14 @@ import {
   FormControlLabel,
   Switch,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  Button,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -323,11 +331,23 @@ const StatisticsView: React.FC = () => {
     bestAvgResult: { value: 0, player: '-' },
   });
 
+  // Add new state for Best Current Streak and Food Order King
+  const [bestCurrentStreak, setBestCurrentStreak] = useState<{ value: number, players: string[] }>({ value: 0, players: [] });
+  const [foodOrderKing, setFoodOrderKing] = useState<{ player: string, count: number, history: Array<{ date: string, player: string }> }>({ 
+    player: '-', 
+    count: 0,
+    history: []
+  });
+
   // Define which columns are negative (lowest is best)
   const negativeColumns = ['largestLoss']; // Add more if needed
 
   // Add state for best winning streak
   const [bestWinStreak, setBestWinStreak] = useState<{ value: number; player: string }>({ value: 0, player: '-' });
+
+  // Add state for new dialogs
+  const [isStreakDialogOpen, setIsStreakDialogOpen] = useState(false);
+  const [isFoodKingDialogOpen, setIsFoodKingDialogOpen] = useState(false);
 
   // Function to handle sort request
   const handleRequestSort = (event: React.MouseEvent<unknown>, property: keyof PlayerStats) => {
@@ -743,6 +763,110 @@ const StatisticsView: React.FC = () => {
     setBestWinStreak({ value: maxStreak, player: maxStreakPlayer });
   }, [playerStats, staticTables]);
 
+  // After playerStats calculation, add effect to calculate best current streak
+  useEffect(() => {
+    // For each player, calculate their current win streak
+    const playerStreaks = new Map<string, number>();
+    const sortedTables = [...staticTables].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    playerStats.forEach(player => {
+      let currentStreak = 0;
+      let foundLoss = false;
+
+      for (const table of sortedTables) {
+        const playerInTable = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+        if (!playerInTable) continue;
+
+        const buyIn = playerInTable.totalBuyIn || 0;
+        const cashOut = playerInTable.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
+        const chips = playerInTable.active ? (playerInTable.chips || 0) : 0;
+        const net = cashOut + chips - buyIn;
+
+        if (net > 0) {
+          currentStreak++;
+        } else {
+          foundLoss = true;
+          break;
+        }
+      }
+
+      if (currentStreak > 0) {
+        playerStreaks.set(player.name, currentStreak);
+      }
+    });
+
+    // Find max streak and players with that streak
+    let maxStreak = 0;
+    const playersWithMaxStreak: string[] = [];
+
+    playerStreaks.forEach((streak, player) => {
+      if (streak > maxStreak) {
+        maxStreak = streak;
+        playersWithMaxStreak.length = 0;
+        playersWithMaxStreak.push(player);
+      } else if (streak === maxStreak) {
+        playersWithMaxStreak.push(player);
+      }
+    });
+
+    setBestCurrentStreak({ value: maxStreak, players: playersWithMaxStreak });
+  }, [playerStats, staticTables]);
+
+  // Calculate Food Order King
+  useEffect(() => {
+    const foodOrders = new Map<string, number>();
+    const foodHistory: Array<{ date: string, player: string }> = [];
+
+    // Sort tables by date descending to get most recent first
+    const sortedTables = [...staticTables].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    sortedTables.forEach(table => {
+      if (table.food) {
+        const foodOrderer = table.players.find(p => p.id === table.food);
+        if (foodOrderer) {
+          const count = (foodOrders.get(foodOrderer.name) || 0) + 1;
+          foodOrders.set(foodOrderer.name, count);
+          
+          // Add to history (up to 20 entries)
+          if (foodHistory.length < 20) {
+            foodHistory.push({
+              date: new Date(table.createdAt).toLocaleString('he-IL', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: false 
+              }),
+              player: foodOrderer.name
+            });
+          }
+        }
+      }
+    });
+
+    // Find player with most food orders
+    let maxOrders = 0;
+    let foodKing = '-';
+
+    foodOrders.forEach((count, player) => {
+      if (count > maxOrders) {
+        maxOrders = count;
+        foodKing = player;
+      }
+    });
+
+    setFoodOrderKing({
+      player: foodKing,
+      count: maxOrders,
+      history: foodHistory
+    });
+  }, [staticTables]);
+
   // Sorted player options for Autocomplete
   const playerOptions = useMemo(() =>
     [...playerStats.map(player => player.name)].sort((a, b) => a.localeCompare(b)),
@@ -939,7 +1063,9 @@ const StatisticsView: React.FC = () => {
                 boxShadow: '0 0 24px 4px #ffd700',
                 transform: { sm: 'scale(1.04)', xs: 'none' },
               },
-            }}>
+              cursor: 'pointer'
+            }}
+            onClick={() => bestCurrentStreak.value > 0 && setIsStreakDialogOpen(true)}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="streak">🔥</span> Best Winning Streak
@@ -1022,6 +1148,77 @@ const StatisticsView: React.FC = () => {
                 </Typography>
               </CardContent>
             </Card>
+          </Grid>
+          <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mb: { xs: 1, sm: 2, md: 3 } }}>
+            <Grid item xs={6} sm={3}>
+              <Card sx={{
+                bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+                minHeight: { xs: 100, sm: 160 },
+                minWidth: { xs: 'unset', sm: 220 },
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                m: { xs: 0.5, sm: 0 },
+                '&:hover': {
+                  boxShadow: '0 0 24px 4px #ffd700',
+                  transform: { sm: 'scale(1.04)', xs: 'none' },
+                },
+                cursor: 'pointer'
+              }}
+              onClick={() => bestCurrentStreak.value > 0 && setIsStreakDialogOpen(true)}>
+                <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    <span role="img" aria-label="current-streak">⚡</span> Best Current Streak
+                  </Typography>
+                  {bestCurrentStreak.value > 0 ? (
+                    <>
+                      <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                        {bestCurrentStreak.players.length === 1 ? bestCurrentStreak.players[0] : `${bestCurrentStreak.players.length} Players`}
+                      </Typography>
+                      <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+                        {bestCurrentStreak.value} Games
+                      </Typography>
+                    </>
+                  ) : (
+                    <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No active streaks</Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={6} sm={3}>
+              <Card sx={{
+                bgcolor: '#1e1e1e', color: 'white', textAlign: 'center', boxShadow: 3,
+                minHeight: { xs: 100, sm: 160 },
+                minWidth: { xs: 'unset', sm: 220 },
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                m: { xs: 0.5, sm: 0 },
+                '&:hover': {
+                  boxShadow: '0 0 24px 4px #ff9800',
+                  transform: { sm: 'scale(1.04)', xs: 'none' },
+                },
+                cursor: 'pointer'
+              }}
+              onClick={() => foodOrderKing.count > 0 && setIsFoodKingDialogOpen(true)}>
+                <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    <span role="img" aria-label="food-king">🍔</span> Food Order King
+                  </Typography>
+                  {foodOrderKing.count > 0 ? (
+                    <>
+                      <Typography variant="h5" sx={{ color: '#ff9800', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                        {foodOrderKing.player}
+                      </Typography>
+                      <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+                        {foodOrderKing.count} Orders
+                      </Typography>
+                    </>
+                  ) : (
+                    <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No food orders yet</Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
         </Grid>
 
@@ -1413,6 +1610,88 @@ const StatisticsView: React.FC = () => {
         playerData={selectedPlayerStats}
         allTablesData={staticTables} 
       />
+
+      {/* Best Current Streak Dialog */}
+      <Dialog
+        open={isStreakDialogOpen}
+        onClose={() => setIsStreakDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            minWidth: { xs: '90%', sm: '400px' },
+            maxWidth: '600px',
+            borderRadius: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: 1, borderColor: 'grey.800', pb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <span role="img" aria-label="current-streak">⚡</span>
+            <Typography variant="h6">Best Current Streak</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <List>
+            {bestCurrentStreak.players.map((player, index) => (
+              <ListItem key={index} sx={{ py: 1 }}>
+                <ListItemText
+                  primary={player}
+                  secondary={`${bestCurrentStreak.value} Games`}
+                  primaryTypographyProps={{ color: '#ffd700', fontWeight: 'bold' }}
+                  secondaryTypographyProps={{ color: 'grey.400' }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions sx={{ borderTop: 1, borderColor: 'grey.800', p: 2 }}>
+          <Button onClick={() => setIsStreakDialogOpen(false)} sx={{ color: 'grey.400' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Food Order King Dialog */}
+      <Dialog
+        open={isFoodKingDialogOpen}
+        onClose={() => setIsFoodKingDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            minWidth: { xs: '90%', sm: '400px' },
+            maxWidth: '600px',
+            borderRadius: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: 1, borderColor: 'grey.800', pb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <span role="img" aria-label="food-king">🍔</span>
+            <Typography variant="h6">Food Order History</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <List>
+            {foodOrderKing.history.map((order, index) => (
+              <ListItem key={index} sx={{ py: 1 }}>
+                <ListItemText
+                  primary={order.player}
+                  secondary={order.date}
+                  primaryTypographyProps={{ color: '#ff9800', fontWeight: 'bold' }}
+                  secondaryTypographyProps={{ color: 'grey.400' }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions sx={{ borderTop: 1, borderColor: 'grey.800', p: 2 }}>
+          <Button onClick={() => setIsFoodKingDialogOpen(false)} sx={{ color: 'grey.400' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
