@@ -42,7 +42,10 @@ const StyledCard = styled(Card)<{ isActive: boolean }>(({ theme, isActive }) => 
     transform: 'translateY(-8px)',
     boxShadow: isActive
       ? '0 8px 30px 0 rgba(0,0,0,0.2), 0 10px 15px -5px rgba(76,175,80,0.5)'
-      : '0 8px 30px 0 rgba(0,0,0,0.1), 0 10px 15px -5px rgba(224,224,224,0.3)'
+      : '0 8px 30px 0 rgba(0,0,0,0.1), 0 10px 15px -5px rgba(224,224,224,0.3)',
+    '&::after': {
+      opacity: 1,
+    },
   },
   '&::after': {
     content: '""',
@@ -56,9 +59,6 @@ const StyledCard = styled(Card)<{ isActive: boolean }>(({ theme, isActive }) => 
     pointerEvents: 'none',
     opacity: 0,
     transition: 'opacity 0.3s ease',
-  },
-  '&:hover::after': {
-    opacity: 1,
   },
   '& .MuiCardContent-root': {
     background: '#181818',
@@ -74,7 +74,10 @@ const ActionButtons = styled(Box)(({ theme }) => ({
   gap: theme.spacing(1),
   opacity: 1,
   transform: 'translateY(-10px)',
-  transition: 'all 0.3s ease'
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-5px)',
+  },
 }));
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
@@ -83,22 +86,22 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
   '&:hover': {
     color: 'white',
     transform: 'scale(1.1)',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)'
-  }
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
 }));
 
 const DeleteButton = styled(StyledIconButton)(({ theme }) => ({
   '&:hover': {
     color: '#f44336',
-    backgroundColor: 'rgba(244, 67, 54, 0.1)'
-  }
+    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+  },
 }));
 
 const ShareButton = styled(StyledIconButton)(({ theme }) => ({
   '&:hover': {
     color: '#2196f3',
-    backgroundColor: 'rgba(33, 150, 243, 0.1)'
-  }
+    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+  },
 }));
 
 const TableList: React.FC = () => {
@@ -257,7 +260,9 @@ const TableList: React.FC = () => {
       bgcolor: '#121212', 
       minHeight: '100vh',
       color: 'white',
-      background: 'radial-gradient(circle at top right, #1a1a1a, #121212)'
+      background: 'radial-gradient(circle at top right, #1a1a1a, #121212)',
+      boxShadow: 'inset 0 0 100px rgba(0,0,0,0.5)',
+      transition: 'all 0.3s ease',
     }}>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
         <Typography variant="h2" component="h1" sx={{ 
@@ -266,7 +271,9 @@ const TableList: React.FC = () => {
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           textShadow: '0 2px 10px rgba(0,0,0,0.3)',
-          letterSpacing: '2px'
+          letterSpacing: '2px',
+          fontFamily: 'Roboto, sans-serif',
+          fontWeight: 'bold',
         }}>
           POKER TABLES
         </Typography>
