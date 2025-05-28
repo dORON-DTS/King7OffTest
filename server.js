@@ -1022,7 +1022,7 @@ app.get('/api/tables/:id', authenticate, (req, res) => {
 // Update table
 app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (req, res) => {
   const tableId = req.params.id;
-  const { name, smallBlind, bigBlind, location, createdAt, food } = req.body;
+  const { name, smallBlind, bigBlind, location, createdAt, food, groupId } = req.body;
   const userId = req.user.id;
   const userRole = req.user.role;
 
@@ -1087,11 +1087,11 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
     await new Promise((resolve, reject) => {
       const updateQuery = `
         UPDATE tables 
-        SET name = ?, smallBlind = ?, bigBlind = ?, location = ?, createdAt = ?, food = ?
+        SET name = ?, smallBlind = ?, bigBlind = ?, location = ?, createdAt = ?, food = ?, groupId = ?
         WHERE id = ?
       `;
-      console.log('[UPDATE TABLE] Running SQL:', updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, tableId]);
-      db.run(updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, tableId], function(err) {
+      console.log('[UPDATE TABLE] Running SQL:', updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, groupId, tableId]);
+      db.run(updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, groupId, tableId], function(err) {
         if (err) {
           console.error('[UPDATE TABLE] Error updating table:', {
             tableId,
