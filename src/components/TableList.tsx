@@ -207,8 +207,8 @@ const TableList: React.FC = () => {
     try {
       await createTable(
         formData.name,
-        formData.smallBlind,
-        formData.bigBlind,
+        Number(formData.smallBlind),
+        Number(formData.bigBlind),
         formData.groupId,
         formData.location
       );
