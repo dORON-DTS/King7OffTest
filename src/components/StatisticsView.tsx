@@ -38,6 +38,7 @@ import {
   ListItem,
   ListItemText,
   Button,
+  MenuItem,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -296,6 +297,7 @@ const StatisticsView: React.FC = () => {
   const navigate = useNavigate();
   const [minGamesFilter, setMinGamesFilter] = useState<string>('0');
   const [staticTables, setStaticTables] = useState<Table[]>([]);
+  const [filteredTables, setFilteredTables] = useState<Table[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -304,6 +306,8 @@ const StatisticsView: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchQuery, setSearchQuery] = useState<string[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
 
   // Add state to track single game win/loss
   const [singleGameStats, setSingleGameStats] = useState<{ 
@@ -349,6 +353,47 @@ const StatisticsView: React.FC = () => {
   const [isStreakDialogOpen, setIsStreakDialogOpen] = useState(false);
   const [isFoodKingDialogOpen, setIsFoodKingDialogOpen] = useState(false);
 
+  // Fetch groups on component mount
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Authentication required');
+        }
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch groups');
+        const data = await response.json();
+        setGroups(data);
+        // Set first group as default if available
+        if (data.length > 0) {
+          setSelectedGroupId(data[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      }
+    };
+
+    fetchGroups();
+  }, []);
+
+  // Filter tables by selected group
+  const filteredTables = useMemo(() => {
+    if (!selectedGroupId) return staticTables;
+    return staticTables.filter(table => table.groupId === selectedGroupId);
+  }, [staticTables, selectedGroupId]);
+
+  // Get selected group name
+  const selectedGroupName = useMemo(() => {
+    const group = groups.find(g => g.id === selectedGroupId);
+    return group ? group.name : 'All Groups';
+  }, [groups, selectedGroupId]);
+
   // Function to handle sort request
   const handleRequestSort = (event: React.MouseEvent<unknown>, property: keyof PlayerStats) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -372,36 +417,33 @@ const StatisticsView: React.FC = () => {
   const [showScrollHint, setShowScrollHint] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      // Authenticated: use context
-      if (!contextLoading && contextTables.length > 0 && !initialLoadComplete) {
-        // Filter out active tables
-        const inactiveTables = contextTables.filter(table => !table.isActive);
-        setStaticTables(inactiveTables);
-        setInitialLoadComplete(true);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
         setError(null);
+        await fetchTables();
+        setStaticTables(contextTables);
+        setInitialLoadComplete(true);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
       }
-    } else {
-      // Not authenticated: fetch from public endpoint
-      setLoading(true);
-      setError(null);
-      fetch('/api/public/tables')
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to load data');
-          return res.json();
-        })
-        .then(data => {
-          // Filter out active tables
-          const inactiveTables = data.filter((table: Table) => !table.isActive);
-          setStaticTables(inactiveTables);
-          setInitialLoadComplete(true);
-        })
-        .catch(err => {
-          setError('Error loading data: ' + (err.message || 'Unknown error'));
-        })
-        .finally(() => setLoading(false));
+    };
+
+    if (!initialLoadComplete) {
+      fetchData();
     }
-  }, [user, contextLoading, contextTables, initialLoadComplete, fetchTables]);
+  }, [fetchTables, contextTables, initialLoadComplete]);
+
+  // Update filteredTables when staticTables or selectedGroupId changes
+  useEffect(() => {
+    if (!selectedGroupId) {
+      setFilteredTables(staticTables);
+    } else {
+      setFilteredTables(staticTables.filter(table => table.groupId === selectedGroupId));
+    }
+  }, [staticTables, selectedGroupId]);
 
   useEffect(() => {
     // Only run on mobile
@@ -441,7 +483,7 @@ const StatisticsView: React.FC = () => {
     let overallMinLossTableIdx = -1;
 
     // Sort tables by creation date ascending to process in order
-    const sortedTables = [...staticTables]
+    const sortedTables = [...filteredTables]
       .sort((a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
@@ -539,7 +581,7 @@ const StatisticsView: React.FC = () => {
     statsArray.sort((a, b) => b.netResult - a.netResult);
 
     return statsArray;
-  }, [staticTables]);
+  }, [filteredTables]);
 
   // Filtered and sorted stats
   const filteredPlayerStats = useMemo(() => {
@@ -556,22 +598,18 @@ const StatisticsView: React.FC = () => {
     if (playerStats.length === 0) {
       return {
         totalBuyIn: 0,
-        // Removed biggestWinner/Loser based on overall net
         mostPlayed: null,
       };
     }
 
     const totalBuyIn = playerStats.reduce((sum, stat) => sum + stat.totalBuyIn, 0);
     
-    // Removed logic for overall winner/loser
-
     // Sort by tables played
     const sortedByTablesPlayed = [...playerStats].sort((a, b) => b.tablesPlayed - a.tablesPlayed);
     const mostPlayed = sortedByTablesPlayed.length > 0 ? sortedByTablesPlayed[0] : null;
 
     return {
       totalBuyIn,
-      // Removed biggestWinner/Loser from return
       mostPlayed,
     };
   }, [playerStats]);
@@ -697,7 +735,7 @@ const StatisticsView: React.FC = () => {
     let maxAvgResultPlayer = '-';
 
     // Biggest single game buy-in
-    staticTables.forEach(table => {
+    filteredTables.forEach(table => {
       table.players.forEach(player => {
         if ((player.totalBuyIn || 0) > maxSingleBuyIn) {
           maxSingleBuyIn = player.totalBuyIn || 0;
@@ -723,7 +761,7 @@ const StatisticsView: React.FC = () => {
       biggestAvgBuyIn: { value: maxAvgBuyIn, player: maxAvgBuyInPlayer },
       bestAvgResult: { value: maxAvgResult, player: maxAvgResultPlayer },
     });
-  }, [staticTables, playerStats]);
+  }, [filteredTables, playerStats]);
 
   // After playerStats calculation, add effect to calculate best winning streak
   useEffect(() => {
@@ -732,7 +770,7 @@ const StatisticsView: React.FC = () => {
     let maxStreakPlayer = '-';
     playerStats.forEach(player => {
       // Gather all games for this player
-      const games = staticTables
+      const games = filteredTables
         .filter(table => table.players.some(p => p.name.toLowerCase() === player.name.toLowerCase()))
         .map(table => {
           const p = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
@@ -761,13 +799,13 @@ const StatisticsView: React.FC = () => {
       }
     });
     setBestWinStreak({ value: maxStreak, player: maxStreakPlayer });
-  }, [playerStats, staticTables]);
+  }, [playerStats, filteredTables]);
 
   // After playerStats calculation, add effect to calculate best current streak
   useEffect(() => {
     // For each player, calculate their current win streak
     const playerStreaks = new Map<string, number>();
-    const sortedTables = [...staticTables].sort((a, b) => 
+    const sortedTables = [...filteredTables].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
@@ -812,7 +850,7 @@ const StatisticsView: React.FC = () => {
     });
 
     setBestCurrentStreak({ value: maxStreak, players: playersWithMaxStreak });
-  }, [playerStats, staticTables]);
+  }, [playerStats, filteredTables]);
 
   // Calculate Food Order King
   useEffect(() => {
@@ -820,7 +858,7 @@ const StatisticsView: React.FC = () => {
     const foodHistory: Array<{ date: string, player: string }> = [];
 
     // Sort tables by date descending to get most recent first
-    const sortedTables = [...staticTables].sort((a, b) => 
+    const sortedTables = [...filteredTables].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
@@ -865,7 +903,7 @@ const StatisticsView: React.FC = () => {
       count: maxOrders,
       history: foodHistory
     });
-  }, [staticTables]);
+  }, [filteredTables]);
 
   // Sorted player options for Autocomplete
   const playerOptions = useMemo(() =>
@@ -967,6 +1005,57 @@ const StatisticsView: React.FC = () => {
           }
         }}
       >
+        {/* Group Selection and Title */}
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          justifyContent: 'space-between',
+          mb: 3,
+          gap: 2
+        }}>
+          <Typography variant="h4" sx={{ 
+            color: 'white',
+            fontWeight: 'bold',
+            textAlign: { xs: 'center', sm: 'left' },
+            width: { xs: '100%', sm: 'auto' }
+          }}>
+            Statistics for {selectedGroupName}
+          </Typography>
+          <TextField
+            select
+            label="Select Group"
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+            sx={{
+              minWidth: 200,
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'grey.700',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'grey.500',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: 'grey.400',
+              },
+              '& .MuiSelect-select': {
+                color: 'white',
+              },
+            }}
+          >
+            {groups.map((group) => (
+              <MenuItem key={group.id} value={group.id}>
+                {group.name}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Box>
+
         <Grid container spacing={0.5} sx={{ mb: 4, width: '100%', mx: 0, px: 0 }}>
           <Grid item xs={6} sm={6} md={2.4}>
             <Card sx={statCardSx}>
@@ -975,7 +1064,7 @@ const StatisticsView: React.FC = () => {
                   <span role="img" aria-label="games">🎮</span> Total Games Played
                 </Typography>
                 <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#29b6f6', fontSize: { xs: '2rem', sm: '2.5rem' } }}>
-                  {staticTables.length}
+                  {filteredTables.length}
                 </Typography>
               </CardContent>
             </Card>
@@ -1518,7 +1607,7 @@ const StatisticsView: React.FC = () => {
         open={isDetailDialogOpen}
         onClose={handleCloseDetailDialog}
         playerData={selectedPlayerStats}
-        allTablesData={staticTables} 
+        allTablesData={filteredTables} 
       />
 
       {/* Best Current Streak Dialog */}
