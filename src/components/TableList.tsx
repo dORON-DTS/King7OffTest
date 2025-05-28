@@ -120,6 +120,7 @@ const TableList: React.FC = () => {
     groupId: ''
   });
   const [formErrors, setFormErrors] = useState<Partial<CreateTableFormData>>({});
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Sort tables by creation date (newest first)
@@ -197,16 +198,23 @@ const TableList: React.FC = () => {
            Number(formData.bigBlind) >= Number(formData.smallBlind);
   };
 
-  const handleCreateTable = () => {
-    if (validateForm()) {
-      createTable(
-        formData.name.trim(),
-        Number(formData.smallBlind),
-        Number(formData.bigBlind),
-        formData.location.trim(),
-        formData.groupId
+  const handleCreateTable = async () => {
+    if (!formData.name || !formData.smallBlind || !formData.bigBlind || !formData.groupId) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      await createTable(
+        formData.name,
+        formData.smallBlind,
+        formData.bigBlind,
+        formData.groupId,
+        formData.location
       );
       handleCreateDialogClose();
+    } catch (error) {
+      setError('Failed to create table');
     }
   };
 

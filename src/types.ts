@@ -93,4 +93,8 @@ export interface CreateTableFormData {
   bigBlind: string;
   location: string;
   groupId: string;
+}
+
+export interface CreateTableFunction {
+  createTable: (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string) => void;
 } 
