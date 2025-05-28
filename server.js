@@ -118,10 +118,29 @@ const db = new sqlite3.Database(dbPath, (err) => {
       )
     `);
 
-    // Add groupId column to tables if it doesn't exist
-    db.run(`
-      ALTER TABLE tables ADD COLUMN groupId TEXT REFERENCES groups(id)
-    `);
+    // Check if groupId column exists before adding it
+    db.get("PRAGMA table_info(tables)", [], (err, rows) => {
+      if (err) {
+        console.error('[DB] Error checking table schema:', err);
+        return;
+      }
+      
+      const hasGroupId = rows.some(row => row.name === 'groupId');
+      if (!hasGroupId) {
+        console.log('[DB] Adding groupId column to tables table');
+        db.run(`
+          ALTER TABLE tables ADD COLUMN groupId TEXT REFERENCES groups(id)
+        `, (err) => {
+          if (err) {
+            console.error('[DB] Error adding groupId column:', err);
+          } else {
+            console.log('[DB] groupId column added successfully');
+          }
+        });
+      } else {
+        console.log('[DB] groupId column already exists');
+      }
+    });
   }
 });
 
