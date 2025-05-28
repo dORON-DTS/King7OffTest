@@ -499,8 +499,8 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Add getTable function
-  const getTable = (id: string): Table | undefined => {
-    return tables.find(table => table.id === id);
+  const getTable = (id: string): Table | null => {
+    return tables.find(table => table.id === id) || null;
   };
 
   const contextValue = {
