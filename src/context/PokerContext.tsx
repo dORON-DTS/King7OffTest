@@ -100,52 +100,31 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // No polling interval
   }, [fetchTables, user, userLoading]); // Add user and userLoading as dependencies
 
-  const createTable = async (name: string, smallBlind: number, bigBlind: number, location?: string, groupId: string) => {
+  const createTable = async (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      const tableData = {
-        id: uuidv4(),
-        name,
-        smallBlind,
-        bigBlind,
-        location,
-        groupId,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        creatorId: uuidv4(),
-      };
-      
-      console.log('Creating table with data:', tableData); // Debug log
-      console.log('Sending to:', `${process.env.REACT_APP_API_URL}/api/tables`); // Debug log
-      
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tables`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(tableData),
+        body: JSON.stringify({
+          name,
+          smallBlind,
+          bigBlind,
+          groupId,
+          location
+        }),
       });
 
-      console.log('Create table response status:', response.status); // Debug log
-      
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          showTransientError('You do not have permission to perform this action');
-          return;
-        }
-        const errorText = await response.text();
-        console.error('Error response:', errorText); // Debug log
-        throw new Error(`Failed to create table: ${errorText}`);
+        throw new Error('Failed to create table');
       }
 
-      await fetchTables();
+      const newTable = await response.json();
+      setTables(prevTables => [...prevTables, newTable]);
     } catch (error) {
       console.error('Error creating table:', error);
+      throw error;
     }
   };
 
