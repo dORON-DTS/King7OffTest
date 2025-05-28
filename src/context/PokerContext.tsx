@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from './UserContext';
-import { Table, Player, BuyIn, CashOut } from '../types';
+import { Table, Player, BuyIn, CashOut, Group } from '../types';
 
-interface PokerContextType {
+export interface PokerContextType {
   tables: Table[];
-  getTable: (id: string) => Table | undefined;
+  groups: Group[];
+  getTable: (id: string) => Table | null;
   createTable: (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string) => void;
-  deleteTable: (tableId: string) => void;
+  deleteTable: (id: string) => void;
   addPlayer: (tableId: string, name: string, chips: number, nickname?: string) => void;
   removePlayer: (tableId: string, playerId: string) => void;
   updatePlayerChips: (tableId: string, playerId: string, newChips: number) => void;
@@ -19,16 +20,14 @@ interface PokerContextType {
   fetchTables: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
-  updateTable: (
-    tableId: string,
-    data: { name: string; smallBlind: number; bigBlind: number; location: string; createdAt: Date; food?: string }
-  ) => Promise<void>;
+  updateTable: (tableId: string, tableData: Partial<Table>) => Promise<void>;
 }
 
 const PokerContext = createContext<PokerContextType | undefined>(undefined);
 
 export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tables, setTables] = useState<Table[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,6 +98,25 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     // No polling interval
   }, [fetchTables, user, userLoading]); // Add user and userLoading as dependencies
+
+  // Fetch groups on mount
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch groups');
+        }
+        const groupsData = await response.json();
+        setGroups(groupsData);
+      } catch (err) {
+        console.error('Error fetching groups:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      }
+    };
+
+    fetchGroups();
+  }, []);
 
   const createTable = async (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string) => {
     try {
@@ -487,6 +505,7 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const contextValue = {
     tables,
+    groups,
     getTable,
     createTable,
     deleteTable,
