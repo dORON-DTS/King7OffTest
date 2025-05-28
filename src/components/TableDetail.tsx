@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePoker } from '../context/PokerContext';
-import { Player, BuyIn, CashOut, EditForm, EditFormErrors } from '../types';
+import { useUser } from '../context/UserContext';
+import { Player, BuyIn, CashOut, EditForm, EditFormErrors, Group } from '../types';
 import { 
   Box, 
   Typography, 
@@ -22,7 +23,8 @@ import {
   Divider,
   Snackbar,
   Alert,
-  Autocomplete
+  Autocomplete,
+  MenuItem
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -38,7 +40,8 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 const TableDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable } = usePoker();
+  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups } = usePoker();
+  const { user } = useUser();
   
   // Dialog state
   const [openDialog, setOpenDialog] = useState(false);
@@ -85,7 +88,8 @@ const TableDetail: React.FC = () => {
     bigBlind: '',
     location: '',
     date: new Date(),
-    food: ''
+    food: '',
+    groupId: ''
   });
   const [editFormErrors, setEditFormErrors] = useState<EditFormErrors>({});
 
@@ -100,7 +104,8 @@ const TableDetail: React.FC = () => {
         bigBlind: table.bigBlind?.toString() || '',
         location: table.location || '',
         date: new Date(table.createdAt),
-        food: table.food || ''
+        food: table.food || '',
+        groupId: table.groupId || ''
       });
       setEditFormErrors({});
     }
@@ -388,7 +393,8 @@ const TableDetail: React.FC = () => {
           bigBlind: Number(editForm.bigBlind),
           location: editForm.location,
           createdAt: editForm.date,
-          food: editForm.food
+          food: editForm.food,
+          groupId: editForm.groupId
         });
         setEditDialogOpen(false);
       } catch (error) {
@@ -998,6 +1004,24 @@ const TableDetail: React.FC = () => {
             sx={{ mb: 2 }}
             placeholder="Optional"
           />
+          <TextField
+            select
+            label="Group"
+            required
+            value={editForm.groupId}
+            onChange={handleEditInputChange('groupId')}
+            error={!!editFormErrors.groupId}
+            helperText={editFormErrors.groupId}
+            fullWidth
+            sx={{ mb: 2 }}
+            disabled={!user || (user.role !== 'admin' && user.role !== 'editor')}
+          >
+            {groups.map((group) => (
+              <MenuItem key={group.id} value={group.id}>
+                {group.name}
+              </MenuItem>
+            ))}
+          </TextField>
           <Autocomplete
             options={sortedPlayers}
             getOptionLabel={(option) => option.name}

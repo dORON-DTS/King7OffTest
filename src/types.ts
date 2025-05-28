@@ -75,6 +75,7 @@ export interface EditForm {
   location: string;
   date: Date;
   food: string;
+  groupId: string;
 }
 
 export interface EditFormErrors {
