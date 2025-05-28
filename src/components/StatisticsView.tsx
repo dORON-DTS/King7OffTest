@@ -48,6 +48,12 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PetsIcon from '@mui/icons-material/Pets';
 import styles from './StatisticsView.module.css';
 
+// Add Group interface
+interface Group {
+  id: string;
+  name: string;
+}
+
 // Helper type for sorting
 type Order = 'asc' | 'desc';
 
