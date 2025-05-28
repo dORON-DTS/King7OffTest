@@ -119,7 +119,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     `);
 
     // Check if groupId column exists before adding it
-    db.get("PRAGMA table_info(tables)", [], (err, rows) => {
+    db.all("PRAGMA table_info(tables)", [], (err, rows) => {
       if (err) {
         console.error('[DB] Error checking table schema:', err);
         return;
