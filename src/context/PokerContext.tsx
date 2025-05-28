@@ -6,7 +6,7 @@ import { Table, Player, BuyIn, CashOut } from '../types';
 interface PokerContextType {
   tables: Table[];
   getTable: (id: string) => Table | undefined;
-  createTable: (name: string, smallBlind: number, bigBlind: number, location?: string, groupId: string) => void;
+  createTable: (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string) => void;
   deleteTable: (tableId: string) => void;
   addPlayer: (tableId: string, name: string, chips: number, nickname?: string) => void;
   removePlayer: (tableId: string, playerId: string) => void;
