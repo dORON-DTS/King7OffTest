@@ -139,7 +139,16 @@ const TableList: React.FC = () => {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch groups');
       const data = await response.json();
       setGroups(data);
