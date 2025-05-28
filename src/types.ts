@@ -25,6 +25,15 @@ export interface CashOut {
   timestamp: Date;
 }
 
+export interface Group {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  createdBy: string;
+  isActive: boolean;
+}
+
 export interface Table {
   id: string;
   name: string;
@@ -36,6 +45,7 @@ export interface Table {
   creatorId: string;
   location?: string;
   food?: string;
+  groupId: string;
 }
 
 export interface PlayerStats {
@@ -82,4 +92,5 @@ export interface CreateTableFormData {
   smallBlind: string;
   bigBlind: string;
   location: string;
+  groupId: string;
 } 

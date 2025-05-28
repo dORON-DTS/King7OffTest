@@ -6,7 +6,7 @@ import { Table, Player, BuyIn, CashOut } from '../types';
 interface PokerContextType {
   tables: Table[];
   getTable: (id: string) => Table | undefined;
-  createTable: (name: string, smallBlind: number, bigBlind: number, location?: string) => void;
+  createTable: (name: string, smallBlind: number, bigBlind: number, location?: string, groupId: string) => void;
   deleteTable: (tableId: string) => void;
   addPlayer: (tableId: string, name: string, chips: number, nickname?: string) => void;
   removePlayer: (tableId: string, playerId: string) => void;
@@ -100,7 +100,7 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // No polling interval
   }, [fetchTables, user, userLoading]); // Add user and userLoading as dependencies
 
-  const createTable = async (name: string, smallBlind: number, bigBlind: number, location?: string) => {
+  const createTable = async (name: string, smallBlind: number, bigBlind: number, location?: string, groupId: string) => {
     try {
       const token = getAuthToken();
       if (!token) {
@@ -113,6 +113,7 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         smallBlind,
         bigBlind,
         location,
+        groupId,
         isActive: true,
         createdAt: new Date().toISOString(),
         creatorId: uuidv4(),

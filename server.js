@@ -104,6 +104,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
       }
     });
     // --- End ensure admin user ---
+
+    // Create groups table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS groups (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        createdAt TEXT NOT NULL,
+        createdBy TEXT NOT NULL,
+        isActive INTEGER DEFAULT 1,
+        FOREIGN KEY (createdBy) REFERENCES users(id)
+      )
+    `);
+
+    // Add groupId column to tables if it doesn't exist
+    db.run(`
+      ALTER TABLE tables ADD COLUMN groupId TEXT REFERENCES groups(id)
+    `);
   }
 });
 
@@ -427,21 +445,26 @@ app.get('/api/public/tables', (req, res) => {
 
 // Create new table
 app.post('/api/tables', authenticate, authorize(['admin']), (req, res) => {
-  const { name, smallBlind, bigBlind, location } = req.body;
+  const { name, smallBlind, bigBlind, location, groupId } = req.body;
+  
+  if (!groupId) {
+    return res.status(400).json({ error: 'Group ID is required' });
+  }
+
   const id = uuidv4();
   const createdAt = new Date().toISOString();
   const creatorId = req.user.id;
   const isActive = true;
 
   db.run(
-    'INSERT INTO tables (id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId],
+    'INSERT INTO tables (id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId],
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({ ...req.body, players: [] });
+      res.json({ ...req.body, id, players: [] });
     }
   );
 });
@@ -1339,6 +1362,81 @@ app.get('/api/statistics/players', (req, res) => {
     
     const playerNames = players.map(player => player.name);
     res.json(playerNames);
+  });
+});
+
+// Get all groups
+app.get('/api/groups', authenticate, (req, res) => {
+  db.all('SELECT * FROM groups ORDER BY name', [], (err, groups) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(groups);
+  });
+});
+
+// Create new group (admin only)
+app.post('/api/groups', authenticate, authorize(['admin']), (req, res) => {
+  const { name, description } = req.body;
+  const id = uuidv4();
+  const createdAt = new Date().toISOString();
+  const createdBy = req.user.id;
+
+  db.run(
+    'INSERT INTO groups (id, name, description, createdAt, createdBy) VALUES (?, ?, ?, ?, ?)',
+    [id, name, description, createdAt, createdBy],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ id, name, description, createdAt, createdBy, isActive: true });
+    }
+  );
+});
+
+// Update group (admin only)
+app.put('/api/groups/:id', authenticate, authorize(['admin']), (req, res) => {
+  const { name, description, isActive } = req.body;
+  const groupId = req.params.id;
+
+  db.run(
+    'UPDATE groups SET name = ?, description = ?, isActive = ? WHERE id = ?',
+    [name, description, isActive ? 1 : 0, groupId],
+    function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ id: groupId, name, description, isActive });
+    }
+  );
+});
+
+// Delete group (admin only)
+app.delete('/api/groups/:id', authenticate, authorize(['admin']), (req, res) => {
+  const groupId = req.params.id;
+
+  // First check if there are any tables using this group
+  db.get('SELECT COUNT(*) as count FROM tables WHERE groupId = ?', [groupId], (err, result) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    if (result.count > 0) {
+      res.status(400).json({ error: 'Cannot delete group that has tables assigned to it' });
+      return;
+    }
+
+    db.run('DELETE FROM groups WHERE id = ?', [groupId], function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ message: 'Group deleted successfully' });
+    });
   });
 });
 

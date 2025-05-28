@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePoker } from '../context/PokerContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Table, CreateTableFormData } from '../types';
+import { Table, CreateTableFormData, Group } from '../types';
 import { 
   Box, 
   Typography, 
@@ -20,7 +20,8 @@ import {
   CardContent,
   Tooltip,
   Zoom,
-  Chip
+  Chip,
+  MenuItem
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShareIcon from '@mui/icons-material/Share';
@@ -110,11 +111,13 @@ const TableList: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [tableToDelete, setTableToDelete] = useState<string | null>(null);
   const [showShareAlert, setShowShareAlert] = useState(false);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [formData, setFormData] = useState<CreateTableFormData>({
     name: '',
     smallBlind: '',
     bigBlind: '',
-    location: ''
+    location: '',
+    groupId: ''
   });
   const [formErrors, setFormErrors] = useState<Partial<CreateTableFormData>>({});
   const navigate = useNavigate();
@@ -126,13 +129,32 @@ const TableList: React.FC = () => {
     return dateB.getTime() - dateA.getTime();
   });
 
+  // Fetch groups when dialog opens
+  useEffect(() => {
+    if (createDialogOpen) {
+      fetchGroups();
+    }
+  }, [createDialogOpen]);
+
+  const fetchGroups = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`);
+      if (!response.ok) throw new Error('Failed to fetch groups');
+      const data = await response.json();
+      setGroups(data);
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+    }
+  };
+
   const handleCreateDialogOpen = () => {
     setCreateDialogOpen(true);
     setFormData({
       name: '',
       smallBlind: '',
       bigBlind: '',
-      location: ''
+      location: '',
+      groupId: ''
     });
     setFormErrors({});
   };
@@ -146,6 +168,10 @@ const TableList: React.FC = () => {
     
     if (!formData.name.trim()) {
       errors.name = 'Table name is required';
+    }
+    
+    if (!formData.groupId) {
+      errors.groupId = 'Group is required';
     }
     
     const smallBlind = Number(formData.smallBlind);
@@ -177,7 +203,8 @@ const TableList: React.FC = () => {
         formData.name.trim(),
         Number(formData.smallBlind),
         Number(formData.bigBlind),
-        formData.location.trim()
+        formData.location.trim(),
+        formData.groupId
       );
       handleCreateDialogClose();
     }
@@ -472,6 +499,22 @@ const TableList: React.FC = () => {
               fullWidth
               placeholder="Optional"
             />
+            <TextField
+              select
+              label="Group"
+              required
+              value={formData.groupId}
+              onChange={handleInputChange('groupId')}
+              error={!!formErrors.groupId}
+              helperText={formErrors.groupId}
+              fullWidth
+            >
+              {groups.map((group) => (
+                <MenuItem key={group.id} value={group.id}>
+                  {group.name}
+                </MenuItem>
+              ))}
+            </TextField>
           </Stack>
         </DialogContent>
         <DialogActions>
