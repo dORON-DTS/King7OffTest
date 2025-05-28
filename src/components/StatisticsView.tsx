@@ -297,7 +297,6 @@ const StatisticsView: React.FC = () => {
   const navigate = useNavigate();
   const [minGamesFilter, setMinGamesFilter] = useState<string>('0');
   const [staticTables, setStaticTables] = useState<Table[]>([]);
-  const [filteredTables, setFilteredTables] = useState<Table[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -435,41 +434,6 @@ const StatisticsView: React.FC = () => {
       fetchData();
     }
   }, [fetchTables, contextTables, initialLoadComplete]);
-
-  // Update filteredTables when staticTables or selectedGroupId changes
-  useEffect(() => {
-    if (!selectedGroupId) {
-      setFilteredTables(staticTables);
-    } else {
-      setFilteredTables(staticTables.filter(table => table.groupId === selectedGroupId));
-    }
-  }, [staticTables, selectedGroupId]);
-
-  useEffect(() => {
-    // Only run on mobile
-    const checkScroll = () => {
-      if (window.innerWidth > 600) {
-        setShowScrollHint(false);
-        return;
-      }
-      const el = tableScrollRef.current;
-      if (el && el.scrollWidth > el.clientWidth + 10) {
-        setShowScrollHint(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
-      } else {
-        setShowScrollHint(false);
-      }
-    };
-    checkScroll();
-    window.addEventListener('resize', checkScroll);
-    const el = tableScrollRef.current;
-    if (el) {
-      el.addEventListener('scroll', checkScroll);
-    }
-    return () => {
-      window.removeEventListener('resize', checkScroll);
-      if (el) el.removeEventListener('scroll', checkScroll);
-    };
-  }, []);
 
   // Calculate player stats
   const playerStats = useMemo(() => {
