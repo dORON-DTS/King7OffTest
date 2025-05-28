@@ -131,18 +131,24 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const createTable = async (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string) => {
     try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tables`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           name,
           smallBlind,
           bigBlind,
-          groupId,
-          location
-        }),
+          location,
+          groupId
+        })
       });
 
       if (!response.ok) {
