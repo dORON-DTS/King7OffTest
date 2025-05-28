@@ -103,7 +103,7 @@ const GroupManagementDialog: React.FC<GroupManagementDialogProps> = ({ open, onC
     }
   };
 
-  if (!user?.isAdmin) {
+  if (!user || user.role !== 'admin') {
     return null;
   }
 
