@@ -436,11 +436,8 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const updateTable = async (
-    tableId: string,
-    data: { name: string; smallBlind: number; bigBlind: number; location: string; createdAt: Date; food?: string }
-  ) => {
-    console.log('[UPDATE TABLE] Attempting to update table:', { tableId, data });
+  const updateTable = async (tableId: string, tableData: Partial<Table>) => {
+    console.log('[UPDATE TABLE] Attempting to update table:', { tableId, tableData });
     try {
       const token = getAuthToken();
       if (!token) {
@@ -456,12 +453,8 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          name: data.name,
-          smallBlind: Number(data.smallBlind),
-          bigBlind: Number(data.bigBlind),
-          location: data.location || '',
-          createdAt: data.createdAt.toISOString(),
-          food: data.food || ''
+          ...tableData,
+          createdAt: tableData.createdAt ? new Date(tableData.createdAt).toISOString() : undefined
         }),
       });
 
