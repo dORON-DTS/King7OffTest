@@ -103,7 +103,16 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`);
+        const token = getAuthToken();
+        if (!token) {
+          throw new Error('Authentication required');
+        }
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch groups');
         }
@@ -115,8 +124,10 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     };
 
-    fetchGroups();
-  }, []);
+    if (!userLoading && user) {
+      fetchGroups();
+    }
+  }, [user, userLoading]);
 
   const createTable = async (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string) => {
     try {
