@@ -157,6 +157,7 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const newTable = await response.json();
       setTables(prevTables => [...prevTables, newTable]);
+      setLastFetchTime(0); // Reset lastFetchTime to force a fresh fetch
     } catch (error) {
       console.error('Error creating table:', error);
       throw error;
