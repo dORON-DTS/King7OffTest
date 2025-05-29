@@ -299,6 +299,7 @@ const LandingPage: React.FC = () => {
             variant="contained"
             size="large"
             onClick={() => navigate('/statistics')}
+            startIcon={<BarChartIcon />}
             sx={{
               bgcolor: '#43a047',
               color: '#fff',
@@ -312,12 +313,13 @@ const LandingPage: React.FC = () => {
               width: { xs: '80%', sm: 'auto' }
             }}
           >
-            VIEW STATISTICS
+            Statistics
           </Button>
         <Button
           variant="contained"
           size="large"
           onClick={() => navigate(user ? '/tables' : '/tableslist')}
+          startIcon={<TableChartIcon />}
           sx={{
             bgcolor: '#3498db',
             color: '#fff',
@@ -331,7 +333,7 @@ const LandingPage: React.FC = () => {
             width: { xs: '80%', sm: 'auto' }
           }}
         >
-          {user ? 'GO TO TABLES LIST' : 'LOGIN'}
+          Tables List
         </Button>
         </Box>
       </Box>
