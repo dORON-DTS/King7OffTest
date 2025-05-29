@@ -32,6 +32,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AddIcon from '@mui/icons-material/Add';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { styled } from '@mui/material/styles';
 
 const StyledCard = styled(Card)<{ isActive: boolean }>(({ theme, isActive }) => ({
@@ -396,6 +397,7 @@ const TableList: React.FC = () => {
           variant="outlined" 
           color="secondary"
           onClick={() => navigate('/statistics')} 
+          startIcon={<BarChartIcon />}
           sx={{ 
             borderRadius: 2,
             px: { xs: 2, sm: 4 },
