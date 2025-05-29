@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { usePoker } from '../context/PokerContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, CreateTableFormData, Group } from '../types';
+import { useUser } from '../context/UserContext';
+import CreateGroupDialog from './CreateGroupDialog';
 import { 
   Box, 
   Typography, 
@@ -107,8 +109,10 @@ const ShareButton = styled(StyledIconButton)(({ theme }) => ({
 
 const TableList: React.FC = () => {
   const { tables = [], createTable, deleteTable } = usePoker();
+  const { user } = useUser();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
   const [tableToDelete, setTableToDelete] = useState<string | null>(null);
   const [showShareAlert, setShowShareAlert] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -362,6 +366,32 @@ const TableList: React.FC = () => {
         >
           CREATE NEW TABLE
         </Button>
+        {user?.role === 'admin' && (
+          <Button 
+            variant="contained" 
+            color="secondary"
+            onClick={() => setCreateGroupDialogOpen(true)}
+            startIcon={<GroupIcon />}
+            sx={{ 
+              borderRadius: 2,
+              px: { xs: 2, sm: 4 },
+              py: { xs: 1, sm: 1.5 },
+              fontSize: { xs: '1rem', sm: '1.1rem' },
+              background: '#dc004e',
+              boxShadow: '0 3px 5px 2px rgba(220, 0, 78, .3)',
+              transition: 'all 0.3s ease',
+              width: { xs: '100%', sm: 'auto' },
+              mb: { xs: 1, sm: 0 },
+              '&:hover': {
+                transform: { xs: 'none', sm: 'translateY(-2px)' },
+                boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .4)',
+                background: '#9a0036'
+              }
+            }}
+          >
+            CREATE NEW GROUP
+          </Button>
+        )}
         <Button 
           variant="outlined" 
           color="secondary"
@@ -562,6 +592,16 @@ const TableList: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Create Group Dialog */}
+      <CreateGroupDialog
+        open={createGroupDialogOpen}
+        onClose={() => setCreateGroupDialogOpen(false)}
+        onSuccess={() => {
+          setCreateGroupDialogOpen(false);
+          fetchGroups();
+        }}
+      />
     </Box>
   );
 };
