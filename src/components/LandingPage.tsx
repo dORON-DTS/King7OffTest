@@ -3,6 +3,8 @@ import { Box, Container, Typography, Button } from '@mui/material';
 import { keyframes } from '@mui/system';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import TableChartIcon from '@mui/icons-material/TableChart';
 
 // Card sliding animation
 const slideCard = keyframes`
