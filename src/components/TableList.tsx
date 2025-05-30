@@ -425,7 +425,7 @@ const TableList: React.FC = () => {
           justifyContent: { xs: 'center', sm: 'flex-start' }
         }}>
           {sortedTables.map((table) => (
-            <Grid item xs={12} sm={6} md={2.4} key={table.id}>
+            <Grid item xs={12} sm={6} md={2.4} key={table.id} sx={{ ml: { xs: '-8px', sm: 0 } }}>
               <StyledCard
                 isActive={table.isActive}
                 onClick={() => navigate(`/table/${table.id}`)}
