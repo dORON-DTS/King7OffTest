@@ -417,9 +417,14 @@ const TableList: React.FC = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={2} sx={{ width: '100%', m: 0 }}>
+      <Grid container spacing={2} sx={{ 
+        width: '100%', 
+        m: 0,
+        px: { xs: 1, sm: 2 },
+        justifyContent: { xs: 'center', sm: 'flex-start' }
+      }}>
         {sortedTables.map((table) => (
-          <Grid item xs={12} sm={6} md={2.4} key={table.id}>
+          <Grid item xs={11} sm={6} md={2.4} key={table.id}>
             <StyledCard
               isActive={table.isActive}
               onClick={() => navigate(`/table/${table.id}`)}
