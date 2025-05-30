@@ -304,13 +304,14 @@ const LandingPage: React.FC = () => {
               bgcolor: '#43a047',
               color: '#fff',
               fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
-              padding: { xs: '8px 16px', sm: '12px 24px', md: '16px 32px' },
+              padding: { xs: '12px 24px', sm: '12px 24px', md: '16px 32px' },
               '&:hover': {
                 bgcolor: '#388e3c'
               },
               boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
               borderRadius: 2,
-              width: { xs: '80%', sm: 'auto' }
+              width: { xs: '100%', sm: 'auto' },
+              marginBottom: { xs: 2, sm: 0 }
             }}
           >
             Statistics
@@ -324,13 +325,13 @@ const LandingPage: React.FC = () => {
             bgcolor: '#3498db',
             color: '#fff',
             fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
-            padding: { xs: '8px 16px', sm: '12px 24px', md: '16px 32px' },
+            padding: { xs: '12px 24px', sm: '12px 24px', md: '16px 32px' },
             '&:hover': {
               bgcolor: '#2980b9'
             },
             boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
             borderRadius: 2,
-            width: { xs: '80%', sm: 'auto' }
+            width: { xs: '100%', sm: 'auto' }
           }}
         >
           Tables List
