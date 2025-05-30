@@ -417,78 +417,80 @@ const TableList: React.FC = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={2} sx={{ 
-        width: '100%', 
-        m: 0,
-        px: { xs: 1, sm: 2 },
-        justifyContent: { xs: 'center', sm: 'flex-start' }
-      }}>
-        {sortedTables.map((table) => (
-          <Grid item xs={11} sm={6} md={2.4} key={table.id}>
-            <StyledCard
-              isActive={table.isActive}
-              onClick={() => navigate(`/table/${table.id}`)}
-              sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 0 24px 4px rgba(33,150,243,0.2), 0 12px 32px rgba(0,0,0,0.5)' } }}
-            >
-              <CardContent sx={{ p: 1 }}>
-                <Box sx={{ position: 'relative', mb: 1, minHeight: 32 }}>
-                  <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', textAlign: 'center', width: '100%' }}>
-                    {table.name}
-                  </Typography>
-                  <ActionButtons className="action-buttons" sx={{ position: 'absolute', top: 0, right: 0 }}>
-                    <Tooltip title="Delete Table" TransitionComponent={Zoom}>
-                      <DeleteButton onClick={(e) => { e.stopPropagation(); handleDeleteClick(table.id, e); }}>
-                        <DeleteIcon />
-                      </DeleteButton>
-                    </Tooltip>
-                    <Tooltip title="Share Table" TransitionComponent={Zoom}>
-                      <ShareButton onClick={(e) => { e.stopPropagation(); handleShare(table.id, e); }}>
-                        <ShareIcon />
-                      </ShareButton>
-                    </Tooltip>
-                  </ActionButtons>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                  <Chip
-                    label={table.isActive ? 'Active' : 'Inactive'}
-                    color={table.isActive ? 'success' : 'default'}
-                    sx={{ bgcolor: table.isActive ? '#4caf50' : '#757575', color: 'white', fontWeight: 'bold', fontSize: '0.75rem', height: 22 }}
-                  />
-                  <Chip
-                    icon={<GroupIcon />}
-                    label={`${table.players.length} Players`}
-                    sx={{ bgcolor: '#2196f3', color: 'white', fontSize: '0.75rem', height: 22 }}
-                  />
-                </Box>
-
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AttachMoneyIcon sx={{ color: '#4caf50' }} />
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
-                      Blinds: {table.smallBlind}/{table.bigBlind}
+      <Box sx={{ width: '100%', maxWidth: { xs: 400, sm: '100%' }, mx: { xs: 'auto', sm: 0 } }}>
+        <Grid container spacing={2} sx={{ 
+          width: '100%', 
+          m: 0,
+          px: { xs: 0, sm: 2 },
+          justifyContent: { xs: 'center', sm: 'flex-start' }
+        }}>
+          {sortedTables.map((table) => (
+            <Grid item xs={12} sm={6} md={2.4} key={table.id}>
+              <StyledCard
+                isActive={table.isActive}
+                onClick={() => navigate(`/table/${table.id}`)}
+                sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 0 24px 4px rgba(33,150,243,0.2), 0 12px 32px rgba(0,0,0,0.5)' } }}
+              >
+                <CardContent sx={{ p: 1 }}>
+                  <Box sx={{ position: 'relative', mb: 1, minHeight: 32 }}>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', textAlign: 'center', width: '100%' }}>
+                      {table.name}
                     </Typography>
+                    <ActionButtons className="action-buttons" sx={{ position: 'absolute', top: 0, right: 0 }}>
+                      <Tooltip title="Delete Table" TransitionComponent={Zoom}>
+                        <DeleteButton onClick={(e) => { e.stopPropagation(); handleDeleteClick(table.id, e); }}>
+                          <DeleteIcon />
+                        </DeleteButton>
+                      </Tooltip>
+                      <Tooltip title="Share Table" TransitionComponent={Zoom}>
+                        <ShareButton onClick={(e) => { e.stopPropagation(); handleShare(table.id, e); }}>
+                          <ShareIcon />
+                        </ShareButton>
+                      </Tooltip>
+                    </ActionButtons>
                   </Box>
-                  {table.location && (
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                    <Chip
+                      label={table.isActive ? 'Active' : 'Inactive'}
+                      color={table.isActive ? 'success' : 'default'}
+                      sx={{ bgcolor: table.isActive ? '#4caf50' : '#757575', color: 'white', fontWeight: 'bold', fontSize: '0.75rem', height: 22 }}
+                    />
+                    <Chip
+                      icon={<GroupIcon />}
+                      label={`${table.players.length} Players`}
+                      sx={{ bgcolor: '#2196f3', color: 'white', fontSize: '0.75rem', height: 22 }}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <LocationOnIcon sx={{ color: '#2196f3' }} />
+                      <AttachMoneyIcon sx={{ color: '#4caf50' }} />
                       <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
-                        {table.location}
+                        Blinds: {table.smallBlind}/{table.bigBlind}
                       </Typography>
                     </Box>
-                  )}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CalendarTodayIcon sx={{ color: '#2196f3' }} />
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
-                      {formatDate(table.createdAt)}
-                    </Typography>
+                    {table.location && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <LocationOnIcon sx={{ color: '#2196f3' }} />
+                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
+                          {table.location}
+                        </Typography>
+                      </Box>
+                    )}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarTodayIcon sx={{ color: '#2196f3' }} />
+                      <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
+                        {formatDate(table.createdAt)}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              </CardContent>
-            </StyledCard>
-          </Grid>
-        ))}
-      </Grid>
+                </CardContent>
+              </StyledCard>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
       <Snackbar 
         open={showShareAlert} 
