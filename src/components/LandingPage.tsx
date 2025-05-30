@@ -120,7 +120,11 @@ const LandingPage: React.FC = () => {
             mb: { xs: 3, sm: 6 },
             fontWeight: 'bold',
             textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-            fontSize: { xs: '1.8rem', sm: '2.5rem', md: '3.5rem' }
+            fontSize: { xs: '1.8rem', sm: '2.5rem', md: '3.5rem' },
+            background: 'linear-gradient(45deg, #fff 30%, #e0e0e0 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            transition: 'all 0.3s ease'
           }}
         >
           Welcome to Poker Management
@@ -277,7 +281,11 @@ const LandingPage: React.FC = () => {
               animation: `${fadeInOut} 6.5s infinite`,
               opacity: 0,
               maxWidth: '800px',
-              fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' }
+              fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+              textShadow: '1px 1px 2px rgba(0,0,0,0.7)',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(0,0,0,0.2)'
             }}
           >
             {pokerQuotes[currentQuote]}
@@ -306,12 +314,15 @@ const LandingPage: React.FC = () => {
               fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
               padding: { xs: '12px 24px', sm: '12px 24px', md: '16px 32px' },
               '&:hover': {
-                bgcolor: '#388e3c'
+                bgcolor: '#388e3c',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 8px rgba(0,0,0,0.3)'
               },
               boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
               borderRadius: 2,
               width: { xs: '100%', sm: 'auto' },
-              marginBottom: { xs: 2, sm: 0 }
+              marginBottom: { xs: 2, sm: 0 },
+              transition: 'all 0.3s ease'
             }}
           >
             Statistics
@@ -327,11 +338,14 @@ const LandingPage: React.FC = () => {
             fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
             padding: { xs: '12px 24px', sm: '12px 24px', md: '16px 32px' },
             '&:hover': {
-              bgcolor: '#2980b9'
+              bgcolor: '#2980b9',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 8px rgba(0,0,0,0.3)'
             },
             boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
             borderRadius: 2,
-            width: { xs: '100%', sm: 'auto' }
+            width: { xs: '100%', sm: 'auto' },
+            transition: 'all 0.3s ease'
           }}
         >
           Tables List
