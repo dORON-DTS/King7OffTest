@@ -389,8 +389,8 @@ const StatisticsView: React.FC = () => {
 
   // Filter tables by selected group
   const filteredTables = useMemo(() => {
-    if (!selectedGroupId) return staticTables;
-    return staticTables.filter(table => table.groupId === selectedGroupId);
+    if (!selectedGroupId) return staticTables.filter(table => !table.isActive);
+    return staticTables.filter(table => table.groupId === selectedGroupId && !table.isActive);
   }, [staticTables, selectedGroupId]);
 
   // Get selected group name
@@ -928,6 +928,19 @@ const StatisticsView: React.FC = () => {
       transform: { sm: 'scale(1.04)', xs: 'none' },
     },
   };
+
+  useEffect(() => {
+    // לוגים שיעזרו להבין את הבעיה
+    const inactiveTables = staticTables.filter(table => !table.isActive);
+    const inactiveGroupTables = staticTables.filter(table => table.groupId === selectedGroupId && !table.isActive);
+    console.log('selectedGroupId:', selectedGroupId);
+    console.log('staticTables.length:', staticTables.length);
+    console.log('inactiveTables.length:', inactiveTables.length);
+    console.log('inactiveTables groupIds:', inactiveTables.map(t => t.groupId));
+    console.log('inactiveGroupTables.length:', inactiveGroupTables.length);
+    console.log('inactiveGroupTables ids:', inactiveGroupTables.map(t => t.id));
+    console.log('filteredTables.length:', filteredTables.length);
+  }, [staticTables, selectedGroupId, filteredTables]);
 
   if (loading || (user && contextLoading)) {
     return (
