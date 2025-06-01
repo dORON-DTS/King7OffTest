@@ -270,7 +270,8 @@ app.post('/api/login', (req, res) => {
       // Generate token
       const token = jwt.sign(
         { id: user.id, username: user.username, role: user.role },
-        process.env.JWT_SECRET || 'your-secret-key'
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '10y' }
       );
 
       console.log('[Login] Token generated successfully:', {
