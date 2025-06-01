@@ -812,6 +812,31 @@ app.put('/api/users/:id/role', authenticate, authorize(['admin']), (req, res) =>
   });
 });
 
+// Update user password (admin only)
+app.put('/api/users/:id/password', authenticate, authorize(['admin']), (req, res) => {
+  const userId = req.params.id;
+  const { password } = req.body;
+
+  if (!password || password.length < 4) {
+    return res.status(400).json({ error: 'Password is required and must be at least 4 characters' });
+  }
+
+  bcrypt.hash(password, 10, (err, hash) => {
+    if (err) {
+      console.error('[Users] Error hashing password:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    db.run('UPDATE users SET password = ? WHERE id = ?', [hash, userId], function(err) {
+      if (err) {
+        console.error('[Users] Error updating password:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      res.json({ message: 'Password updated successfully' });
+    });
+  });
+});
+
 // Add a debug endpoint to check database status
 app.get('/api/debug/db', (req, res) => {
   console.log('[Debug] Checking database status');
