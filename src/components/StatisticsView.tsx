@@ -422,24 +422,12 @@ const StatisticsView: React.FC = () => {
   const [showScrollHint, setShowScrollHint] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        await fetchTables();
-        setStaticTables(contextTables);
-        setInitialLoadComplete(true);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchTables();
+  }, [fetchTables]);
 
-    if (!initialLoadComplete) {
-      fetchData();
-    }
-  }, [fetchTables, contextTables, initialLoadComplete]);
+  useEffect(() => {
+    setStaticTables(contextTables);
+  }, [contextTables]);
 
   // Calculate player stats
   const playerStats = useMemo(() => {
@@ -928,19 +916,6 @@ const StatisticsView: React.FC = () => {
       transform: { sm: 'scale(1.04)', xs: 'none' },
     },
   };
-
-  useEffect(() => {
-    // לוגים שיעזרו להבין את הבעיה
-    const inactiveTables = staticTables.filter(table => !table.isActive);
-    const inactiveGroupTables = staticTables.filter(table => table.groupId === selectedGroupId && !table.isActive);
-    console.log('selectedGroupId:', selectedGroupId);
-    console.log('staticTables.length:', staticTables.length);
-    console.log('inactiveTables.length:', inactiveTables.length);
-    console.log('inactiveTables groupIds:', inactiveTables.map(t => t.groupId));
-    console.log('inactiveGroupTables.length:', inactiveGroupTables.length);
-    console.log('inactiveGroupTables ids:', inactiveGroupTables.map(t => t.id));
-    console.log('filteredTables.length:', filteredTables.length);
-  }, [staticTables, selectedGroupId, filteredTables]);
 
   if (loading || (user && contextLoading)) {
     return (
