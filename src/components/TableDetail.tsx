@@ -128,7 +128,6 @@ const TableDetail: React.FC = () => {
       const names = await response.json();
       setUniquePlayerNames(names);
     } catch (error) {
-      console.error('Error fetching player names:', error);
       showTransientError('Failed to load player names');
     } finally {
       setLoadingNames(false);

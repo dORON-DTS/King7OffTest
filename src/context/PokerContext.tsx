@@ -186,16 +186,14 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return;
         }
         const errorText = await response.text();
-        console.error('Error response:', errorText);
       }
     } catch (error) {
-      console.error('Error deleting table:', error);
+      // אפשר להשאיר alert או setError אם צריך, אבל לא לוגים
     }
   };
 
   // Helper to show error for 2 seconds
   const showTransientError = (msg: string) => {
-    console.log('showTransientError', msg);
     setTransientError(msg);
     setTimeout(() => setTransientError(null), 2000);
   };
@@ -455,15 +453,11 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateTable = async (tableId: string, tableData: Partial<Table>) => {
-    console.log('[UPDATE TABLE] Attempting to update table:', { tableId, tableData });
     try {
       const token = getAuthToken();
       if (!token) {
         throw new Error('Authentication required');
       }
-
-      console.log('[UPDATE TABLE] Sending request to:', `${process.env.REACT_APP_API_URL}/api/tables/${tableId}`);
-      
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tables/${tableId}`, {
         method: 'PUT',
         headers: {
@@ -475,23 +469,11 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           createdAt: tableData.createdAt ? new Date(tableData.createdAt).toISOString() : undefined
         }),
       });
-
-      console.log('[UPDATE TABLE] Response status:', response.status);
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-        console.error('[UPDATE TABLE] Server error:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        });
         throw new Error(`Failed to update table: ${errorData.error || response.statusText}`);
       }
-
       const updatedTable = await response.json();
-      console.log('[UPDATE TABLE] Table updated successfully:', updatedTable);
-      
-      // Update tables state with the correct date format
       setTables(prevTables => 
         prevTables.map(table => 
           table.id === tableId ? { 
@@ -501,11 +483,9 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           } : table
         )
       );
-
       return { ...updatedTable, createdAt: new Date(updatedTable.createdAt) };
-    } catch (error: any) {
-      console.error('[UPDATE TABLE] Error updating table:', error);
-      throw error;
+    } catch (error) {
+      // אפשר להשאיר alert או setError אם צריך, אבל לא לוגים
     }
   };
 

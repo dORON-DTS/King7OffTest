@@ -31,27 +31,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserInfo = async (token: string) => {
     try {
-      console.log("[UserContext] Fetching user info with token:", token);
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      console.log("[UserContext] User info response status:", response.status);
       if (response.status === 304) {
-        console.log("[UserContext] No changes to user info (304 Not Modified)");
         return; // Don't try to parse JSON
       }
       if (response.ok) {
         const userData = await response.json();
-        console.log("[UserContext] User info data:", userData);
         setUser(userData);
       } else {
-        console.log("[UserContext] User info fetch failed, logging out");
         logout();
       }
     } catch (err) {
-      console.log("[UserContext] User info fetch error:", err);
       logout();
     } finally {
       setIsLoading(false);
