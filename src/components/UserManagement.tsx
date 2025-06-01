@@ -24,6 +24,7 @@ import {
   Tooltip
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LockResetIcon from '@mui/icons-material/LockReset';
 import { useUser } from '../context/UserContext';
 
 interface User {
@@ -42,6 +43,11 @@ const UserManagement: React.FC = () => {
   const [newRole, setNewRole] = useState('viewer');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
 
   const { user: currentUser } = useUser();
   const currentUserId = currentUser?.id;
@@ -58,6 +64,7 @@ const UserManagement: React.FC = () => {
         throw new Error('Failed to fetch users');
       }
       const data = await response.json();
+      console.log('[UserManagement] Loaded users:', data);
       setUsers(data);
     } catch (error) {
       setError('Error loading users');
@@ -156,6 +163,42 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const handleOpenResetDialog = (userId: string) => {
+    console.log('[UserManagement] Opening reset dialog for user:', userId);
+    setResetUserId(userId);
+    setResetPassword('');
+    setResetError('');
+    setResetSuccess('');
+    setResetDialogOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetUserId || !resetPassword) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${resetUserId}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ password: resetPassword })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to reset password');
+      }
+      setResetSuccess('Password reset successfully');
+      setTimeout(() => {
+        setResetDialogOpen(false);
+        setResetUserId(null);
+        setResetPassword('');
+        setResetSuccess('');
+      }, 1200);
+    } catch (error) {
+      setResetError('Error resetting password');
+    }
+  };
+
   return (
     <Box sx={{ mt: 4, maxWidth: 1200, mx: 'auto' }}>
       <Card sx={{ mb: 4, bgcolor: 'background.paper', borderRadius: 2 }}>
@@ -223,79 +266,87 @@ const UserManagement: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                        {user.username}
-                        <Box sx={{ 
-                          display: { xs: 'flex', sm: 'none' },
-                          flexDirection: 'column',
-                          gap: 0.5,
-                          mt: 1,
-                          fontSize: '0.875rem',
-                          color: 'text.secondary'
-                        }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            Role: 
-                            <Select
-                              value={user.role}
-                              onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                              disabled={user.id === currentUserId}
-                              size="small"
-                              sx={{ 
-                                minWidth: 100,
-                                height: '30px',
-                                '.MuiSelect-select': {
-                                  py: 0.5
-                                }
-                              }}
-                            >
-                              <MenuItem value="viewer">Viewer</MenuItem>
-                              <MenuItem value="editor">Editor</MenuItem>
-                              <MenuItem value="admin">Admin</MenuItem>
-                            </Select>
+                {users.map((user) => {
+                  console.log('[UserManagement] Rendering user:', user.username, user.id);
+                  return (
+                    <TableRow key={user.id} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                          {user.username}
+                          <Box sx={{ 
+                            display: { xs: 'flex', sm: 'none' },
+                            flexDirection: 'column',
+                            gap: 0.5,
+                            mt: 1,
+                            fontSize: '0.875rem',
+                            color: 'text.secondary'
+                          }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              Role: 
+                              <Select
+                                value={user.role}
+                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                disabled={user.id === currentUserId}
+                                size="small"
+                                sx={{ 
+                                  minWidth: 100,
+                                  height: '30px',
+                                  '.MuiSelect-select': {
+                                    py: 0.5
+                                  }
+                                }}
+                              >
+                                <MenuItem value="viewer">Viewer</MenuItem>
+                                <MenuItem value="editor">Editor</MenuItem>
+                                <MenuItem value="admin">Admin</MenuItem>
+                              </Select>
+                            </Box>
+                            <Box>Created: {new Date(user.createdAt).toLocaleDateString()}</Box>
                           </Box>
-                          <Box>Created: {new Date(user.createdAt).toLocaleDateString()}</Box>
                         </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      <Select
-                        value={user.role}
-                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                        disabled={user.id === currentUserId}
-                        sx={{ minWidth: 120 }}
-                      >
-                        <MenuItem value="viewer">Viewer</MenuItem>
-                        <MenuItem value="editor">Editor</MenuItem>
-                        <MenuItem value="admin">Admin</MenuItem>
-                      </Select>
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title="Delete User">
-                        <span>
-                          <IconButton
-                            onClick={() => handleDeleteConfirm(user.id)}
-                            disabled={user.id === currentUserId}
-                            sx={{ 
-                              color: 'error.main',
-                              '&:hover': { 
-                                bgcolor: 'error.main',
-                                color: 'white'
-                              }
-                            }}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                        <Select
+                          value={user.role}
+                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                          disabled={user.id === currentUserId}
+                          sx={{ minWidth: 120 }}
+                        >
+                          <MenuItem value="viewer">Viewer</MenuItem>
+                          <MenuItem value="editor">Editor</MenuItem>
+                          <MenuItem value="admin">Admin</MenuItem>
+                        </Select>
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title="Delete User">
+                          <span>
+                            <IconButton
+                              onClick={() => handleDeleteConfirm(user.id)}
+                              disabled={user.id === currentUserId}
+                              sx={{ color: 'error.main', '&:hover': { bgcolor: 'error.main', color: 'white' } }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title="Reset Password">
+                          <span>
+                            <IconButton
+                              onClick={() => { console.log('[UserManagement] Clicked reset password for:', user.username, user.id); handleOpenResetDialog(user.id); }}
+                              disabled={user.id === currentUserId}
+                              sx={{ color: 'primary.main', ml: 1, '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
+                            >
+                              <LockResetIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
@@ -446,6 +497,40 @@ const UserManagement: React.FC = () => {
             color="error"
           >
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog
+        open={resetDialogOpen}
+        onClose={() => setResetDialogOpen(false)}
+        PaperProps={{ sx: { borderRadius: 2, width: '100%', maxWidth: { xs: '100%', sm: '400px' }, m: { xs: 0, sm: 2 } } }}
+        fullScreen={false}
+      >
+        <DialogTitle sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'primary.main', color: 'white', py: 2 }}>
+          Reset Password
+        </DialogTitle>
+        <DialogContent sx={{ mt: 3, px: 3 }}>
+          <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <TextField
+              label="New Password"
+              type="password"
+              fullWidth
+              value={resetPassword}
+              onChange={(e) => setResetPassword(e.target.value)}
+              autoFocus
+            />
+            {resetError && <Alert severity="error">{resetError}</Alert>}
+            {resetSuccess && <Alert severity="success">{resetSuccess}</Alert>}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: 1, borderColor: 'divider', gap: 1, flexDirection: { xs: 'column', sm: 'row' }, '& > button': { width: { xs: '100%', sm: 'auto' } } }}>
+          <Button onClick={() => setResetDialogOpen(false)} variant="outlined" fullWidth sx={{ color: 'text.secondary', borderColor: 'divider', '&:hover': { borderColor: 'text.primary', bgcolor: 'action.hover' }, order: { xs: 2, sm: 1 } }}>
+            Cancel
+          </Button>
+          <Button onClick={handleResetPassword} variant="contained" disabled={!resetPassword} fullWidth sx={{ bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' }, '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' }, order: { xs: 1, sm: 2 } }}>
+            Reset
           </Button>
         </DialogActions>
       </Dialog>
