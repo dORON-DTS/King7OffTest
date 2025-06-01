@@ -58,7 +58,7 @@ if (process.env.RENDER && !fs.existsSync(dbPath) && fs.existsSync(path.join(__di
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
-    console.error('[DB] Error opening database:', err);
+    console.error('[DB] Error connecting to database:', err);
   } else {
     console.log('[DB] Connected to SQLite database at:', dbPath);
     
@@ -70,40 +70,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.log('[DB] Database is writable and healthy');
       }
     });
-
-    // --- Ensure admin user exists ---
-    db.get('SELECT * FROM users WHERE username = ?', ['admin'], (err, user) => {
-      if (err) {
-        console.error('[DB] Error checking for admin user:', err);
-      } else if (!user) {
-        // Admin user does not exist, create one
-        const adminId = uuidv4();
-        const adminUsername = 'admin';
-        const adminPassword = 'admin123'; // CHANGE THIS PASSWORD AFTER FIRST LOGIN!
-        const adminRole = 'admin';
-        const createdAt = new Date().toISOString();
-        bcrypt.hash(adminPassword, 10, (err, hash) => {
-          if (err) {
-            console.error('[DB] Error hashing admin password:', err);
-          } else {
-            db.run(
-              'INSERT INTO users (id, username, password, role, createdAt) VALUES (?, ?, ?, ?, ?)',
-              [adminId, adminUsername, hash, adminRole, createdAt],
-              function(err) {
-                if (err) {
-                  console.error('[DB] Error creating admin user:', err);
-                } else {
-                  console.log('[DB] Default admin user created! Username: admin, Password: admin123');
-                }
-              }
-            );
-          }
-        });
-      } else {
-        console.log('[DB] Admin user already exists.');
-      }
-    });
-    // --- End ensure admin user ---
 
     // Create groups table
     db.run(`
@@ -117,30 +83,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (createdBy) REFERENCES users(id)
       )
     `);
-
-    // Check if groupId column exists before adding it
-    db.all("PRAGMA table_info(tables)", [], (err, rows) => {
-      if (err) {
-        console.error('[DB] Error checking table schema:', err);
-        return;
-      }
-      
-      const hasGroupId = rows.some(row => row.name === 'groupId');
-      if (!hasGroupId) {
-        console.log('[DB] Adding groupId column to tables table');
-        db.run(`
-          ALTER TABLE tables ADD COLUMN groupId TEXT REFERENCES groups(id)
-        `, (err) => {
-          if (err) {
-            console.error('[DB] Error adding groupId column:', err);
-          } else {
-            console.log('[DB] groupId column added successfully');
-          }
-        });
-      } else {
-        console.log('[DB] groupId column already exists');
-      }
-    });
   }
 });
 
