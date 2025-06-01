@@ -64,7 +64,6 @@ const UserManagement: React.FC = () => {
         throw new Error('Failed to fetch users');
       }
       const data = await response.json();
-      console.log('[UserManagement] Loaded users:', data);
       setUsers(data);
     } catch (error) {
       setError('Error loading users');
@@ -164,7 +163,6 @@ const UserManagement: React.FC = () => {
   };
 
   const handleOpenResetDialog = (userId: string) => {
-    console.log('[UserManagement] Opening reset dialog for user:', userId);
     setResetUserId(userId);
     setResetPassword('');
     setResetError('');
@@ -267,7 +265,6 @@ const UserManagement: React.FC = () => {
               </TableHead>
               <TableBody>
                 {users.map((user) => {
-                  console.log('[UserManagement] Rendering user:', user.username, user.id);
                   return (
                     <TableRow key={user.id} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
                       <TableCell>
@@ -335,7 +332,7 @@ const UserManagement: React.FC = () => {
                         <Tooltip title="Reset Password">
                           <span>
                             <IconButton
-                              onClick={() => { console.log('[UserManagement] Clicked reset password for:', user.username, user.id); handleOpenResetDialog(user.id); }}
+                              onClick={() => { handleOpenResetDialog(user.id); }}
                               disabled={user.id === currentUserId}
                               sx={{ color: 'primary.main', ml: 1, '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
                             >
