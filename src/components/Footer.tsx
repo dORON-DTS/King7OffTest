@@ -26,7 +26,7 @@ const Footer = () => (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1, sm: 0 } }}>
       <Box
         component="img"
-        src="/dtslogo.jpg"
+        src="/dtslogo.png"
         alt="DTS Logo"
         sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'white', p: 0.5 }}
       />
