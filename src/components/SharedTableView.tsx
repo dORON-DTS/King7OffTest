@@ -298,7 +298,7 @@ const SharedTableView: React.FC = () => {
         <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ 
             height: '100%', 
-            bgcolor: '#4caf50', 
+            bgcolor: '#00bcd4', 
             color: 'white',
             transition: 'transform 0.2s',
             '&:hover': {
