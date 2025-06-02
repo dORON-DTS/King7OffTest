@@ -298,7 +298,7 @@ const SharedTableView: React.FC = () => {
         <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ 
             height: '100%', 
-            bgcolor: '#00bcd4', 
+            bgcolor: '#2196f3', 
             color: 'white',
             transition: 'transform 0.2s',
             '&:hover': {
@@ -306,7 +306,7 @@ const SharedTableView: React.FC = () => {
             }
           }}>
             <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
-              <Typography variant="subtitle2" gutterBottom>Players</Typography>
+              <Typography variant="subtitle2" gutterBottom>Total Players</Typography>
               <Typography variant="h5">{players.length}</Typography>
             </CardContent>
           </Card>
@@ -322,7 +322,7 @@ const SharedTableView: React.FC = () => {
             }
           }}>
             <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
-              <Typography variant="subtitle2" gutterBottom>Status</Typography>
+              <Typography variant="subtitle2" gutterBottom>Table Status</Typography>
               <Typography variant="h5">
                 {table.isActive ? 'Active' : 'Inactive'}
               </Typography>
