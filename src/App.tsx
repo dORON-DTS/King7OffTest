@@ -21,6 +21,7 @@ import Login from './components/Login';
 import UserManagement from './components/UserManagement';
 import PersonIcon from '@mui/icons-material/Person';
 import LandingPage from './components/LandingPage';
+import Footer from './components/Footer';
 import './App.css';
 
 // Create emotion cache
@@ -195,6 +196,7 @@ const AppLayout = () => {
       <Container maxWidth={false} sx={{ py: 2 }}>
         <Outlet />
       </Container>
+      <Footer />
     </div>
   );
 };
