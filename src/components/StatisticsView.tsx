@@ -342,7 +342,7 @@ const StatisticsView: React.FC = () => {
 
   // Add new state for Best Current Streak and Food Order King
   const [bestCurrentStreak, setBestCurrentStreak] = useState<{ value: number, players: string[] }>({ value: 0, players: [] });
-  const [foodOrderKing, setFoodOrderKing] = useState<{ player: string, count: number, history: Array<{ date: string, player: string }> }>({ 
+  const [foodOrderKing, setFoodOrderKing] = useState<{ player: string, count: number, history: Array<{ date: string, player: string, tableCreatedAt?: string }> }>({ 
     player: '-', 
     count: 0,
     history: []
@@ -830,7 +830,7 @@ const StatisticsView: React.FC = () => {
   // Calculate Food Order King
   useEffect(() => {
     const foodOrders = new Map<string, number>();
-    const foodHistory: Array<{ date: string, player: string }> = [];
+    const foodHistory: Array<{ date: string, player: string, tableCreatedAt?: string }> = [];
 
     // Sort tables by date descending to get most recent first
     const sortedTables = [...filteredTables].sort((a, b) => 
@@ -847,15 +847,16 @@ const StatisticsView: React.FC = () => {
           // Add to history (up to 20 entries)
           if (foodHistory.length < 20) {
             foodHistory.push({
-              date: new Date(table.createdAt).toLocaleString('he-IL', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit', 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                hour12: false 
+              date: new Date(table.createdAt).toLocaleString('he-IL', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
               }),
-              player: foodOrderer.name
+              player: foodOrderer.name,
+              tableCreatedAt: table.createdAt
             });
           }
         }
