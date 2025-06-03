@@ -1032,7 +1032,8 @@ const StatisticsView: React.FC = () => {
         </Box>
 
         <Grid container spacing={0.5} sx={{ mb: 4, width: '100%', mx: 0, px: 0 }}>
-          <Grid item xs={6} sm={6} md={2.4}>
+          {/* 1. Total Games Played */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1044,7 +1045,8 @@ const StatisticsView: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={6} md={2.4}>
+          {/* 2. Most Games Played */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1065,7 +1067,8 @@ const StatisticsView: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={6} md={2.4}>
+          {/* 3. Total Buy In */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1077,7 +1080,8 @@ const StatisticsView: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={6} md={2.4}>
+          {/* 4. Biggest Single Game Win */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1093,7 +1097,115 @@ const StatisticsView: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={6} md={2.4}>
+          {/* 5. Best Winning Streak */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="fire">🔥</span> Best Winning Streak
+                </Typography>
+                {bestWinStreak.value > 0 ? (
+                  <Typography variant="h5" sx={{ color: '#ffb300', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    {bestWinStreak.player} ({bestWinStreak.value})
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No streaks yet</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          {/* 6. Biggest Single Game Buy-In */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="buy-in">🪙</span> Biggest Single Game Buy-In
+                </Typography>
+                {extraStats.biggestSingleBuyIn.value > 0 ? (
+                  <Typography variant="h5" sx={{ color: '#ffd600', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    {extraStats.biggestSingleBuyIn.player} ({extraStats.biggestSingleBuyIn.value})
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No buy-ins yet</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          {/* 7. Biggest Avg Buy-In */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="credit-card">💳</span> Biggest Avg Buy-In
+                </Typography>
+                {extraStats.biggestAvgBuyIn.value > 0 ? (
+                  <Typography variant="h5" sx={{ color: '#ba68c8', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    {extraStats.biggestAvgBuyIn.player} ({Math.round(extraStats.biggestAvgBuyIn.value)})
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No avg buy-ins yet</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          {/* 8. Best Avg Result */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
+            <Card sx={statCardSx}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="chart">📈</span> Best Avg Result
+                </Typography>
+                {extraStats.bestAvgResult.value !== 0 ? (
+                  <Typography variant="h5" sx={{ color: '#00bcd4', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    {extraStats.bestAvgResult.player} ({Math.round(extraStats.bestAvgResult.value)})
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No avg results yet</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          {/* 9. Best Current Streak */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
+            <Card sx={statCardSx} onClick={bestCurrentStreak.value > 0 ? () => setIsStreakDialogOpen(true) : undefined} style={bestCurrentStreak.value > 0 ? { cursor: 'pointer' } : {}}>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="current-streak">⚡</span> Best Current Streak
+                </Typography>
+                {bestCurrentStreak.value > 0 ? (
+                  <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    {bestCurrentStreak.players[0]} ({bestCurrentStreak.value} Games)
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No current streaks</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          {/* 10. King Of Food Orders */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
+            <Card sx={statCardSx} onClick={foodOrderKing.count > 0 ? () => setIsFoodKingDialogOpen(true) : undefined} style={foodOrderKing.count > 0 ? { cursor: 'pointer' } : {}}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="food-king">🍔</span> King Of Food Orders
+                </Typography>
+                {foodOrderKing.count > 0 ? (
+                  <>
+                    <Typography variant="h5" sx={{ color: '#ff9800', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                      {foodOrderKing.player}
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+                      {foodOrderKing.count} Orders
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No food orders yet</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          {/* 11. Craziest Table (NEW) */}
+          <Grid item xs={6} sm={6} md={2.2} lg={1.09} xl={1}>
             <Card
               sx={statCardSx}
               onClick={craziestTable.table ? () => setIsCraziestTableDialogOpen(true) : undefined}
@@ -1114,31 +1226,6 @@ const StatisticsView: React.FC = () => {
                   </>
                 ) : (
                   <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No tables yet</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={6} md={2.4}>
-            <Card
-              sx={statCardSx}
-              onClick={foodOrderKing.count > 0 ? () => setIsFoodKingDialogOpen(true) : undefined}
-              style={foodOrderKing.count > 0 ? { cursor: 'pointer' } : {}}
-            >
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="food-king">🍔</span> King Of Food Orders
-                </Typography>
-                {foodOrderKing.count > 0 ? (
-                  <>
-                    <Typography variant="h5" sx={{ color: '#ff9800', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                      {foodOrderKing.player}
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
-                      {foodOrderKing.count} Orders
-                    </Typography>
-                  </>
-                ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No food orders yet</Typography>
                 )}
               </CardContent>
             </Card>
