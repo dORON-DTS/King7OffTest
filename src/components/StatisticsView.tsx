@@ -921,7 +921,8 @@ const StatisticsView: React.FC = () => {
     color: 'white',
     textAlign: 'center',
     boxShadow: 3,
-    minHeight: { xs: 120, sm: 160 },
+    minHeight: { xs: 170, sm: 200 },
+    maxHeight: { xs: 170, sm: 200 },
     minWidth: { xs: 'unset', sm: 220 },
     width: '100%',
     display: 'flex',
@@ -1036,7 +1037,7 @@ const StatisticsView: React.FC = () => {
           {/* 1. Total Games Played */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="games">🎮</span> Total Games Played
                 </Typography>
@@ -1049,7 +1050,7 @@ const StatisticsView: React.FC = () => {
           {/* 2. Most Games Played */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="trophy">🏆</span> Most Games Played
                 </Typography>
@@ -1071,7 +1072,7 @@ const StatisticsView: React.FC = () => {
           {/* 3. Total Buy In */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="money">💰</span> Total Buy In
                 </Typography>
@@ -1084,7 +1085,7 @@ const StatisticsView: React.FC = () => {
           {/* 4. Biggest Single Game Win */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="win">🏅</span> Biggest Single Game Win
                 </Typography>
@@ -1101,7 +1102,7 @@ const StatisticsView: React.FC = () => {
           {/* 5. Best Winning Streak */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="fire">🔥</span> Best Winning Streak
                 </Typography>
@@ -1118,7 +1119,7 @@ const StatisticsView: React.FC = () => {
           {/* 6. Biggest Single Game Buy-In */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="buy-in">🪙</span> Biggest Single Game Buy-In
                 </Typography>
@@ -1135,7 +1136,7 @@ const StatisticsView: React.FC = () => {
           {/* 7. Biggest Avg Buy-In */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="credit-card">💳</span> Biggest Avg Buy-In
                 </Typography>
@@ -1152,7 +1153,7 @@ const StatisticsView: React.FC = () => {
           {/* 8. Best Avg Result */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="chart">📈</span> Best Avg Result
                 </Typography>
@@ -1169,7 +1170,7 @@ const StatisticsView: React.FC = () => {
           {/* 9. Best Current Streak */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx} onClick={bestCurrentStreak.value > 0 ? () => setIsStreakDialogOpen(true) : undefined} style={bestCurrentStreak.value > 0 ? { cursor: 'pointer' } : {}}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="current-streak">⚡</span> Best Current Streak
                 </Typography>
@@ -1186,7 +1187,7 @@ const StatisticsView: React.FC = () => {
           {/* 10. King Of Food Orders */}
           <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx} onClick={foodOrderKing.count > 0 ? () => setIsFoodKingDialogOpen(true) : undefined} style={foodOrderKing.count > 0 ? { cursor: 'pointer' } : {}}>
-              <CardContent>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="food-king">🍔</span> King Of Food Orders
                 </Typography>
@@ -1212,7 +1213,7 @@ const StatisticsView: React.FC = () => {
               onClick={craziestTable.table ? () => setIsCraziestTableDialogOpen(true) : undefined}
               style={craziestTable.table ? { cursor: 'pointer' } : {}}
             >
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="crazy">🤪</span> Craziest Table
                 </Typography>
