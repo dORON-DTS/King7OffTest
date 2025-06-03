@@ -1709,11 +1709,7 @@ const StatisticsView: React.FC = () => {
                     }
                     secondary={
                       <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                        {(() => {
-                          let d = new Date(order.date);
-                          if (isNaN(d.getTime()) && order.tableCreatedAt) d = new Date(order.tableCreatedAt);
-                          return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('he-IL');
-                        })()}
+                        {order.tableCreatedAt ? new Date(order.tableCreatedAt).toLocaleDateString('he-IL') : '-'}
                       </Typography>
                     }
                   />
