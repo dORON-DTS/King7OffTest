@@ -362,21 +362,12 @@ const StatisticsView: React.FC = () => {
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Authentication required');
-        }
-
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`);
         if (!response.ok) throw new Error('Failed to fetch groups');
         const data = await response.json();
         setGroups(data);
-        // Set first group as default if available
-        if (data.length > 0) {
+        // Set first group as default if available and no group is selected
+        if (data.length > 0 && !selectedGroupId) {
           setSelectedGroupId(data[0].id);
         }
       } catch (error) {
@@ -385,7 +376,7 @@ const StatisticsView: React.FC = () => {
     };
 
     fetchGroups();
-  }, []);
+  }, [selectedGroupId]);
 
   // Filter tables by selected group
   const filteredTables = useMemo(() => {

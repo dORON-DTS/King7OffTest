@@ -1352,7 +1352,7 @@ app.get('/api/statistics/players', (req, res) => {
 });
 
 // Get all groups
-app.get('/api/groups', authenticate, (req, res) => {
+app.get('/api/groups', (req, res) => {
   db.all('SELECT * FROM groups ORDER BY name', [], (err, groups) => {
     if (err) {
       res.status(500).json({ error: err.message });
