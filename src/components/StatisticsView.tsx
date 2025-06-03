@@ -856,7 +856,7 @@ const StatisticsView: React.FC = () => {
                 hour12: false
               }),
               player: foodOrderer.name,
-              tableCreatedAt: table.createdAt
+              tableCreatedAt: new Date(table.createdAt).toISOString()
             });
           }
         }
