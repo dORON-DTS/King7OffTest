@@ -1709,7 +1709,8 @@ const StatisticsView: React.FC = () => {
                     secondary={
                       <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                         {(() => {
-                          const d = new Date(order.date);
+                          let d = new Date(order.date);
+                          if (isNaN(d.getTime()) && order.tableCreatedAt) d = new Date(order.tableCreatedAt);
                           return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('he-IL');
                         })()}
                       </Typography>
@@ -1756,7 +1757,7 @@ const StatisticsView: React.FC = () => {
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <span role="img" aria-label="calendar">📅</span>
+                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>Date:</Typography>
                   <Typography variant="body1" sx={{ color: 'white' }}>
                     {new Date(craziestTable.table.createdAt).toLocaleDateString('he-IL')}
                   </Typography>
