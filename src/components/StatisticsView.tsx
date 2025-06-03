@@ -1032,9 +1032,9 @@ const StatisticsView: React.FC = () => {
           </TextField>
         </Box>
 
-        <Grid container spacing={2} sx={{ mb: 4, width: '100%', mx: 0, px: 0 }}>
+        <Grid container spacing={1} sx={{ mb: 4, width: '100%', mx: 0, px: 0 }}>
           {/* 1. Total Games Played */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1047,7 +1047,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 2. Most Games Played */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1069,7 +1069,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 3. Total Buy In */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1082,7 +1082,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 4. Biggest Single Game Win */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1099,7 +1099,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 5. Best Winning Streak */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1116,7 +1116,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 6. Biggest Single Game Buy-In */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1133,7 +1133,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 7. Biggest Avg Buy-In */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1150,7 +1150,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 8. Best Avg Result */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1167,7 +1167,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 9. Best Current Streak */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx} onClick={bestCurrentStreak.value > 0 ? () => setIsStreakDialogOpen(true) : undefined} style={bestCurrentStreak.value > 0 ? { cursor: 'pointer' } : {}}>
               <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1184,7 +1184,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 10. King Of Food Orders */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card sx={statCardSx} onClick={foodOrderKing.count > 0 ? () => setIsFoodKingDialogOpen(true) : undefined} style={foodOrderKing.count > 0 ? { cursor: 'pointer' } : {}}>
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -1206,7 +1206,7 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           {/* 11. Craziest Table (NEW) */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card
               sx={statCardSx}
               onClick={craziestTable.table ? () => setIsCraziestTableDialogOpen(true) : undefined}
