@@ -49,28 +49,27 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsLoading(true);
     setError(null);
     try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      console.log('Fetching tables from:', `${process.env.REACT_APP_API_URL}/api/tables`); // Debug log
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tables`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      let response;
+      if (user) {
+        const token = getAuthToken();
+        if (!token) {
+          throw new Error('Authentication required');
         }
-      });
-      console.log('Response status:', response.status); // Debug log
+        response = await fetch(`${process.env.REACT_APP_API_URL}/api/tables`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } else {
+        response = await fetch(`${process.env.REACT_APP_API_URL}/api/public/tables`);
+      }
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error response:', errorText); // Debug log
         throw new Error(`Failed to fetch tables: ${errorText}`);
       }
       
       const data = await response.json();
-      console.log('Received data:', data); // Debug log
-      
       // Ensure each table has a players array and parse dates
       const tablesWithPlayers = data.map((table: Table) => ({
         ...table,
@@ -83,13 +82,12 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTables(tablesWithPlayers);
       setLastFetchTime(now);
     } catch (error: any) {
-      console.error('Error fetching tables:', error);
       setError(error.message || 'Failed to fetch tables');
       setTables([]); // Set to empty array on error
     } finally {
       setIsLoading(false);
     }
-  }, [lastFetchTime]);
+  }, [lastFetchTime, user]);
 
   // Fetch tables on mount (no polling)
   useEffect(() => {
