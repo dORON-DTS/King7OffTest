@@ -1787,3 +1787,4 @@ const StatisticsView: React.FC = () => {
 };
 
 export default StatisticsView; 
+rewritten_file>
