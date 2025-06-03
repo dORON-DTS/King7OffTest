@@ -1223,6 +1223,9 @@ const StatisticsView: React.FC = () => {
                     <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
                       Avg Buy In: {Math.round(craziestTable.avgBuyIn)}
                     </Typography>
+                    <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+                      Players: {craziestTable.table.players.length}
+                    </Typography>
                   </>
                 ) : (
                   <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No tables yet</Typography>
@@ -1705,7 +1708,10 @@ const StatisticsView: React.FC = () => {
                     }
                     secondary={
                       <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                        {new Date(order.date).toLocaleString()}
+                        {(() => {
+                          const d = new Date(order.date);
+                          return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('he-IL');
+                        })()}
                       </Typography>
                     }
                   />
@@ -1749,9 +1755,10 @@ const StatisticsView: React.FC = () => {
                 {craziestTable.table.name}
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid item xs={12} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <span role="img" aria-label="calendar">📅</span>
                   <Typography variant="body1" sx={{ color: 'white' }}>
-                    <strong>Created At:</strong> {new Date(craziestTable.table.createdAt).toLocaleString()}
+                    {new Date(craziestTable.table.createdAt).toLocaleDateString('he-IL')}
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
