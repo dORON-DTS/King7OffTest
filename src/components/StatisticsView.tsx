@@ -358,6 +358,15 @@ const StatisticsView: React.FC = () => {
   const [isStreakDialogOpen, setIsStreakDialogOpen] = useState(false);
   const [isFoodKingDialogOpen, setIsFoodKingDialogOpen] = useState(false);
 
+  // Add state for craziest table
+  const [craziestTable, setCraziestTable] = useState<{
+    table: Table | null;
+    avgBuyIn: number;
+  }>({ table: null, avgBuyIn: 0 });
+
+  // Add state for craziest table dialog
+  const [isCraziestTableDialogOpen, setIsCraziestTableDialogOpen] = useState(false);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -682,9 +691,21 @@ const StatisticsView: React.FC = () => {
     let maxAvgBuyInPlayer = '-';
     let maxAvgResult = 0;
     let maxAvgResultPlayer = '-';
+    let maxTableAvgBuyIn = 0;
+    let craziestTableData: Table | null = null;
 
     // Biggest single game buy-in
     filteredTables.forEach(table => {
+      // Calculate table's average buy-in
+      const totalBuyInAmount = table.players.reduce((sum, player) => sum + (player.totalBuyIn || 0), 0);
+      const playersWithBuyIns = table.players.filter(player => (player.totalBuyIn || 0) > 0).length;
+      const tableAvgBuyIn = playersWithBuyIns > 0 ? totalBuyInAmount / playersWithBuyIns : 0;
+
+      if (tableAvgBuyIn > maxTableAvgBuyIn) {
+        maxTableAvgBuyIn = tableAvgBuyIn;
+        craziestTableData = table;
+      }
+
       table.players.forEach(player => {
         if ((player.totalBuyIn || 0) > maxSingleBuyIn) {
           maxSingleBuyIn = player.totalBuyIn || 0;
@@ -709,6 +730,11 @@ const StatisticsView: React.FC = () => {
       biggestSingleBuyIn: { value: maxSingleBuyIn, player: maxSingleBuyInPlayer },
       biggestAvgBuyIn: { value: maxAvgBuyIn, player: maxAvgBuyInPlayer },
       bestAvgResult: { value: maxAvgResult, player: maxAvgResultPlayer },
+    });
+
+    setCraziestTable({
+      table: craziestTableData,
+      avgBuyIn: maxTableAvgBuyIn
     });
   }, [filteredTables, playerStats]);
 
@@ -1068,77 +1094,26 @@ const StatisticsView: React.FC = () => {
             </Card>
           </Grid>
           <Grid item xs={6} sm={6} md={2.4}>
-            <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="streak">🔥</span> Best Winning Streak
-                </Typography>
-                {bestWinStreak.value > 0 ? (
-                  <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                    {bestWinStreak.player} ({bestWinStreak.value})
-                  </Typography>
-                ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No win streaks yet</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={6} md={2.4}>
-            <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="single-buyin">💸</span> Biggest Single Game Buy-In
-                </Typography>
-                <Typography variant="h5" sx={{ color: '#ffb300', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  {extraStats.biggestSingleBuyIn.player} ({extraStats.biggestSingleBuyIn.value})
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={6} md={2.4}>
-            <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="avg-buyin">💳</span> Biggest Avg Buy-In
-                </Typography>
-                <Typography variant="h5" sx={{ color: '#ab47bc', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  {extraStats.biggestAvgBuyIn.player} ({Math.round(extraStats.biggestAvgBuyIn.value)})
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={6} md={2.4}>
-            <Card sx={statCardSx}>
-              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="avg-result">📈</span> Best Avg Result
-                </Typography>
-                <Typography variant="h5" sx={{ color: '#00bcd4', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  {extraStats.bestAvgResult.player} ({Math.round(extraStats.bestAvgResult.value)})
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={6} md={2.4}>
             <Card
               sx={statCardSx}
-              {...(bestCurrentStreak.players.length > 1 ? { onClick: () => setIsStreakDialogOpen(true), style: { cursor: 'pointer' } } : {})}
+              onClick={craziestTable.table ? () => setIsCraziestTableDialogOpen(true) : undefined}
+              style={craziestTable.table ? { cursor: 'pointer' } : {}}
             >
-              <CardContent>
+              <CardContent sx={{ width: '100%', p: { xs: 1, sm: 2 } }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  <span role="img" aria-label="current-streak">⚡</span> Best Current Streak
+                  <span role="img" aria-label="crazy">🤪</span> Craziest Table
                 </Typography>
-                {bestCurrentStreak.value > 0 ? (
+                {craziestTable.table ? (
                   <>
-                    <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                      {bestCurrentStreak.players.length === 1 ? bestCurrentStreak.players[0] : `${bestCurrentStreak.players.length} Players`}
+                    <Typography variant="h5" sx={{ color: '#ff4081', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                      {craziestTable.table.name}
                     </Typography>
                     <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
-                      {bestCurrentStreak.value} Games
+                      Avg Buy In: {Math.round(craziestTable.avgBuyIn)}
                     </Typography>
                   </>
                 ) : (
-                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No active streaks</Typography>
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No tables yet</Typography>
                 )}
               </CardContent>
             </Card>
@@ -1600,44 +1575,119 @@ const StatisticsView: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Food Order King Dialog */}
+      {/* Food King Dialog */}
       <Dialog
         open={isFoodKingDialogOpen}
         onClose={() => setIsFoodKingDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
         PaperProps={{
           sx: {
             bgcolor: '#1e1e1e',
             color: 'white',
-            minWidth: { xs: '90%', sm: '400px' },
-            maxWidth: '600px',
-            borderRadius: 2
+            border: '1px solid rgba(255, 255, 255, 0.12)'
           }
         }}
       >
-        <DialogTitle sx={{ borderBottom: 1, borderColor: 'grey.800', pb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <span role="img" aria-label="food-king">🍔</span>
-            <Typography variant="h6">King Of Food Orders</Typography>
-          </Box>
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <span role="img" aria-label="food-king">🍔</span>
+          Food Order History
         </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <List>
-            {foodOrderKing.history.map((order, index) => (
-              <ListItem key={index} sx={{ py: 1 }}>
-                <ListItemText
-                  primary={order.player}
-                  secondary={order.date}
-                  primaryTypographyProps={{ color: '#ff9800', fontWeight: 'bold' }}
-                  secondaryTypographyProps={{ color: 'grey.400' }}
-                />
-              </ListItem>
-            ))}
-          </List>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h6" sx={{ color: '#ff9800', mb: 2 }}>
+              {foodOrderKing.player} - {foodOrderKing.count} Orders
+            </Typography>
+            <List>
+              {foodOrderKing.history.map((order, index) => (
+                <ListItem key={index} sx={{
+                  bgcolor: 'rgba(255, 152, 0, 0.1)',
+                  borderRadius: 1,
+                  mb: 1
+                }}>
+                  <ListItemText
+                    primary={
+                      <Typography sx={{ color: 'white' }}>
+                        {order.player}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                        {new Date(order.date).toLocaleString()}
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ borderTop: 1, borderColor: 'grey.800', p: 2 }}>
-          <Button onClick={() => setIsFoodKingDialogOpen(false)} sx={{ color: 'grey.400' }}>
-            Close
-          </Button>
+        <DialogActions>
+          <Button onClick={() => setIsFoodKingDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Craziest Table Dialog */}
+      <Dialog
+        open={isCraziestTableDialogOpen}
+        onClose={() => setIsCraziestTableDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <span role="img" aria-label="crazy">🤪</span>
+          Craziest Table Details
+        </DialogTitle>
+        <DialogContent>
+          {craziestTable.table && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" sx={{ color: '#ff4081', mb: 2 }}>
+                {craziestTable.table.name}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="body1" sx={{ color: 'white' }}>
+                    <strong>Created At:</strong> {new Date(craziestTable.table.createdAt).toLocaleString()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body1" sx={{ color: 'white' }}>
+                    <strong>Blinds:</strong> {craziestTable.table.smallBlind}/{craziestTable.table.bigBlind}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body1" sx={{ color: 'white' }}>
+                    <strong>Location:</strong> {craziestTable.table.location || 'Not specified'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body1" sx={{ color: 'white' }}>
+                    <strong>Total Buy In:</strong> {craziestTable.table.players.reduce((sum, player) => sum + (player.totalBuyIn || 0), 0)}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsCraziestTableDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
