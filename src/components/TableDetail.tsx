@@ -433,13 +433,17 @@ const TableDetail: React.FC = () => {
       .filter(t => t.food === player.id || t.food === player.name)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
     const lastOrderTime = lastOrderTable ? new Date(lastOrderTable.createdAt).getTime() : null;
+    const foodOrderPercent = participations > 0 ? foodOrders / participations : 0;
+    const isEligible = participations >= MIN_GAMES_FOR_FOOD;
+    // Detailed log for this player
+    console.log(`Player: ${player.name}, Participations: ${participations}, Food Orders: ${foodOrders}, Percent: ${(foodOrderPercent*100).toFixed(1)}%, Last Order: ${lastOrderTime ? new Date(lastOrderTime).toLocaleString('he-IL') : 'Never'}, Eligible: ${isEligible}`);
     return {
       ...player,
       participations,
       foodOrders,
-      foodOrderPercent: participations > 0 ? foodOrders / participations : 0,
+      foodOrderPercent,
       lastOrderTime,
-      isEligible: participations >= MIN_GAMES_FOR_FOOD
+      isEligible
     };
   });
 
