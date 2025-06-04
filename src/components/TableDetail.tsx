@@ -430,15 +430,26 @@ const TableDetail: React.FC = () => {
     console.log('Current table player names:', table.players.map(p => p.name));
   }
 
-  // Count food orders and participations for each player in the current table
+  // Build a mapping from food id to player name for all relevant tables
+  const foodIdToName: Record<string, string> = {};
+  relevantTables.forEach(t => {
+    if (t.food && Array.isArray(t.players)) {
+      const foodPlayer = t.players.find(p => p.id === t.food);
+      if (foodPlayer) {
+        foodIdToName[t.food] = foodPlayer.name;
+      }
+    }
+  });
+  console.log('Food id to name mapping:', foodIdToName);
+
   const playerFoodStats = (table?.players || []).map(player => {
     // Count participations (games played)
     const participations = relevantTables.filter(t => t.players.some(p => p.id === player.id || p.name === player.name)).length;
-    // Count food orders (times player was responsible for food) - by name only
-    const foodOrders = relevantTables.filter(t => t.food === player.name).length;
-    // Find last time ordered food (timestamp or null) - by name only
+    // Count food orders: t.food is id, match to player.name
+    const foodOrders = relevantTables.filter(t => foodIdToName[t.food] === player.name).length;
+    // Find last time ordered food (timestamp or null)
     const lastOrderTable = relevantTables
-      .filter(t => t.food === player.name)
+      .filter(t => foodIdToName[t.food] === player.name)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
     const lastOrderTime = lastOrderTable ? new Date(lastOrderTable.createdAt).getTime() : null;
     const foodOrderPercent = participations > 0 ? foodOrders / participations : 0;
