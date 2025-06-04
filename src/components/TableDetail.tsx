@@ -416,14 +416,17 @@ const TableDetail: React.FC = () => {
   const MIN_GAMES_FOR_FOOD = 3;
 
   // Use allTables from context (already destructured above)
+  // Only consider tables that are not active and belong to the same group as the current table
+  const relevantTables = allTables.filter(t => !t.isActive && t.groupId === table.groupId);
+
   // Count food orders and participations for each player in the current table
   const playerFoodStats = (table?.players || []).map(player => {
     // Count participations (games played)
-    const participations = allTables.filter(t => t.players.some(p => p.id === player.id)).length;
+    const participations = relevantTables.filter(t => t.players.some(p => p.id === player.id)).length;
     // Count food orders (times player was responsible for food)
-    const foodOrders = allTables.filter(t => t.food === player.id).length;
+    const foodOrders = relevantTables.filter(t => t.food === player.id).length;
     // Find last time ordered food (timestamp or null)
-    const lastOrderTable = allTables
+    const lastOrderTable = relevantTables
       .filter(t => t.food === player.id)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
     const lastOrderTime = lastOrderTable ? new Date(lastOrderTable.createdAt).getTime() : null;
