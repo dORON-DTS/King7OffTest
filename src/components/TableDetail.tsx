@@ -421,6 +421,10 @@ const TableDetail: React.FC = () => {
 
   // Debug logs
   console.log('Relevant tables:', relevantTables);
+  console.log('All food values in relevant tables:', relevantTables.map(t => t.food));
+  if (relevantTables.length > 0) {
+    console.log('Sample relevant table:', relevantTables[0]);
+  }
 
   // Count food orders and participations for each player in the current table
   const playerFoodStats = (table?.players || []).map(player => {
