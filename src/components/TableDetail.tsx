@@ -410,6 +410,66 @@ const TableDetail: React.FC = () => {
 
   const sortedPlayers = [...(table?.players || [])].sort((a, b) => a.name.localeCompare(b.name));
 
+  // --- Food Order Turn Logic ---
+  // Minimum games to be considered for food order turn
+  const MIN_GAMES_FOR_FOOD = 3;
+
+  // Gather all tables for food order stats
+  const allTables = usePoker().tables || [];
+
+  // Count food orders and participations for each player in the current table
+  const playerFoodStats = (table?.players || []).map(player => {
+    // Count participations (games played)
+    const participations = allTables.filter(t => t.players.some(p => p.id === player.id)).length;
+    // Count food orders (times player was responsible for food)
+    const foodOrders = allTables.filter(t => t.food === player.id).length;
+    // Find last time ordered food (timestamp or null)
+    const lastOrderTable = allTables
+      .filter(t => t.food === player.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+    const lastOrderTime = lastOrderTable ? new Date(lastOrderTable.createdAt).getTime() : null;
+    return {
+      ...player,
+      participations,
+      foodOrders,
+      foodOrderPercent: participations > 0 ? foodOrders / participations : 0,
+      lastOrderTime,
+      isEligible: participations >= MIN_GAMES_FOR_FOOD
+    };
+  });
+
+  // Split eligible and new players
+  const eligiblePlayers = playerFoodStats.filter(p => p.isEligible);
+  const newPlayers = playerFoodStats.filter(p => !p.isEligible);
+
+  // Sort eligible by: lowest percent, then oldest last order
+  eligiblePlayers.sort((a, b) => {
+    if (a.foodOrderPercent !== b.foodOrderPercent) {
+      return a.foodOrderPercent - b.foodOrderPercent;
+    }
+    // If percent equal, pick the one who ordered least recently
+    if (a.lastOrderTime !== b.lastOrderTime) {
+      if (a.lastOrderTime === null) return -1;
+      if (b.lastOrderTime === null) return 1;
+      return a.lastOrderTime - b.lastOrderTime;
+    }
+    return a.name.localeCompare(b.name);
+  });
+  // Sort new players alphabetically
+  newPlayers.sort((a, b) => a.name.localeCompare(b.name));
+
+  // Merge for dropdown: eligible first, then new
+  const foodDropdownPlayers = [...eligiblePlayers, ...newPlayers];
+
+  // Color logic for top 3 eligible
+  const getFoodCandidateColor = (idx: number, isEligible: boolean) => {
+    if (!isEligible) return undefined;
+    if (idx === 0) return '#e53935'; // red
+    if (idx === 1) return '#fb8c00'; // orange
+    if (idx === 2) return '#fdd835'; // yellow
+    return undefined;
+  };
+
   return (
     <Box sx={{ p: 2, maxWidth: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -1022,15 +1082,25 @@ const TableDetail: React.FC = () => {
             ))}
           </TextField>
           <Autocomplete
-            options={sortedPlayers}
+            options={foodDropdownPlayers}
             getOptionLabel={(option) => option.name}
-            value={table.players.find(p => p.id === editForm.food) || null}
+            value={foodDropdownPlayers.find(p => p.id === editForm.food) || null}
             onChange={(_, newValue) => {
               setEditForm(prev => ({
                 ...prev,
                 food: newValue?.id || ''
               }));
             }}
+            renderOption={(props, option, { index }) => (
+              <li {...props} key={option.id}>
+                <span style={{
+                  color: getFoodCandidateColor(index, option.isEligible),
+                  fontWeight: getFoodCandidateColor(index, option.isEligible) ? 700 : 400
+                }}>
+                  {option.name}
+                </span>
+              </li>
+            )}
             renderInput={(params) => (
               <TextField
                 {...params}
