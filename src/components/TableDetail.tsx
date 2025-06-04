@@ -434,11 +434,11 @@ const TableDetail: React.FC = () => {
   const playerFoodStats = (table?.players || []).map(player => {
     // Count participations (games played)
     const participations = relevantTables.filter(t => t.players.some(p => p.id === player.id || p.name === player.name)).length;
-    // Count food orders (times player was responsible for food)
-    const foodOrders = relevantTables.filter(t => t.food === player.id || t.food === player.name).length;
-    // Find last time ordered food (timestamp or null)
+    // Count food orders (times player was responsible for food) - by name only
+    const foodOrders = relevantTables.filter(t => t.food === player.name).length;
+    // Find last time ordered food (timestamp or null) - by name only
     const lastOrderTable = relevantTables
-      .filter(t => t.food === player.id || t.food === player.name)
+      .filter(t => t.food === player.name)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
     const lastOrderTime = lastOrderTable ? new Date(lastOrderTable.createdAt).getTime() : null;
     const foodOrderPercent = participations > 0 ? foodOrders / participations : 0;
