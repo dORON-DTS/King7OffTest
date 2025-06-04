@@ -40,7 +40,8 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 const TableDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups } = usePoker();
+  const pokerContext = usePoker();
+  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups, tables: allTables } = pokerContext;
   const { user } = useUser();
   
   // Dialog state
@@ -414,9 +415,7 @@ const TableDetail: React.FC = () => {
   // Minimum games to be considered for food order turn
   const MIN_GAMES_FOR_FOOD = 3;
 
-  // Gather all tables for food order stats
-  const allTables = usePoker().tables || [];
-
+  // Use allTables from context (already destructured above)
   // Count food orders and participations for each player in the current table
   const playerFoodStats = (table?.players || []).map(player => {
     // Count participations (games played)
