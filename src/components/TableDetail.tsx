@@ -419,6 +419,9 @@ const TableDetail: React.FC = () => {
   // Only consider tables that are not active and belong to the same group as the current table
   const relevantTables = allTables.filter(t => !t.isActive && t.groupId === table.groupId);
 
+  // Debug logs
+  console.log('Relevant tables:', relevantTables);
+
   // Count food orders and participations for each player in the current table
   const playerFoodStats = (table?.players || []).map(player => {
     // Count participations (games played)
@@ -440,9 +443,14 @@ const TableDetail: React.FC = () => {
     };
   });
 
+  console.log('Player food stats:', playerFoodStats);
+
   // Split eligible and new players
   const eligiblePlayers = playerFoodStats.filter(p => p.isEligible);
   const newPlayers = playerFoodStats.filter(p => !p.isEligible);
+
+  console.log('Eligible players:', eligiblePlayers);
+  console.log('New players:', newPlayers);
 
   // Sort eligible by: lowest percent, then oldest last order
   eligiblePlayers.sort((a, b) => {
