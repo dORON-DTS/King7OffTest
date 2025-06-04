@@ -367,6 +367,13 @@ const StatisticsView: React.FC = () => {
   // Add state for craziest table dialog
   const [isCraziestTableDialogOpen, setIsCraziestTableDialogOpen] = useState(false);
 
+  // Add state for calmest table
+  const [calmestTable, setCalmestTable] = useState<{
+    table: Table | null;
+    avgBuyIn: number;
+  }>({ table: null, avgBuyIn: 0 });
+  const [isCalmestTableDialogOpen, setIsCalmestTableDialogOpen] = useState(false);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -693,6 +700,8 @@ const StatisticsView: React.FC = () => {
     let maxAvgResultPlayer = '-';
     let maxTableAvgBuyIn = 0;
     let craziestTableData: Table | null = null;
+    let minTableAvgBuyIn = Number.POSITIVE_INFINITY;
+    let calmestTableData: Table | null = null;
 
     // Biggest single game buy-in
     filteredTables.forEach(table => {
@@ -704,6 +713,12 @@ const StatisticsView: React.FC = () => {
       if (tableAvgBuyIn > maxTableAvgBuyIn) {
         maxTableAvgBuyIn = tableAvgBuyIn;
         craziestTableData = table;
+      }
+
+      // Find calmest table (lowest avg buy-in, but only if > 0 and at least 2 players)
+      if (tableAvgBuyIn < minTableAvgBuyIn && tableAvgBuyIn > 0 && table.players.length > 1) {
+        minTableAvgBuyIn = tableAvgBuyIn;
+        calmestTableData = table;
       }
 
       table.players.forEach(player => {
@@ -735,6 +750,10 @@ const StatisticsView: React.FC = () => {
     setCraziestTable({
       table: craziestTableData,
       avgBuyIn: maxTableAvgBuyIn
+    });
+    setCalmestTable({
+      table: calmestTableData,
+      avgBuyIn: minTableAvgBuyIn === Number.POSITIVE_INFINITY ? 0 : minTableAvgBuyIn
     });
   }, [filteredTables, playerStats]);
 
@@ -1227,6 +1246,35 @@ const StatisticsView: React.FC = () => {
                     </Typography>
                     <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
                       Players: {craziestTable.table.players.length}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No tables yet</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          {/* 12. Calmest Table (NEW) */}
+          <Grid item xs={6} sm={6} md={3}>
+            <Card
+              sx={statCardSx}
+              onClick={calmestTable.table ? () => setIsCalmestTableDialogOpen(true) : undefined}
+              style={calmestTable.table ? { cursor: 'pointer' } : {}}
+            >
+              <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <span role="img" aria-label="calm">🧘‍♂️</span> Calmest Table
+                </Typography>
+                {calmestTable.table ? (
+                  <>
+                    <Typography variant="h5" sx={{ color: '#00bcd4', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                      {calmestTable.table.name}
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+                      Avg Buy In: {Math.round(calmestTable.avgBuyIn)}
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+                      Players: {calmestTable.table.players.length}
                     </Typography>
                   </>
                 ) : (
@@ -1781,6 +1829,66 @@ const StatisticsView: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCraziestTableDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Calmest Table Dialog */}
+      <Dialog
+        open={isCalmestTableDialogOpen}
+        onClose={() => setIsCalmestTableDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <span role="img" aria-label="calm">🧘‍♂️</span>
+          Calmest Table Details
+        </DialogTitle>
+        <DialogContent>
+          {calmestTable.table && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" sx={{ color: '#00bcd4', mb: 2 }}>
+                {calmestTable.table.name}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>Date:</Typography>
+                  <Typography variant="body1" sx={{ color: 'white' }}>
+                    {new Date(calmestTable.table.createdAt).toLocaleDateString('he-IL')}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body1" sx={{ color: 'white' }}>
+                    <strong>Blinds:</strong> {calmestTable.table.smallBlind}/{calmestTable.table.bigBlind}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body1" sx={{ color: 'white' }}>
+                    <strong>Location:</strong> {calmestTable.table.location || 'Not specified'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body1" sx={{ color: 'white' }}>
+                    <strong>Total Buy In:</strong> {calmestTable.table.players.reduce((sum, player) => sum + (player.totalBuyIn || 0), 0)}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsCalmestTableDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
