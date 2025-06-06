@@ -211,8 +211,8 @@ const LandingPage: React.FC = () => {
             { rank: 'K', suit: '♥', color: '#e74c3c', delay: 4, x: -100, rotate: -8 },
             { rank: 'Q', suit: '♠', color: '#2c3e50', delay: 4.2, x: -50, rotate: -4 },
             { rank: 'J', suit: '♦', color: '#e74c3c', delay: 4.4, x: 0, rotate: 0 },
-            { rank: 'A', suit: '♣', color: '#2c3e50', delay: 8, x: 50, rotate: 4 },
-            { rank: '10', suit: '♥', color: '#e74c3c', delay: 12.5, x: 100, rotate: 8 }
+            { rank: '7', suit: '♣', color: '#2c3e50', delay: 8, x: 50, rotate: 4 },
+            { rank: '7', suit: '♦', color: '#e74c3c', delay: 12.5, x: 100, rotate: 8 }
           ].map((card, index, arr) => {
             const isFan = animationKey > 0;
             const isRiver = index === arr.length - 1;
