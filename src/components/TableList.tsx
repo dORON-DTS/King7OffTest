@@ -354,125 +354,243 @@ const TableList: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Groups Filter Dropdown */}
-      <Box sx={{
-        display: 'flex',
-        flexDirection: { xs: 'column', sm: 'row' },
-        alignItems: { xs: 'stretch', sm: 'center' },
-        justifyContent: 'space-between',
-        gap: 2,
-        mb: 3
-      }}>
-        <TextField
-          select
-          label="Groups"
-          value={selectedGroupId}
-          onChange={(e) => setSelectedGroupId(e.target.value)}
-          sx={{
-            minWidth: { xs: '100%', sm: 200 },
-            maxWidth: 300,
-            mb: { xs: 2, sm: 0 },
-            '& .MuiOutlinedInput-root': {
-              '& fieldset': {
-                borderColor: 'grey.700',
+      {/* Groups Filter Dropdown and Action Buttons */}
+      {isMobile ? (
+        // Mobile: everything in one column as before
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          gap: 2,
+          mb: 3
+        }}>
+          <TextField
+            select
+            label="Groups"
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+            sx={{
+              minWidth: '100%',
+              maxWidth: 300,
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'grey.700',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'grey.500',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                },
               },
-              '&:hover fieldset': {
-                borderColor: 'grey.500',
+              '& .MuiInputLabel-root': {
+                color: 'grey.400',
               },
-              '&.Mui-focused fieldset': {
-                borderColor: 'primary.main',
+              '& .MuiSelect-select': {
+                color: 'white',
               },
-            },
-            '& .MuiInputLabel-root': {
-              color: 'grey.400',
-            },
-            '& .MuiSelect-select': {
-              color: 'white',
-            },
-          }}
-        >
-          <MenuItem value="">All Groups</MenuItem>
-          {groups.map((group) => (
-            <MenuItem key={group.id} value={group.id}>
-              {group.name}
-            </MenuItem>
-          ))}
-        </TextField>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
-          <Button 
-            variant="contained" 
-            color="primary"
-            onClick={handleCreateDialogOpen}
-            startIcon={<AddIcon />}
-            sx={{ 
-              borderRadius: 2,
-              px: { xs: 2, sm: 4 },
-              py: { xs: 1, sm: 1.5 },
-              fontSize: { xs: '1rem', sm: '1.1rem' },
-              background: '#2196f3',
-              boxShadow: '0 3px 5px 2px rgba(33, 150, 243, .3)',
-              transition: 'all 0.3s ease',
-              width: { xs: '100%', sm: 'auto' },
-              mb: { xs: 1, sm: 0 },
-              '&:hover': {
-                transform: { xs: 'none', sm: 'translateY(-2px)' },
-                boxShadow: '0 5px 8px 2px rgba(33, 150, 243, .4)',
-                background: '#1976d2'
-              }
             }}
           >
-            CREATE NEW TABLE
-          </Button>
-          {user?.role === 'admin' && (
+            <MenuItem value="">All Groups</MenuItem>
+            {groups.map((group) => (
+              <MenuItem key={group.id} value={group.id}>
+                {group.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
+            {/* Action buttons */}
             <Button 
               variant="contained" 
-              color="secondary"
-              onClick={() => setCreateGroupDialogOpen(true)}
-              startIcon={<GroupIcon />}
+              color="primary"
+              onClick={handleCreateDialogOpen}
+              startIcon={<AddIcon />}
               sx={{ 
                 borderRadius: 2,
                 px: { xs: 2, sm: 4 },
                 py: { xs: 1, sm: 1.5 },
                 fontSize: { xs: '1rem', sm: '1.1rem' },
-                background: '#dc004e',
-                boxShadow: '0 3px 5px 2px rgba(220, 0, 78, .3)',
+                background: '#2196f3',
+                boxShadow: '0 3px 5px 2px rgba(33, 150, 243, .3)',
                 transition: 'all 0.3s ease',
                 width: { xs: '100%', sm: 'auto' },
                 mb: { xs: 1, sm: 0 },
                 '&:hover': {
                   transform: { xs: 'none', sm: 'translateY(-2px)' },
-                  boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .4)',
-                  background: '#9a0036'
+                  boxShadow: '0 5px 8px 2px rgba(33, 150, 243, .4)',
+                  background: '#1976d2'
                 }
               }}
             >
-              CREATE NEW GROUP
+              CREATE NEW TABLE
             </Button>
-          )}
-          <Button 
-            variant="outlined" 
-            color="secondary"
-            onClick={() => navigate('/statistics')} 
-            startIcon={<BarChartIcon />}
-            sx={{ 
-              borderRadius: 2,
-              px: { xs: 2, sm: 4 },
-              py: { xs: 1, sm: 1.5 },
-              fontSize: { xs: '1rem', sm: '1.1rem' },
-              transition: 'all 0.3s ease',
-              width: { xs: '100%', sm: 'auto' },
-              mb: { xs: 0, sm: 0 },
-              '&:hover': {
-                transform: { xs: 'none', sm: 'translateY(-2px)' },
-                boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .3)',
-                background: 'rgba(220, 0, 78, 0.1)'
-              }
-            }}
-          >
-            VIEW STATISTICS
-          </Button>
+            {user?.role === 'admin' && (
+              <Button 
+                variant="contained" 
+                color="secondary"
+                onClick={() => setCreateGroupDialogOpen(true)}
+                startIcon={<GroupIcon />}
+                sx={{ 
+                  borderRadius: 2,
+                  px: { xs: 2, sm: 4 },
+                  py: { xs: 1, sm: 1.5 },
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  background: '#dc004e',
+                  boxShadow: '0 3px 5px 2px rgba(220, 0, 78, .3)',
+                  transition: 'all 0.3s ease',
+                  width: { xs: '100%', sm: 'auto' },
+                  mb: { xs: 1, sm: 0 },
+                  '&:hover': {
+                    transform: { xs: 'none', sm: 'translateY(-2px)' },
+                    boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .4)',
+                    background: '#9a0036'
+                  }
+                }}
+              >
+                CREATE NEW GROUP
+              </Button>
+            )}
+            <Button 
+              variant="outlined" 
+              color="secondary"
+              onClick={() => navigate('/statistics')} 
+              startIcon={<BarChartIcon />}
+              sx={{ 
+                borderRadius: 2,
+                px: { xs: 2, sm: 4 },
+                py: { xs: 1, sm: 1.5 },
+                fontSize: { xs: '1rem', sm: '1.1rem' },
+                transition: 'all 0.3s ease',
+                width: { xs: '100%', sm: 'auto' },
+                mb: { xs: 0, sm: 0 },
+                '&:hover': {
+                  transform: { xs: 'none', sm: 'translateY(-2px)' },
+                  boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .3)',
+                  background: 'rgba(220, 0, 78, 0.1)'
+                }
+              }}
+            >
+              VIEW STATISTICS
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      ) : (
+        // Desktop: filter centered in its own row, buttons centered below
+        <>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <TextField
+              select
+              label="Groups"
+              value={selectedGroupId}
+              onChange={(e) => setSelectedGroupId(e.target.value)}
+              sx={{
+                minWidth: 200,
+                maxWidth: 300,
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'grey.700',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'grey.500',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'grey.400',
+                },
+                '& .MuiSelect-select': {
+                  color: 'white',
+                },
+              }}
+            >
+              <MenuItem value="">All Groups</MenuItem>
+              {groups.map((group) => (
+                <MenuItem key={group.id} value={group.id}>
+                  {group.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 3 }}>
+            {/* Action buttons */}
+            <Button 
+              variant="contained" 
+              color="primary"
+              onClick={handleCreateDialogOpen}
+              startIcon={<AddIcon />}
+              sx={{ 
+                borderRadius: 2,
+                px: { xs: 2, sm: 4 },
+                py: { xs: 1, sm: 1.5 },
+                fontSize: { xs: '1rem', sm: '1.1rem' },
+                background: '#2196f3',
+                boxShadow: '0 3px 5px 2px rgba(33, 150, 243, .3)',
+                transition: 'all 0.3s ease',
+                width: { xs: '100%', sm: 'auto' },
+                mb: { xs: 1, sm: 0 },
+                '&:hover': {
+                  transform: { xs: 'none', sm: 'translateY(-2px)' },
+                  boxShadow: '0 5px 8px 2px rgba(33, 150, 243, .4)',
+                  background: '#1976d2'
+                }
+              }}
+            >
+              CREATE NEW TABLE
+            </Button>
+            {user?.role === 'admin' && (
+              <Button 
+                variant="contained" 
+                color="secondary"
+                onClick={() => setCreateGroupDialogOpen(true)}
+                startIcon={<GroupIcon />}
+                sx={{ 
+                  borderRadius: 2,
+                  px: { xs: 2, sm: 4 },
+                  py: { xs: 1, sm: 1.5 },
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  background: '#dc004e',
+                  boxShadow: '0 3px 5px 2px rgba(220, 0, 78, .3)',
+                  transition: 'all 0.3s ease',
+                  width: { xs: '100%', sm: 'auto' },
+                  mb: { xs: 1, sm: 0 },
+                  '&:hover': {
+                    transform: { xs: 'none', sm: 'translateY(-2px)' },
+                    boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .4)',
+                    background: '#9a0036'
+                  }
+                }}
+              >
+                CREATE NEW GROUP
+              </Button>
+            )}
+            <Button 
+              variant="outlined" 
+              color="secondary"
+              onClick={() => navigate('/statistics')} 
+              startIcon={<BarChartIcon />}
+              sx={{ 
+                borderRadius: 2,
+                px: { xs: 2, sm: 4 },
+                py: { xs: 1, sm: 1.5 },
+                fontSize: { xs: '1rem', sm: '1.1rem' },
+                transition: 'all 0.3s ease',
+                width: { xs: '100%', sm: 'auto' },
+                mb: { xs: 0, sm: 0 },
+                '&:hover': {
+                  transform: { xs: 'none', sm: 'translateY(-2px)' },
+                  boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .3)',
+                  background: 'rgba(220, 0, 78, 0.1)'
+                }
+              }}
+            >
+              VIEW STATISTICS
+            </Button>
+          </Box>
+        </>
+      )}
 
       <Box sx={{ width: '100%', maxWidth: { xs: 400, sm: '100%' }, mx: { xs: 'auto', sm: 0 } }}>
         {filteredTables.length === 0 ? (
