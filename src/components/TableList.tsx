@@ -23,7 +23,9 @@ import {
   Tooltip,
   Zoom,
   Chip,
-  MenuItem
+  MenuItem,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShareIcon from '@mui/icons-material/Share';
@@ -127,6 +129,9 @@ const TableList: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Partial<CreateTableFormData>>({});
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
 
   // Sort tables by creation date (newest first)
   const sortedTables = [...tables].sort((a, b) => {
@@ -141,6 +146,11 @@ const TableList: React.FC = () => {
       fetchGroups();
     }
   }, [createDialogOpen]);
+
+  // Fetch groups on mount (not just on dialog open)
+  useEffect(() => {
+    fetchGroups();
+  }, []);
 
   const fetchGroups = async () => {
     try {
@@ -307,6 +317,11 @@ const TableList: React.FC = () => {
     return date.toLocaleDateString('he-IL');
   };
 
+  // Filter tables by group
+  const filteredTables = selectedGroupId
+    ? sortedTables.filter((table) => table.groupId === selectedGroupId)
+    : sortedTables;
+
   return (
     <Box sx={{ 
       p: 3, 
@@ -339,86 +354,124 @@ const TableList: React.FC = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ 
-        display: 'flex', 
+      {/* Groups Filter Dropdown */}
+      <Box sx={{
+        display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        gap: { xs: 2, sm: 2 }, 
-        mb: 4 
+        alignItems: { xs: 'stretch', sm: 'center' },
+        justifyContent: 'space-between',
+        gap: 2,
+        mb: 3
       }}>
-        <Button 
-          variant="contained" 
-          color="primary"
-          onClick={handleCreateDialogOpen}
-          startIcon={<AddIcon />}
-          sx={{ 
-            borderRadius: 2,
-            px: { xs: 2, sm: 4 },
-            py: { xs: 1, sm: 1.5 },
-            fontSize: { xs: '1rem', sm: '1.1rem' },
-            background: '#2196f3',
-            boxShadow: '0 3px 5px 2px rgba(33, 150, 243, .3)',
-            transition: 'all 0.3s ease',
-            width: { xs: '100%', sm: 'auto' },
-            mb: { xs: 1, sm: 0 },
-            '&:hover': {
-              transform: { xs: 'none', sm: 'translateY(-2px)' },
-              boxShadow: '0 5px 8px 2px rgba(33, 150, 243, .4)',
-              background: '#1976d2'
-            }
+        <TextField
+          select
+          label="Groups"
+          value={selectedGroupId}
+          onChange={(e) => setSelectedGroupId(e.target.value)}
+          sx={{
+            minWidth: { xs: '100%', sm: 200 },
+            maxWidth: 300,
+            mb: { xs: 2, sm: 0 },
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': {
+                borderColor: 'grey.700',
+              },
+              '&:hover fieldset': {
+                borderColor: 'grey.500',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'primary.main',
+              },
+            },
+            '& .MuiInputLabel-root': {
+              color: 'grey.400',
+            },
+            '& .MuiSelect-select': {
+              color: 'white',
+            },
           }}
         >
-          CREATE NEW TABLE
-        </Button>
-        {user?.role === 'admin' && (
+          <MenuItem value="">All Groups</MenuItem>
+          {groups.map((group) => (
+            <MenuItem key={group.id} value={group.id}>
+              {group.name}
+            </MenuItem>
+          ))}
+        </TextField>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
           <Button 
             variant="contained" 
-            color="secondary"
-            onClick={() => setCreateGroupDialogOpen(true)}
-            startIcon={<GroupIcon />}
+            color="primary"
+            onClick={handleCreateDialogOpen}
+            startIcon={<AddIcon />}
             sx={{ 
               borderRadius: 2,
               px: { xs: 2, sm: 4 },
               py: { xs: 1, sm: 1.5 },
               fontSize: { xs: '1rem', sm: '1.1rem' },
-              background: '#dc004e',
-              boxShadow: '0 3px 5px 2px rgba(220, 0, 78, .3)',
+              background: '#2196f3',
+              boxShadow: '0 3px 5px 2px rgba(33, 150, 243, .3)',
               transition: 'all 0.3s ease',
               width: { xs: '100%', sm: 'auto' },
               mb: { xs: 1, sm: 0 },
               '&:hover': {
                 transform: { xs: 'none', sm: 'translateY(-2px)' },
-                boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .4)',
-                background: '#9a0036'
+                boxShadow: '0 5px 8px 2px rgba(33, 150, 243, .4)',
+                background: '#1976d2'
               }
             }}
           >
-            CREATE NEW GROUP
+            CREATE NEW TABLE
           </Button>
-        )}
-        <Button 
-          variant="outlined" 
-          color="secondary"
-          onClick={() => navigate('/statistics')} 
-          startIcon={<BarChartIcon />}
-          sx={{ 
-            borderRadius: 2,
-            px: { xs: 2, sm: 4 },
-            py: { xs: 1, sm: 1.5 },
-            fontSize: { xs: '1rem', sm: '1.1rem' },
-            transition: 'all 0.3s ease',
-            width: { xs: '100%', sm: 'auto' },
-            mb: { xs: 0, sm: 0 },
-            '&:hover': {
-              transform: { xs: 'none', sm: 'translateY(-2px)' },
-              boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .3)',
-              background: 'rgba(220, 0, 78, 0.1)'
-            }
-          }}
-        >
-          VIEW STATISTICS
-        </Button>
+          {user?.role === 'admin' && (
+            <Button 
+              variant="contained" 
+              color="secondary"
+              onClick={() => setCreateGroupDialogOpen(true)}
+              startIcon={<GroupIcon />}
+              sx={{ 
+                borderRadius: 2,
+                px: { xs: 2, sm: 4 },
+                py: { xs: 1, sm: 1.5 },
+                fontSize: { xs: '1rem', sm: '1.1rem' },
+                background: '#dc004e',
+                boxShadow: '0 3px 5px 2px rgba(220, 0, 78, .3)',
+                transition: 'all 0.3s ease',
+                width: { xs: '100%', sm: 'auto' },
+                mb: { xs: 1, sm: 0 },
+                '&:hover': {
+                  transform: { xs: 'none', sm: 'translateY(-2px)' },
+                  boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .4)',
+                  background: '#9a0036'
+                }
+              }}
+            >
+              CREATE NEW GROUP
+            </Button>
+          )}
+          <Button 
+            variant="outlined" 
+            color="secondary"
+            onClick={() => navigate('/statistics')} 
+            startIcon={<BarChartIcon />}
+            sx={{ 
+              borderRadius: 2,
+              px: { xs: 2, sm: 4 },
+              py: { xs: 1, sm: 1.5 },
+              fontSize: { xs: '1rem', sm: '1.1rem' },
+              transition: 'all 0.3s ease',
+              width: { xs: '100%', sm: 'auto' },
+              mb: { xs: 0, sm: 0 },
+              '&:hover': {
+                transform: { xs: 'none', sm: 'translateY(-2px)' },
+                boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .3)',
+                background: 'rgba(220, 0, 78, 0.1)'
+              }
+            }}
+          >
+            VIEW STATISTICS
+          </Button>
+        </Box>
       </Box>
 
       <Box sx={{ width: '100%', maxWidth: { xs: 400, sm: '100%' }, mx: { xs: 'auto', sm: 0 } }}>
@@ -428,7 +481,7 @@ const TableList: React.FC = () => {
           px: { xs: 0, sm: 2 },
           justifyContent: { xs: 'center', sm: 'flex-start' }
         }}>
-          {sortedTables.map((table) => (
+          {filteredTables.map((table) => (
             <Grid item xs={12} sm={6} md={2.4} key={table.id} sx={{ ml: { xs: '-8px', sm: 0 } }}>
               <StyledCard
                 isActive={table.isActive}
