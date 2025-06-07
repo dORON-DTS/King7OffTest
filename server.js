@@ -676,19 +676,44 @@ app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, author
 });
 
 // Update table status
-app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor']), async (req, res) => {
   const { isActive } = req.body;
-  db.run(
-    'UPDATE tables SET isActive = ? WHERE id = ?',
-    [isActive, req.params.tableId],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
+  const userId = req.user.id;
+  const userRole = req.user.role;
+  const tableId = req.params.tableId;
+
+  try {
+    if (userRole === 'editor') {
+      const tableRow = await new Promise((resolve, reject) => {
+        db.get('SELECT creatorId, isActive FROM tables WHERE id = ?', [tableId], (err, row) => {
+          if (err) return reject(err);
+          resolve(row);
+        });
+      });
+      if (!tableRow) {
+        return res.status(404).json({ error: 'Table not found' });
       }
-      res.json({ isActive });
+      // אם השולחן לא אקטיבי, רק היוצר יכול להפעיל/להשבית
+      if (!tableRow.isActive && tableRow.creatorId !== userId) {
+        return res.status(403).json({ error: 'You do not have permission to change status for this table' });
+      }
+      // אם השולחן אקטיבי, כל עורך יכול להפעיל/להשבית
     }
-  );
+
+    db.run(
+      'UPDATE tables SET isActive = ? WHERE id = ?',
+      [isActive, tableId],
+      function(err) {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+        res.json({ isActive });
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Reactivate player
