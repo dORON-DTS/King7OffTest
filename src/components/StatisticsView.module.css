@@ -1,0 +1,110 @@
+.position-cell {}
+.title-cell {}
+.player-cell {}
+
+@media (max-width: 600px) {
+  .sticky-header {
+    position: sticky !important;
+    top: 0;
+    z-index: 10;
+    background: #1e1e1e;
+  }
+  .position-cell {
+    position: sticky !important;
+    left: 0;
+    z-index: 20;
+    background: #1e1e1e !important;
+    box-shadow: 2px 0 6px -2px #0006;
+  }
+  .title-cell {
+    position: sticky !important;
+    left: 60px;
+    z-index: 20;
+    background: #1e1e1e !important;
+    box-shadow: 2px 0 6px -2px #0006;
+  }
+  .player-cell {
+    position: sticky !important;
+    left: 120px;
+    z-index: 20;
+    background: #1e1e1e !important;
+    box-shadow: 2px 0 6px -2px #0006;
+  }
+  .mobile-table-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    font-size: 0.85rem;
+    padding-bottom: 8px;
+  }
+  .mobile-scroll-hint {
+    position: absolute;
+    top: 8px;
+    right: 16px;
+    z-index: 10;
+    color: #aaa;
+    font-size: 1.2em;
+    pointer-events: none;
+    animation: bounce-arrow 1.2s infinite;
+  }
+  @keyframes bounce-arrow {
+    0%, 100% { transform: translateX(0); opacity: 0.7; }
+    50% { transform: translateX(-10px); opacity: 1; }
+  }
+  .mobile-stats-grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow-x: auto;
+    background: #181818;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .mobile-stats-header {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #1e1e1e;
+    font-weight: bold;
+    color: #29b6f6;
+    border-bottom: 2px solid #333;
+  }
+  .mobile-stats-row {
+    display: flex;
+    border-bottom: 1px solid #222;
+    background: #181818;
+    align-items: center;
+    min-height: 40px;
+  }
+  .mobile-stats-cell {
+    flex: 1 0 90px;
+    min-width: 90px;
+    padding: 8px 4px;
+    text-align: center;
+    color: #fff;
+    background: #181818;
+    font-size: 0.95em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mobile-stats-sticky {
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    background: #1e1e1e;
+    box-shadow: 2px 0 6px -2px #0006;
+    color: #fff;
+    font-weight: bold;
+  }
+  .mobile-stats-sticky2 {
+    position: sticky;
+    left: 60px;
+    z-index: 20;
+    background: #1e1e1e;
+    box-shadow: 2px 0 6px -2px #0006;
+    color: #fff;
+    font-weight: bold;
+  }
+} 
