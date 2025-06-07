@@ -31,6 +31,7 @@ const GroupManagementDialog: React.FC<GroupManagementDialogProps> = ({ open, onC
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [newGroup, setNewGroup] = useState({ name: '', description: '' });
   const { user } = useUser();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -58,19 +59,23 @@ const GroupManagementDialog: React.FC<GroupManagementDialogProps> = ({ open, onC
         },
         body: JSON.stringify(newGroup),
       });
-
-      if (!response.ok) throw new Error('Failed to create group');
-      
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 403 || errorText.includes('permission')) {
+          setError('You do not have permission to perform this action');
+          return;
+        }
+        throw new Error('Failed to create group');
+      }
       await fetchGroups();
       setNewGroup({ name: '', description: '' });
     } catch (error) {
-      console.error('Error creating group:', error);
+      setError('Failed to create group');
     }
   };
 
   const handleUpdateGroup = async () => {
     if (!editingGroup) return;
-
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups/${editingGroup.id}`, {
         method: 'PUT',
@@ -79,13 +84,18 @@ const GroupManagementDialog: React.FC<GroupManagementDialogProps> = ({ open, onC
         },
         body: JSON.stringify(editingGroup),
       });
-
-      if (!response.ok) throw new Error('Failed to update group');
-      
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 403 || errorText.includes('permission')) {
+          setError('You do not have permission to perform this action');
+          return;
+        }
+        throw new Error('Failed to update group');
+      }
       await fetchGroups();
       setEditingGroup(null);
     } catch (error) {
-      console.error('Error updating group:', error);
+      setError('Failed to update group');
     }
   };
 
@@ -94,12 +104,17 @@ const GroupManagementDialog: React.FC<GroupManagementDialogProps> = ({ open, onC
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups/${groupId}`, {
         method: 'DELETE',
       });
-
-      if (!response.ok) throw new Error('Failed to delete group');
-      
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 403 || errorText.includes('permission')) {
+          setError('You do not have permission to perform this action');
+          return;
+        }
+        throw new Error('Failed to delete group');
+      }
       await fetchGroups();
     } catch (error) {
-      console.error('Error deleting group:', error);
+      setError('Failed to delete group');
     }
   };
 

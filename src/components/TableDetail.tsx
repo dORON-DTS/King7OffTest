@@ -195,7 +195,7 @@ const TableDetail: React.FC = () => {
     return newPlayerName && newPlayerName.trim() !== '';
   };
 
-  const handleAddPlayer = () => {
+  const handleAddPlayer = async () => {
     if (isFormValid() && newPlayerName) {
       // Check for duplicate names and nicknames
       const isDuplicate = table.players.some(
@@ -203,30 +203,44 @@ const TableDetail: React.FC = () => {
           player.name.toLowerCase() === newPlayerName.trim().toLowerCase() &&
           (player.nickname || '').toLowerCase() === newPlayerNickname.trim().toLowerCase()
       );
-
       if (isDuplicate) {
         alert('A player with this exact name and nickname combination already exists at this table');
         return;
       }
-
-      addPlayer(
-        id,
-        newPlayerName.trim(),
-        newPlayerChips,
-        newPlayerNickname.trim()
-      );
-      setOpenDialog(false);
-      setNewPlayerName(null);
-      setNewPlayerNickname('');
-      setNewPlayerChips(50);
+      try {
+        await addPlayer(
+          id,
+          newPlayerName.trim(),
+          newPlayerChips,
+          newPlayerNickname.trim()
+        );
+        setOpenDialog(false);
+        setNewPlayerName(null);
+        setNewPlayerNickname('');
+        setNewPlayerChips(50);
+      } catch (error: any) {
+        if (error.message?.includes('403') || error.message?.includes('permission')) {
+          showTransientError('You do not have permission to perform this action');
+        } else {
+          showTransientError('Failed to add player');
+        }
+      }
     }
   };
 
-  const handleBuyIn = () => {
+  const handleBuyIn = async () => {
     if (selectedPlayerId && buyInAmount && buyInAmount > 0) {
-      addBuyIn(id, selectedPlayerId, Number(buyInAmount));
-      setBuyInDialogOpen(false);
-      setBuyInAmount(0);
+      try {
+        await addBuyIn(id, selectedPlayerId, Number(buyInAmount));
+        setBuyInDialogOpen(false);
+        setBuyInAmount(0);
+      } catch (error: any) {
+        if (error.message?.includes('403') || error.message?.includes('permission')) {
+          showTransientError('You do not have permission to perform this action');
+        } else {
+          showTransientError('Failed to add buy-in');
+        }
+      }
     }
   };
 
@@ -239,11 +253,19 @@ const TableDetail: React.FC = () => {
     }
   };
 
-  const confirmCashOut = () => {
+  const confirmCashOut = async () => {
     if (selectedPlayerId && cashOutAmount >= 0) {
-      cashOut(id, selectedPlayerId, cashOutAmount);
-      setCashOutDialogOpen(false);
-      setCashOutAmount(0);
+      try {
+        await cashOut(id, selectedPlayerId, cashOutAmount);
+        setCashOutDialogOpen(false);
+        setCashOutAmount(0);
+      } catch (error: any) {
+        if (error.message?.includes('403') || error.message?.includes('permission')) {
+          showTransientError('You do not have permission to perform this action');
+        } else {
+          showTransientError('Failed to cash out');
+        }
+      }
     }
   };
 
@@ -310,22 +332,37 @@ const TableDetail: React.FC = () => {
   };
 
   // Update the handler
-  const handleTableStatusChange = () => {
+  const handleTableStatusChange = async () => {
     if (table.isActive) {
       setDeactivateDialogOpen(true);
     } else {
-      toggleTableStatus(id, table.creatorId);
+      try {
+        await toggleTableStatus(id, table.creatorId);
+      } catch (error: any) {
+        if (error.message?.includes('403') || error.message?.includes('permission')) {
+          showTransientError('You do not have permission to perform this action');
+        } else {
+          showTransientError('Failed to change table status');
+        }
+      }
     }
   };
 
-  const handleDeactivateConfirm = () => {
+  const handleDeactivateConfirm = async () => {
     const validation = validateTableDeactivation();
-    // Update condition to check allPlayersInactive
     if (!validation.allPlayersInactive || !validation.isBalanceMatching) {
       return; // Don't allow deactivation if validations fail
     }
-    toggleTableStatus(id, table.creatorId);
-    setDeactivateDialogOpen(false);
+    try {
+      await toggleTableStatus(id, table.creatorId);
+      setDeactivateDialogOpen(false);
+    } catch (error: any) {
+      if (error.message?.includes('403') || error.message?.includes('permission')) {
+        showTransientError('You do not have permission to perform this action');
+      } else {
+        showTransientError('Failed to deactivate table');
+      }
+    }
   };
 
   // Add handler for remove player
@@ -334,11 +371,19 @@ const TableDetail: React.FC = () => {
     setRemovePlayerDialogOpen(true);
   };
 
-  const confirmRemovePlayer = () => {
+  const confirmRemovePlayer = async () => {
     if (playerToRemove) {
-      removePlayer(id, playerToRemove);
-      setRemovePlayerDialogOpen(false);
-      setPlayerToRemove(null);
+      try {
+        await removePlayer(id, playerToRemove);
+        setRemovePlayerDialogOpen(false);
+        setPlayerToRemove(null);
+      } catch (error: any) {
+        if (error.message?.includes('403') || error.message?.includes('permission')) {
+          showTransientError('You do not have permission to perform this action');
+        } else {
+          showTransientError('Failed to remove player');
+        }
+      }
     }
   };
 
@@ -397,9 +442,12 @@ const TableDetail: React.FC = () => {
           groupId: editForm.groupId
         });
         setEditDialogOpen(false);
-      } catch (error) {
-        console.error('Error updating table:', error);
-        showTransientError('Failed to update table');
+      } catch (error: any) {
+        if (error.message?.includes('403') || error.message?.includes('permission')) {
+          showTransientError('You do not have permission to perform this action');
+        } else {
+          showTransientError('Failed to update table');
+        }
       }
     }
   };

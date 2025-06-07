@@ -89,11 +89,14 @@ const UserManagement: React.FC = () => {
           role: newRole
         })
       });
-
       if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 403 || errorText.includes('permission')) {
+          setError('You do not have permission to perform this action');
+          return;
+        }
         throw new Error('Failed to create user');
       }
-
       await fetchUsers();
       setNewUsername('');
       setNewPassword('');
@@ -118,7 +121,6 @@ const UserManagement: React.FC = () => {
 
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
-    
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${userToDelete}`, {
@@ -127,11 +129,14 @@ const UserManagement: React.FC = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-
       if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 403 || errorText.includes('permission')) {
+          setError('You do not have permission to perform this action');
+          return;
+        }
         throw new Error('Failed to delete user');
       }
-
       await fetchUsers();
       setDeleteConfirmOpen(false);
       setUserToDelete(null);
@@ -151,11 +156,14 @@ const UserManagement: React.FC = () => {
         },
         body: JSON.stringify({ role: newRole })
       });
-
       if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 403 || errorText.includes('permission')) {
+          setError('You do not have permission to perform this action');
+          return;
+        }
         throw new Error('Failed to update role');
       }
-
       await fetchUsers();
     } catch (error) {
       setError('Error updating role');
@@ -183,6 +191,11 @@ const UserManagement: React.FC = () => {
         body: JSON.stringify({ password: resetPassword })
       });
       if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 403 || errorText.includes('permission')) {
+          setResetError('You do not have permission to perform this action');
+          return;
+        }
         throw new Error('Failed to reset password');
       }
       setResetSuccess('Password reset successfully');
