@@ -1063,10 +1063,9 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
   });
 
   try {
-    // אם המשתמש הוא editor, נבדוק שהוא יצר את השולחן
     if (userRole === 'editor') {
       const tableRow = await new Promise((resolve, reject) => {
-        db.get('SELECT creatorId FROM tables WHERE id = ?', [tableId], (err, row) => {
+        db.get('SELECT creatorId, isActive FROM tables WHERE id = ?', [tableId], (err, row) => {
           if (err) return reject(err);
           resolve(row);
         });
@@ -1074,9 +1073,11 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
       if (!tableRow) {
         return res.status(404).json({ error: 'Table not found' });
       }
-      if (tableRow.creatorId !== userId) {
+      // אם השולחן לא אקטיבי, רק היוצר יכול לערוך
+      if (!tableRow.isActive && tableRow.creatorId !== userId) {
         return res.status(403).json({ error: 'You do not have permission to edit this table' });
       }
+      // אם השולחן אקטיבי, כל עורך יכול לערוך
     }
 
     // Validate required fields
