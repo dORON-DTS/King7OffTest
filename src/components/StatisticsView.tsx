@@ -1188,7 +1188,7 @@ const StatisticsView: React.FC = () => {
           </Grid>
           {/* 9. Best Current Streak */}
           <Grid item xs={6} sm={6} md={3}>
-            <Card sx={statCardSx} onClick={bestCurrentStreak.value > 0 ? () => setIsStreakDialogOpen(true) : undefined} style={bestCurrentStreak.value > 0 ? { cursor: 'pointer' } : {}}>
+            <Card sx={statCardSx}>
               <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="current-streak">⚡</span> Best Current Streak
