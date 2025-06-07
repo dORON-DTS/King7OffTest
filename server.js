@@ -461,14 +461,40 @@ app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res)
 });
 
 // Delete table
-app.delete('/api/tables/:id', authenticate, authorize(['admin']), (req, res) => {
-  db.run('DELETE FROM tables WHERE id = ?', [req.params.id], function(err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json({ message: 'Table deleted' });
-  });
+app.delete('/api/tables/:id', authenticate, authorize(['admin', 'editor']), (req, res) => {
+  const tableId = req.params.id;
+  const userId = req.user.id;
+  const userRole = req.user.role;
+
+  // אם המשתמש הוא editor, נבדוק שהוא יצר את השולחן
+  if (userRole === 'editor') {
+    db.get('SELECT creatorId FROM tables WHERE id = ?', [tableId], (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (!row) {
+        return res.status(404).json({ error: 'Table not found' });
+      }
+      if (row.creatorId !== userId) {
+        return res.status(403).json({ error: 'You do not have permission to delete this table' });
+      }
+      // אם עובר, מוחקים
+      db.run('DELETE FROM tables WHERE id = ?', [tableId], function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.json({ message: 'Table deleted' });
+      });
+    });
+  } else {
+    // admin מוחק הכל
+    db.run('DELETE FROM tables WHERE id = ?', [tableId], function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Table deleted' });
+    });
+  }
 });
 
 // Add player to table
