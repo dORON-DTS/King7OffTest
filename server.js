@@ -1063,6 +1063,22 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
   });
 
   try {
+    // אם המשתמש הוא editor, נבדוק שהוא יצר את השולחן
+    if (userRole === 'editor') {
+      const tableRow = await new Promise((resolve, reject) => {
+        db.get('SELECT creatorId FROM tables WHERE id = ?', [tableId], (err, row) => {
+          if (err) return reject(err);
+          resolve(row);
+        });
+      });
+      if (!tableRow) {
+        return res.status(404).json({ error: 'Table not found' });
+      }
+      if (tableRow.creatorId !== userId) {
+        return res.status(403).json({ error: 'You do not have permission to edit this table' });
+      }
+    }
+
     // Validate required fields
     if (!name || !smallBlind || !bigBlind) {
       console.warn('[UPDATE TABLE] Validation failed:', {
