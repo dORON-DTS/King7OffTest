@@ -983,7 +983,7 @@ const StatisticsView: React.FC = () => {
             player: player.name,
             amount: net,
             tableName: table.name,
-            date: table.createdAt ? new Date(table.createdAt).toLocaleDateString() : undefined
+            date: table.createdAt ? new Date(table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined
           });
         }
       });
