@@ -2310,6 +2310,24 @@ const StatisticsView: React.FC = () => {
         <DialogContent>
           {top3BestCurrentStreaks.length > 0 ? (
             <List>
+              {top3BestCurrentStreaks.map((streak, idx) => (
+                <ListItem key={streak.player + streak.streak}>
+                  <ListItemText
+                    primary={<>
+                      <strong>{idx + 1}.</strong> {streak.player} ({streak.streak} Games)
+                    </>}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No data available.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsBestCurrentStreakDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
