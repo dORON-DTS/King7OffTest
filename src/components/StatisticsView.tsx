@@ -374,6 +374,9 @@ const StatisticsView: React.FC = () => {
   }>({ table: null, avgBuyIn: 0 });
   const [isCalmestTableDialogOpen, setIsCalmestTableDialogOpen] = useState(false);
 
+  // Add state for Most Games Played dialog
+  const [isMostGamesPlayedDialogOpen, setIsMostGamesPlayedDialogOpen] = useState(false);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -955,6 +958,13 @@ const StatisticsView: React.FC = () => {
     },
   };
 
+  // Helper: get top 3 players by games played
+  const top3MostGamesPlayed = useMemo(() => {
+    return [...playerStats]
+      .sort((a, b) => b.tablesPlayed - a.tablesPlayed)
+      .slice(0, 3);
+  }, [playerStats]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -1068,7 +1078,7 @@ const StatisticsView: React.FC = () => {
           </Grid>
           {/* 2. Most Games Played */}
           <Grid item xs={6} sm={6} md={3}>
-            <Card sx={statCardSx}>
+            <Card sx={statCardSx} onClick={top3MostGamesPlayed.length > 0 ? () => setIsMostGamesPlayedDialogOpen(true) : undefined} style={top3MostGamesPlayed.length > 0 ? { cursor: 'pointer' } : {}}>
               <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="trophy">🏆</span> Most Games Played
@@ -1889,6 +1899,46 @@ const StatisticsView: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCalmestTableDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Most Games Played Dialog */}
+      <Dialog
+        open={isMostGamesPlayedDialogOpen}
+        onClose={() => setIsMostGamesPlayedDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span role="img" aria-label="trophy">🏆</span> Top 3 Most Games Played
+        </DialogTitle>
+        <DialogContent>
+          {top3MostGamesPlayed.length > 0 ? (
+            <List>
+              {top3MostGamesPlayed.map((player, idx) => (
+                <ListItem key={player.id || player.name}>
+                  <ListItemText
+                    primary={<>
+                      <strong>{idx + 1}.</strong> {player.name}
+                    </>}
+                    secondary={`Games Played: ${player.tablesPlayed}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No data available.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsMostGamesPlayedDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
