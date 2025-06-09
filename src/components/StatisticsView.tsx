@@ -377,6 +377,9 @@ const StatisticsView: React.FC = () => {
   // Add state for Most Games Played dialog
   const [isMostGamesPlayedDialogOpen, setIsMostGamesPlayedDialogOpen] = useState(false);
 
+  // Add state for Biggest Single Game Win dialog
+  const [isBiggestSingleGameWinDialogOpen, setIsBiggestSingleGameWinDialogOpen] = useState(false);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -965,6 +968,29 @@ const StatisticsView: React.FC = () => {
       .slice(0, 3);
   }, [playerStats]);
 
+  // Helper: get top 3 biggest single game wins
+  const top3BiggestSingleGameWins = useMemo(() => {
+    // Collect all single game wins from all tables
+    const wins: { player: string; amount: number; tableName?: string; date?: string }[] = [];
+    filteredTables.forEach(table => {
+      table.players.forEach(player => {
+        const buyIn = player.totalBuyIn || 0;
+        const cashOut = player.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
+        const chips = player.active ? (player.chips || 0) : 0;
+        const net = cashOut + chips - buyIn;
+        if (net > 0) {
+          wins.push({
+            player: player.name,
+            amount: net,
+            tableName: table.name,
+            date: table.createdAt ? new Date(table.createdAt).toLocaleDateString() : undefined
+          });
+        }
+      });
+    });
+    return wins.sort((a, b) => b.amount - a.amount).slice(0, 3);
+  }, [filteredTables]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -1113,7 +1139,7 @@ const StatisticsView: React.FC = () => {
           </Grid>
           {/* 4. Biggest Single Game Win */}
           <Grid item xs={6} sm={6} md={3}>
-            <Card sx={statCardSx}>
+            <Card sx={statCardSx} onClick={top3BiggestSingleGameWins.length > 0 ? () => setIsBiggestSingleGameWinDialogOpen(true) : undefined} style={top3BiggestSingleGameWins.length > 0 ? { cursor: 'pointer' } : {}}>
               <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="win">🏅</span> Biggest Single Game Win
@@ -1939,6 +1965,46 @@ const StatisticsView: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsMostGamesPlayedDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Biggest Single Game Win Dialog */}
+      <Dialog
+        open={isBiggestSingleGameWinDialogOpen}
+        onClose={() => setIsBiggestSingleGameWinDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span role="img" aria-label="win">🏅</span> Top 3 Biggest Single Game Wins
+        </DialogTitle>
+        <DialogContent>
+          {top3BiggestSingleGameWins.length > 0 ? (
+            <List>
+              {top3BiggestSingleGameWins.map((win, idx) => (
+                <ListItem key={win.player + win.amount + (win.tableName || '') + (win.date || '')}>
+                  <ListItemText
+                    primary={<>
+                      <strong>{idx + 1}.</strong> {win.player} (+{win.amount})
+                    </>}
+                    secondary={win.tableName || win.date ? `${win.tableName ? 'Table: ' + win.tableName : ''}${win.tableName && win.date ? ' | ' : ''}${win.date ? 'Date: ' + win.date : ''}` : undefined}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No data available.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsBiggestSingleGameWinDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
