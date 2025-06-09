@@ -386,6 +386,9 @@ const StatisticsView: React.FC = () => {
   // Add state for Biggest Single Game Buy-In dialog
   const [isBiggestSingleGameBuyInDialogOpen, setIsBiggestSingleGameBuyInDialogOpen] = useState(false);
 
+  // Add state for Biggest Avg Buy-In dialog
+  const [isBiggestAvgBuyInDialogOpen, setIsBiggestAvgBuyInDialogOpen] = useState(false);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -1052,6 +1055,19 @@ const StatisticsView: React.FC = () => {
     return buyIns.sort((a, b) => b.amount - a.amount).slice(0, 3);
   }, [filteredTables]);
 
+  // Helper: get top 3 biggest avg buy-in
+  const top3BiggestAvgBuyIn = useMemo(() => {
+    return [...playerStats]
+      .filter(p => p.tablesPlayed > 0)
+      .map(p => ({
+        player: p.name,
+        avgBuyIn: Math.round(p.avgBuyIn),
+        games: p.tablesPlayed
+      }))
+      .sort((a, b) => b.avgBuyIn - a.avgBuyIn)
+      .slice(0, 3);
+  }, [playerStats]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -1251,7 +1267,7 @@ const StatisticsView: React.FC = () => {
           </Grid>
           {/* 7. Biggest Avg Buy-In */}
           <Grid item xs={6} sm={6} md={3}>
-            <Card sx={statCardSx}>
+            <Card sx={statCardSx} onClick={top3BiggestAvgBuyIn.length > 0 ? () => setIsBiggestAvgBuyInDialogOpen(true) : undefined} style={top3BiggestAvgBuyIn.length > 0 ? { cursor: 'pointer' } : {}}>
               <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="credit-card">💳</span> Biggest Avg Buy-In
@@ -2145,6 +2161,46 @@ const StatisticsView: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsBiggestSingleGameBuyInDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Biggest Avg Buy-In Dialog */}
+      <Dialog
+        open={isBiggestAvgBuyInDialogOpen}
+        onClose={() => setIsBiggestAvgBuyInDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span role="img" aria-label="credit-card">💳</span> Top 3 Biggest Avg Buy-In
+        </DialogTitle>
+        <DialogContent>
+          {top3BiggestAvgBuyIn.length > 0 ? (
+            <List>
+              {top3BiggestAvgBuyIn.map((item, idx) => (
+                <ListItem key={item.player + item.avgBuyIn}>
+                  <ListItemText
+                    primary={<>
+                      <strong>{idx + 1}.</strong> {item.player} ({item.avgBuyIn})
+                    </>}
+                    secondary={`Games: ${item.games}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No data available.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsBiggestAvgBuyInDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
