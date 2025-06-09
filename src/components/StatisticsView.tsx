@@ -383,6 +383,9 @@ const StatisticsView: React.FC = () => {
   // Add state for Best Winning Streak dialog
   const [isBestWinningStreakDialogOpen, setIsBestWinningStreakDialogOpen] = useState(false);
 
+  // Add state for Biggest Single Game Buy-In dialog
+  const [isBiggestSingleGameBuyInDialogOpen, setIsBiggestSingleGameBuyInDialogOpen] = useState(false);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -1030,6 +1033,25 @@ const StatisticsView: React.FC = () => {
     return streaks.sort((a, b) => b.streak - a.streak).slice(0, 3);
   }, [playerStats, filteredTables]);
 
+  // Helper: get top 3 biggest single game buy-ins
+  const top3BiggestSingleGameBuyIns = useMemo(() => {
+    const buyIns: { player: string; amount: number; tableName?: string; date?: string }[] = [];
+    filteredTables.forEach(table => {
+      table.players.forEach(player => {
+        const buyIn = player.totalBuyIn || 0;
+        if (buyIn > 0) {
+          buyIns.push({
+            player: player.name,
+            amount: buyIn,
+            tableName: table.name,
+            date: table.createdAt ? new Date(table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined
+          });
+        }
+      });
+    });
+    return buyIns.sort((a, b) => b.amount - a.amount).slice(0, 3);
+  }, [filteredTables]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -1212,7 +1234,7 @@ const StatisticsView: React.FC = () => {
           </Grid>
           {/* 6. Biggest Single Game Buy-In */}
           <Grid item xs={6} sm={6} md={3}>
-            <Card sx={statCardSx}>
+            <Card sx={statCardSx} onClick={top3BiggestSingleGameBuyIns.length > 0 ? () => setIsBiggestSingleGameBuyInDialogOpen(true) : undefined} style={top3BiggestSingleGameBuyIns.length > 0 ? { cursor: 'pointer' } : {}}>
               <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="buy-in">🪙</span> Biggest Single Game Buy-In
@@ -2083,6 +2105,46 @@ const StatisticsView: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsBestWinningStreakDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Biggest Single Game Buy-In Dialog */}
+      <Dialog
+        open={isBiggestSingleGameBuyInDialogOpen}
+        onClose={() => setIsBiggestSingleGameBuyInDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span role="img" aria-label="buy-in">🪙</span> Top 3 Biggest Single Game Buy-Ins
+        </DialogTitle>
+        <DialogContent>
+          {top3BiggestSingleGameBuyIns.length > 0 ? (
+            <List>
+              {top3BiggestSingleGameBuyIns.map((buyIn, idx) => (
+                <ListItem key={buyIn.player + buyIn.amount + (buyIn.tableName || '') + (buyIn.date || '')}>
+                  <ListItemText
+                    primary={<>
+                      <strong>{idx + 1}.</strong> {buyIn.player} ({buyIn.amount})
+                    </>}
+                    secondary={buyIn.tableName || buyIn.date ? `${buyIn.tableName ? 'Table: ' + buyIn.tableName : ''}${buyIn.tableName && buyIn.date ? ' | ' : ''}${buyIn.date ? 'Date: ' + buyIn.date : ''}` : undefined}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No data available.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsBiggestSingleGameBuyInDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
