@@ -392,6 +392,9 @@ const StatisticsView: React.FC = () => {
   // Add state for Best Avg Result dialog
   const [isBestAvgResultDialogOpen, setIsBestAvgResultDialogOpen] = useState(false);
 
+  // Add state for Best Current Streak dialog
+  const [isBestCurrentStreakDialogOpen, setIsBestCurrentStreakDialogOpen] = useState(false);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -1084,6 +1087,33 @@ const StatisticsView: React.FC = () => {
       .slice(0, 3);
   }, [playerStats]);
 
+  // Helper: get top 3 best current streaks
+  const top3BestCurrentStreaks = useMemo(() => {
+    // For each player, calculate their current win streak
+    const streaks: { player: string; streak: number }[] = [];
+    playerStats.forEach(player => {
+      let currentStreak = 0;
+      const sortedTables = [...filteredTables].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      for (const table of sortedTables) {
+        const playerInTable = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+        if (!playerInTable) continue;
+        const buyIn = playerInTable.totalBuyIn || 0;
+        const cashOut = playerInTable.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
+        const chips = playerInTable.active ? (playerInTable.chips || 0) : 0;
+        const net = cashOut + chips - buyIn;
+        if (net > 0) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+      if (currentStreak > 0) {
+        streaks.push({ player: player.name, streak: currentStreak });
+      }
+    });
+    return streaks.sort((a, b) => b.streak - a.streak).slice(0, 3);
+  }, [playerStats, filteredTables]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -1317,7 +1347,7 @@ const StatisticsView: React.FC = () => {
           </Grid>
           {/* 9. Best Current Streak */}
           <Grid item xs={6} sm={6} md={3}>
-            <Card sx={statCardSx}>
+            <Card sx={statCardSx} onClick={top3BestCurrentStreaks.length > 0 ? () => setIsBestCurrentStreakDialogOpen(true) : undefined} style={top3BestCurrentStreaks.length > 0 ? { cursor: 'pointer' } : {}}>
               <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="current-streak">⚡</span> Best Current Streak
@@ -2259,6 +2289,27 @@ const StatisticsView: React.FC = () => {
           <Button onClick={() => setIsBestAvgResultDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Best Current Streak Dialog */}
+      <Dialog
+        open={isBestCurrentStreakDialogOpen}
+        onClose={() => setIsBestCurrentStreakDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span role="img" aria-label="current-streak">⚡</span> Top 3 Best Current Streaks
+        </DialogTitle>
+        <DialogContent>
+          {top3BestCurrentStreaks.length > 0 ? (
+            <List>
     </Box>
   );
 };
