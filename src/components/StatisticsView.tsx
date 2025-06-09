@@ -389,6 +389,9 @@ const StatisticsView: React.FC = () => {
   // Add state for Biggest Avg Buy-In dialog
   const [isBiggestAvgBuyInDialogOpen, setIsBiggestAvgBuyInDialogOpen] = useState(false);
 
+  // Add state for Best Avg Result dialog
+  const [isBestAvgResultDialogOpen, setIsBestAvgResultDialogOpen] = useState(false);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -1068,6 +1071,19 @@ const StatisticsView: React.FC = () => {
       .slice(0, 3);
   }, [playerStats]);
 
+  // Helper: get top 3 best avg result
+  const top3BestAvgResult = useMemo(() => {
+    return [...playerStats]
+      .filter(p => p.tablesPlayed > 0)
+      .map(p => ({
+        player: p.name,
+        avgResult: Math.round(p.avgNetResult),
+        games: p.tablesPlayed
+      }))
+      .sort((a, b) => b.avgResult - a.avgResult)
+      .slice(0, 3);
+  }, [playerStats]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -1284,7 +1300,7 @@ const StatisticsView: React.FC = () => {
           </Grid>
           {/* 8. Best Avg Result */}
           <Grid item xs={6} sm={6} md={3}>
-            <Card sx={statCardSx}>
+            <Card sx={statCardSx} onClick={top3BestAvgResult.length > 0 ? () => setIsBestAvgResultDialogOpen(true) : undefined} style={top3BestAvgResult.length > 0 ? { cursor: 'pointer' } : {}}>
               <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="chart">📈</span> Best Avg Result
@@ -2201,6 +2217,46 @@ const StatisticsView: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsBiggestAvgBuyInDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Best Avg Result Dialog */}
+      <Dialog
+        open={isBestAvgResultDialogOpen}
+        onClose={() => setIsBestAvgResultDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span role="img" aria-label="chart">📈</span> Top 3 Best Avg Result
+        </DialogTitle>
+        <DialogContent>
+          {top3BestAvgResult.length > 0 ? (
+            <List>
+              {top3BestAvgResult.map((item, idx) => (
+                <ListItem key={item.player + item.avgResult}>
+                  <ListItemText
+                    primary={<>
+                      <strong>{idx + 1}.</strong> {item.player} ({item.avgResult})
+                    </>}
+                    secondary={`Games: ${item.games}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No data available.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsBestAvgResultDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
