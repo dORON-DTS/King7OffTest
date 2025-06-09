@@ -380,6 +380,9 @@ const StatisticsView: React.FC = () => {
   // Add state for Biggest Single Game Win dialog
   const [isBiggestSingleGameWinDialogOpen, setIsBiggestSingleGameWinDialogOpen] = useState(false);
 
+  // Add state for Best Winning Streak dialog
+  const [isBestWinningStreakDialogOpen, setIsBestWinningStreakDialogOpen] = useState(false);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -991,6 +994,42 @@ const StatisticsView: React.FC = () => {
     return wins.sort((a, b) => b.amount - a.amount).slice(0, 3);
   }, [filteredTables]);
 
+  // Helper: get top 3 best winning streaks
+  const top3BestWinningStreaks = useMemo(() => {
+    // For each player, calculate their longest win streak
+    const streaks: { player: string; streak: number }[] = [];
+    playerStats.forEach(player => {
+      // Gather all games for this player
+      const games = filteredTables
+        .filter(table => table.players.some(p => p.name.toLowerCase() === player.name.toLowerCase()))
+        .map(table => {
+          const p = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+          const buyIn = p?.totalBuyIn || 0;
+          const cashOut = p?.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
+          const chips = p?.active ? (p?.chips || 0) : 0;
+          const net = cashOut + chips - buyIn;
+          return { netResult: net, date: new Date(table.createdAt) };
+        });
+      // Sort games by date ascending
+      games.sort((a, b) => a.date.getTime() - b.date.getTime());
+      // Calculate longest win streak
+      let streak = 0;
+      let maxPlayerStreak = 0;
+      games.forEach(g => {
+        if (g.netResult > 0) {
+          streak++;
+          if (streak > maxPlayerStreak) maxPlayerStreak = streak;
+        } else {
+          streak = 0;
+        }
+      });
+      if (maxPlayerStreak > 0) {
+        streaks.push({ player: player.name, streak: maxPlayerStreak });
+      }
+    });
+    return streaks.sort((a, b) => b.streak - a.streak).slice(0, 3);
+  }, [playerStats, filteredTables]);
+
   if (loading || (user && contextLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -1156,7 +1195,7 @@ const StatisticsView: React.FC = () => {
           </Grid>
           {/* 5. Best Winning Streak */}
           <Grid item xs={6} sm={6} md={3}>
-            <Card sx={statCardSx}>
+            <Card sx={statCardSx} onClick={top3BestWinningStreaks.length > 0 ? () => setIsBestWinningStreakDialogOpen(true) : undefined} style={top3BestWinningStreaks.length > 0 ? { cursor: 'pointer' } : {}}>
               <CardContent sx={{ width: '100%', height: '100%', p: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="fire">🔥</span> Best Winning Streak
@@ -2005,6 +2044,45 @@ const StatisticsView: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsBiggestSingleGameWinDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Best Winning Streak Dialog */}
+      <Dialog
+        open={isBestWinningStreakDialogOpen}
+        onClose={() => setIsBestWinningStreakDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span role="img" aria-label="fire">🔥</span> Top 3 Best Winning Streaks
+        </DialogTitle>
+        <DialogContent>
+          {top3BestWinningStreaks.length > 0 ? (
+            <List>
+              {top3BestWinningStreaks.map((streak, idx) => (
+                <ListItem key={streak.player + streak.streak}>
+                  <ListItemText
+                    primary={<>
+                      <strong>{idx + 1}.</strong> {streak.player} ({streak.streak} Games)
+                    </>}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No data available.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsBestWinningStreakDialogOpen(false)} sx={{ color: 'grey.400' }}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
