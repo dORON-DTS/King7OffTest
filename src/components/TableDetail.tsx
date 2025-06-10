@@ -122,12 +122,22 @@ const TableDetail: React.FC = () => {
   const fetchUniquePlayerNames = async () => {
     try {
       setLoadingNames(true);
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/statistics/players`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch player names');
+      // Get all player names from tables with the same groupId as the current table
+      if (table && table.groupId && allTables) {
+        const relevantTables = allTables.filter(t => t.groupId === table.groupId);
+        const namesSet = new Set<string>();
+        relevantTables.forEach(t => {
+          t.players.forEach(p => {
+            namesSet.add(p.name);
+          });
+        });
+        // Exclude players already at the current table
+        const currentTableNames = new Set(table.players.map(p => p.name));
+        const filteredNames = Array.from(namesSet).filter(name => !currentTableNames.has(name));
+        setUniquePlayerNames(filteredNames.sort((a, b) => a.localeCompare(b)));
+      } else {
+        setUniquePlayerNames([]);
       }
-      const names = await response.json();
-      setUniquePlayerNames(names);
     } catch (error) {
       showTransientError('Failed to load player names');
     } finally {
