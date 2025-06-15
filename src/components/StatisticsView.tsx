@@ -800,17 +800,25 @@ const StatisticsView: React.FC = () => {
       // Calculate longest win streak
       let streak = 0;
       let maxPlayerStreak = 0;
-      games.forEach(g => {
-        if (g.netResult > 0) {
+      let streakStartIdx = 0;
+      let maxStreakStartIdx = 0;
+      let maxStreakEndIdx = 0;
+      for (let i = 0; i < games.length; i++) {
+        if (games[i].netResult > 0) {
+          if (streak === 0) streakStartIdx = i;
           streak++;
-          if (streak > maxPlayerStreak) maxPlayerStreak = streak;
+          if (streak > maxPlayerStreak) {
+            maxPlayerStreak = streak;
+            maxStreakStartIdx = streakStartIdx;
+            maxStreakEndIdx = i;
+          }
         } else {
           streak = 0;
         }
-      });
-      if (maxPlayerStreak > maxStreak) {
-        maxStreak = maxPlayerStreak;
-        maxStreakPlayer = player.name;
+      }
+      if (maxPlayerStreak > 0) {
+        // We'll use the end date of the streak as the achievement date
+        streaks.push({ player: player.name, streak: maxPlayerStreak, date: games[maxStreakEndIdx]?.date || null });
       }
     });
     setBestWinStreak({ value: maxStreak, player: maxStreakPlayer });
@@ -1008,8 +1016,8 @@ const StatisticsView: React.FC = () => {
 
   // Helper: get top 3 best winning streaks
   const top3BestWinningStreaks = useMemo(() => {
-    // For each player, calculate their longest win streak
-    const streaks: { player: string; streak: number }[] = [];
+    // For each player, calculate their longest win streak and when it was achieved
+    const streaks: { player: string; streak: number; date: Date | null }[] = [];
     playerStats.forEach(player => {
       // Gather all games for this player
       const games = filteredTables
@@ -1024,22 +1032,35 @@ const StatisticsView: React.FC = () => {
         });
       // Sort games by date ascending
       games.sort((a, b) => a.date.getTime() - b.date.getTime());
-      // Calculate longest win streak
+      // Calculate longest win streak and when it was achieved
       let streak = 0;
       let maxPlayerStreak = 0;
-      games.forEach(g => {
-        if (g.netResult > 0) {
+      let streakStartIdx = 0;
+      let maxStreakStartIdx = 0;
+      let maxStreakEndIdx = 0;
+      for (let i = 0; i < games.length; i++) {
+        if (games[i].netResult > 0) {
+          if (streak === 0) streakStartIdx = i;
           streak++;
-          if (streak > maxPlayerStreak) maxPlayerStreak = streak;
+          if (streak > maxPlayerStreak) {
+            maxPlayerStreak = streak;
+            maxStreakStartIdx = streakStartIdx;
+            maxStreakEndIdx = i;
+          }
         } else {
           streak = 0;
         }
-      });
+      }
       if (maxPlayerStreak > 0) {
-        streaks.push({ player: player.name, streak: maxPlayerStreak });
+        // We'll use the end date of the streak as the achievement date
+        streaks.push({ player: player.name, streak: maxPlayerStreak, date: games[maxStreakEndIdx]?.date || null });
       }
     });
-    return streaks.sort((a, b) => b.streak - a.streak).slice(0, 3);
+    return streaks.sort((a, b) => {
+      if (b.streak !== a.streak) return b.streak - a.streak;
+      if (a.date && b.date) return a.date.getTime() - b.date.getTime(); // earlier date first
+      return 0;
+    }).slice(0, 3);
   }, [playerStats, filteredTables]);
 
   // Helper: get top 3 biggest single game buy-ins
@@ -1294,9 +1315,9 @@ const StatisticsView: React.FC = () => {
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="fire">🔥</span> Best Winning Streak
                 </Typography>
-                {bestWinStreak.value > 0 ? (
+                {top3BestWinningStreaks.length > 0 ? (
                   <Typography variant="h5" sx={{ color: '#ffb300', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                    {bestWinStreak.player} ({bestWinStreak.value})
+                    {top3BestWinningStreaks[0].player} ({top3BestWinningStreaks[0].streak} Games)
                   </Typography>
                 ) : (
                   <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No streaks yet</Typography>
