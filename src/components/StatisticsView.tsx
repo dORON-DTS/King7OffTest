@@ -896,7 +896,7 @@ const StatisticsView: React.FC = () => {
                 hour12: false
               }),
               player: foodOrderer.name,
-              tableCreatedAt: new Date(table.createdAt).toISOString()
+              tableCreatedAt: table.createdAt ? String(table.createdAt) : undefined // keep the raw date for sorting
             });
           }
         }
@@ -1054,7 +1054,7 @@ const StatisticsView: React.FC = () => {
             amount: buyIn,
             tableName: table.name,
             date: table.createdAt ? new Date(table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined,
-            createdAt: table.createdAt // keep the raw date for sorting
+            createdAt: table.createdAt ? String(table.createdAt) : undefined // keep the raw date for sorting
           });
         }
       });
