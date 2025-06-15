@@ -1311,9 +1311,9 @@ const StatisticsView: React.FC = () => {
                 <Typography variant="h6" gutterBottom sx={{ color: 'grey.400', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   <span role="img" aria-label="buy-in">🪙</span> Biggest Single Game Buy-In
                 </Typography>
-                {extraStats.biggestSingleBuyIn.value > 0 ? (
+                {top3BiggestSingleGameBuyIns.length > 0 ? (
                   <Typography variant="h5" sx={{ color: '#ffd600', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                    {extraStats.biggestSingleBuyIn.player} ({extraStats.biggestSingleBuyIn.value})
+                    {top3BiggestSingleGameBuyIns[0].player} ({top3BiggestSingleGameBuyIns[0].amount})
                   </Typography>
                 ) : (
                   <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No buy-ins yet</Typography>
