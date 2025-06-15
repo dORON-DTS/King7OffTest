@@ -1044,7 +1044,7 @@ const StatisticsView: React.FC = () => {
 
   // Helper: get top 3 biggest single game buy-ins
   const top3BiggestSingleGameBuyIns = useMemo(() => {
-    const buyIns: { player: string; amount: number; tableName?: string; date?: string }[] = [];
+    const buyIns: { player: string; amount: number; tableName?: string; date?: string; createdAt?: string }[] = [];
     filteredTables.forEach(table => {
       table.players.forEach(player => {
         const buyIn = player.totalBuyIn || 0;
@@ -1053,12 +1053,22 @@ const StatisticsView: React.FC = () => {
             player: player.name,
             amount: buyIn,
             tableName: table.name,
-            date: table.createdAt ? new Date(table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined
+            date: table.createdAt ? new Date(table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined,
+            createdAt: table.createdAt // keep the raw date for sorting
           });
         }
       });
     });
-    return buyIns.sort((a, b) => b.amount - a.amount).slice(0, 3);
+    return buyIns.sort((a, b) => {
+      if (b.amount !== a.amount) {
+        return b.amount - a.amount;
+      }
+      // Tie-breaker: older createdAt first
+      if (a.createdAt && b.createdAt) {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      return 0;
+    }).slice(0, 3);
   }, [filteredTables]);
 
   // Helper: get top 3 biggest avg buy-in
