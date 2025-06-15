@@ -800,25 +800,17 @@ const StatisticsView: React.FC = () => {
       // Calculate longest win streak
       let streak = 0;
       let maxPlayerStreak = 0;
-      let streakStartIdx = 0;
-      let maxStreakStartIdx = 0;
-      let maxStreakEndIdx = 0;
       for (let i = 0; i < games.length; i++) {
         if (games[i].netResult > 0) {
-          if (streak === 0) streakStartIdx = i;
           streak++;
-          if (streak > maxPlayerStreak) {
-            maxPlayerStreak = streak;
-            maxStreakStartIdx = streakStartIdx;
-            maxStreakEndIdx = i;
-          }
+          if (streak > maxPlayerStreak) maxPlayerStreak = streak;
         } else {
           streak = 0;
         }
       }
-      if (maxPlayerStreak > 0) {
-        // We'll use the end date of the streak as the achievement date
-        streaks.push({ player: player.name, streak: maxPlayerStreak, date: games[maxStreakEndIdx]?.date || null });
+      if (maxPlayerStreak > maxStreak) {
+        maxStreak = maxPlayerStreak;
+        maxStreakPlayer = player.name;
       }
     });
     setBestWinStreak({ value: maxStreak, player: maxStreakPlayer });
