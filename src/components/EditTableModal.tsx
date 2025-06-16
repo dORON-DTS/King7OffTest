@@ -69,6 +69,8 @@ export const EditTableModal: React.FC<EditTableModalProps> = ({
 
   if (!isOpen) return null;
 
+  console.log("EditTableModal rendered");
+
   return (
     <div className="modal-overlay">
       <div className="modal-content">
@@ -116,6 +118,7 @@ export const EditTableModal: React.FC<EditTableModalProps> = ({
 
           <div className="form-group">
             <label htmlFor="minimumBuyIn">Minimum Buy-In</label>
+            {console.log("Rendering minimumBuyIn input in EditTableModal")}
             <input
               type="number"
               id="minimumBuyIn"

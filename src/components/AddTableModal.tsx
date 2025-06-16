@@ -75,6 +75,8 @@ export const AddTableModal: React.FC<AddTableModalProps> = ({
 
   if (!isOpen) return null;
 
+  console.log("AddTableModal rendered");
+
   return (
     <div className="modal-overlay">
       <div className="modal-content">
@@ -122,6 +124,7 @@ export const AddTableModal: React.FC<AddTableModalProps> = ({
 
           <div className="form-group">
             <label htmlFor="minimumBuyIn">Minimum Buy-In</label>
+            {console.log("Rendering minimumBuyIn input in AddTableModal")}
             <input
               type="number"
               id="minimumBuyIn"
