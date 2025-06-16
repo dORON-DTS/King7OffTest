@@ -77,16 +77,18 @@ export interface EditForm {
   date: Date;
   food: string;
   groupId: string;
+  minimumBuyIn: string;
 }
 
 export interface EditFormErrors {
-  [key: string]: string | undefined;
   name?: string;
   smallBlind?: string;
   bigBlind?: string;
   location?: string;
   date?: string;
   food?: string;
+  groupId?: string;
+  minimumBuyIn?: string;
 }
 
 export interface CreateTableFormData {
