@@ -418,7 +418,7 @@ app.get('/api/public/tables', (req, res) => {
 
 // Create new table
 app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res) => {
-  const { name, smallBlind, bigBlind, location, groupId } = req.body;
+  const { name, smallBlind, bigBlind, location, groupId, minimumBuyIn } = req.body;
   
   console.log('[CREATE TABLE] Received request:', {
     userId: req.user.id,
@@ -440,8 +440,8 @@ app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res)
   const isActive = true;
 
   db.run(
-    'INSERT INTO tables (id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId],
+    'INSERT INTO tables (id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn],
     function(err) {
       if (err) {
         console.error('[CREATE TABLE] Database error:', {
@@ -1070,7 +1070,7 @@ app.get('/api/tables/:id', authenticate, (req, res) => {
 // Update table
 app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (req, res) => {
   const tableId = req.params.id;
-  const { name, smallBlind, bigBlind, location, createdAt, food, groupId } = req.body;
+  const { name, smallBlind, bigBlind, location, createdAt, food, groupId, minimumBuyIn } = req.body;
   const userId = req.user.id;
   const userRole = req.user.role;
 
@@ -1152,11 +1152,11 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
     await new Promise((resolve, reject) => {
       const updateQuery = `
         UPDATE tables 
-        SET name = ?, smallBlind = ?, bigBlind = ?, location = ?, createdAt = ?, food = ?, groupId = ?
+        SET name = ?, smallBlind = ?, bigBlind = ?, location = ?, createdAt = ?, food = ?, groupId = ?, minimumBuyIn = ?
         WHERE id = ?
       `;
-      console.log('[UPDATE TABLE] Running SQL:', updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, groupId, tableId]);
-      db.run(updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, groupId, tableId], function(err) {
+      console.log('[UPDATE TABLE] Running SQL:', updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, groupId, minimumBuyIn, tableId]);
+      db.run(updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, groupId, minimumBuyIn, tableId], function(err) {
         if (err) {
           console.error('[UPDATE TABLE] Error updating table:', {
             tableId,
