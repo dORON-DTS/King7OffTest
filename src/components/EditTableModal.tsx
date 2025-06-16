@@ -69,8 +69,6 @@ export const EditTableModal: React.FC<EditTableModalProps> = ({
 
   if (!isOpen) return null;
 
-  console.log("EditTableModal rendered");
-
   return (
     <div className="modal-overlay">
       <div className="modal-content">

@@ -505,7 +505,6 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
   const initialBuyInId = uuidv4();
   const timestamp = new Date().toISOString();
   
-  // Get table's minimumBuyIn
   db.get('SELECT minimumBuyIn FROM tables WHERE id = ?', [tableId], (err, table) => {
     if (err) {
       console.error(`ADD PLAYER ERROR (GET TABLE): Table ${tableId} - ${err.message}`);
@@ -523,7 +522,6 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
             console.error(`ADD PLAYER ERROR (INSERT PLAYER): Table ${tableId}, Player ${name} - ${err.message}`);
             return res.status(500).json({ error: 'Failed to add player' });
           }
-          console.log(`ADD PLAYER SUCCESS (INSERT PLAYER): Table ${tableId}, Player ID: ${playerId}, Name: ${name}`);
 
           db.run(
             'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
@@ -531,8 +529,6 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
             function(buyinErr) {
               if (buyinErr) {
                 console.error(`ADD PLAYER ERROR (INSERT INITIAL BUYIN): Player ${playerId} - ${buyinErr.message}`);
-              } else {
-                console.log(`ADD PLAYER SUCCESS (INSERT INITIAL BUYIN): Player ID: ${playerId}, Buyin ID: ${initialBuyInId}, Amount: ${initialBuyInAmount}`);
               }
               
               const newPlayerResponse = {
@@ -597,7 +593,11 @@ app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authoriz
   const playerId = req.params.playerId;
   const timestamp = new Date().toISOString();
   
-  console.log(`BUYIN: Received for player ${playerId}, amount: ${amount} (Type: ${typeof amount})`);
+  const numericAmount = Number(amount);
+  if (isNaN(numericAmount)) {
+    console.error(`BUYIN ERROR (VALIDATION): Invalid amount type for player ${playerId} - amount: ${amount}`);
+    return res.status(400).json({ error: 'Invalid amount for buyin' });
+  }
 
   db.serialize(() => {
     db.run(
@@ -608,13 +608,6 @@ app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authoriz
           console.error(`BUYIN ERROR (INSERT): Player ${playerId} - ${err.message}`);
           return res.status(500).json({ error: 'Failed to record buyin' });
         }
-        console.log(`BUYIN SUCCESS (INSERT): Player ${playerId}, Buyin ID: ${buyInId}, Rows changed: ${this.changes}`);
-
-        const numericAmount = Number(amount);
-        if (isNaN(numericAmount)) {
-          console.error(`BUYIN ERROR (UPDATE): Invalid amount type for player ${playerId} - amount: ${amount}`);
-          return res.status(400).json({ error: 'Invalid amount for buyin' });
-        }
 
         db.run(
           'UPDATE players SET chips = COALESCE(chips, 0) + ?, totalBuyIn = COALESCE(totalBuyIn, 0) + ? WHERE id = ?',
@@ -624,7 +617,6 @@ app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authoriz
               console.error(`BUYIN ERROR (UPDATE): Player ${playerId} - ${updateErr.message}`);
               return res.status(500).json({ error: 'Failed to update player after buyin' });
             }
-            console.log(`BUYIN SUCCESS (UPDATE): Player ${playerId}, Rows changed: ${this.changes}`);
             res.json({ id: buyInId, amount: numericAmount, timestamp });
           }
         );

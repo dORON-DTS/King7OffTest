@@ -75,8 +75,6 @@ export const AddTableModal: React.FC<AddTableModalProps> = ({
 
   if (!isOpen) return null;
 
-  console.log("AddTableModal rendered");
-
   return (
     <div className="modal-overlay">
       <div className="modal-content">
