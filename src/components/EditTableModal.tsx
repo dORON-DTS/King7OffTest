@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTables } from '../context/TablesContext';
+import { usePoker } from '../context/PokerContext';
 import { Table } from '../types';
 
 interface EditTableModalProps {
@@ -13,7 +13,7 @@ export const EditTableModal: React.FC<EditTableModalProps> = ({
   onClose,
   table
 }) => {
-  const { editTable } = useTables();
+  const { updateTable } = usePoker();
   const [name, setName] = useState(table.name);
   const [smallBlind, setSmallBlind] = useState(table.smallBlind.toString());
   const [bigBlind, setBigBlind] = useState(table.bigBlind.toString());
@@ -59,7 +59,7 @@ export const EditTableModal: React.FC<EditTableModalProps> = ({
         food: food || undefined
       };
 
-      await editTable(updatedTable);
+      await updateTable(updatedTable);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update table');

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
-import { useTables } from '../context/TablesContext';
+import { usePoker } from '../context/PokerContext';
 import { Table } from '../types';
 
 interface AddTableModalProps {
@@ -17,7 +17,7 @@ export const AddTableModal: React.FC<AddTableModalProps> = ({
 }) => {
   const navigate = useNavigate();
   const { currentUser } = useUser();
-  const { createTable } = useTables();
+  const { createTable } = usePoker();
   const [name, setName] = useState('');
   const [smallBlind, setSmallBlind] = useState('');
   const [bigBlind, setBigBlind] = useState('');
