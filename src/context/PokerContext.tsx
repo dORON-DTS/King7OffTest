@@ -7,7 +7,7 @@ export interface PokerContextType {
   tables: Table[];
   groups: Group[];
   getTable: (id: string) => Table | null;
-  createTable: (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string) => void;
+  createTable: (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string, minimumBuyIn?: number) => Promise<any>;
   deleteTable: (id: string) => void;
   addPlayer: (tableId: string, name: string, chips: number, nickname?: string) => void;
   removePlayer: (tableId: string, playerId: string) => void;
@@ -127,7 +127,7 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [user, userLoading]);
 
-  const createTable = async (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string) => {
+  const createTable = async (name: string, smallBlind: number, bigBlind: number, groupId: string, location?: string, minimumBuyIn?: number) => {
     try {
       const token = getAuthToken();
       if (!token) {
@@ -145,7 +145,8 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           smallBlind,
           bigBlind,
           location,
-          groupId
+          groupId,
+          minimumBuyIn
         })
       });
 
