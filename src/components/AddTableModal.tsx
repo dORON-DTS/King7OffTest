@@ -57,21 +57,13 @@ export const AddTableModal: React.FC<AddTableModalProps> = ({
         throw new Error('Minimum buy-in must be at least 2 big blinds');
       }
 
-      const newTable: Omit<Table, 'id'> = {
+      const tableId = await createTable(
         name,
-        players: [],
-        smallBlind: smallBlindNum,
-        bigBlind: bigBlindNum,
-        minimumBuyIn: minimumBuyInNum,
-        createdAt: new Date(),
-        isActive: true,
-        creatorId: user.id,
-        location: location || undefined,
-        food: food || undefined,
-        groupId
-      };
-
-      const tableId = await createTable(newTable);
+        smallBlindNum,
+        bigBlindNum,
+        groupId,
+        location || undefined
+      );
       onClose();
       navigate(`/tables/${tableId}`);
     } catch (err) {
