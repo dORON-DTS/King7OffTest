@@ -98,6 +98,7 @@ export interface CreateTableFormData {
   bigBlind: string;
   location: string;
   groupId: string;
+  minimumBuyIn: string;
 }
 
 export interface CreateTableFunction {
