@@ -49,8 +49,7 @@ export const EditTableModal: React.FC<EditTableModalProps> = ({
         throw new Error('Minimum buy-in must be at least 2 big blinds');
       }
 
-      const updatedTable: Table = {
-        ...table,
+      const updatedTable = {
         name,
         smallBlind: smallBlindNum,
         bigBlind: bigBlindNum,
@@ -59,7 +58,7 @@ export const EditTableModal: React.FC<EditTableModalProps> = ({
         food: food || undefined
       };
 
-      await updateTable(updatedTable);
+      await updateTable(table.id, updatedTable);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update table');
