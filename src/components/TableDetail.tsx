@@ -90,7 +90,8 @@ const TableDetail: React.FC = () => {
     location: '',
     date: new Date(),
     food: '',
-    groupId: ''
+    groupId: '',
+    minimumBuyIn: ''
   });
   const [editFormErrors, setEditFormErrors] = useState<EditFormErrors>({});
 
@@ -106,7 +107,8 @@ const TableDetail: React.FC = () => {
         location: table.location || '',
         date: new Date(table.createdAt),
         food: table.food || '',
-        groupId: table.groupId || ''
+        groupId: table.groupId || '',
+        minimumBuyIn: table.minimumBuyIn?.toString() || ''
       });
       setEditFormErrors({});
     }
@@ -434,31 +436,27 @@ const TableDetail: React.FC = () => {
       errors.food = 'Selected player is not in the table';
     }
     
+    if (!editForm.minimumBuyIn || isNaN(Number(editForm.minimumBuyIn)) || Number(editForm.minimumBuyIn) <= 0) {
+      errors.minimumBuyIn = 'Minimum buy-in is required and must be greater than 0';
+    } else if (Number(editForm.minimumBuyIn) < Number(editForm.bigBlind) * 2) {
+      errors.minimumBuyIn = 'Minimum buy-in must be at least 2x big blind';
+    }
+    
     setEditFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   // שמירה (TODO: לממש עדכון לשרת)
   const handleEditSubmit = async () => {
-    if (validateEditForm() && id) {
-      try {
-        await updateTable(id, {
-          name: editForm.name,
-          smallBlind: Number(editForm.smallBlind),
-          bigBlind: Number(editForm.bigBlind),
-          location: editForm.location,
-          createdAt: editForm.date,
-          food: editForm.food,
-          groupId: editForm.groupId
-        });
-        setEditDialogOpen(false);
-      } catch (error: any) {
-        if (error.message?.includes('403') || error.message?.includes('permission')) {
-          showTransientError('You do not have permission to perform this action');
-        } else {
-          showTransientError('Failed to update table');
-        }
-      }
+    if (!validateEditForm()) return;
+    try {
+      await updateTable(table.id, {
+        ...editForm,
+        minimumBuyIn: Number(editForm.minimumBuyIn)
+      });
+      setEditDialogOpen(false);
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Failed to update table');
     }
   };
 
@@ -1142,6 +1140,18 @@ const TableDetail: React.FC = () => {
             onChange={handleEditInputChange('bigBlind')}
             error={!!editFormErrors.bigBlind}
             helperText={editFormErrors.bigBlind}
+            fullWidth
+            sx={{ mb: 2 }}
+            InputProps={{ startAdornment: '$' }}
+          />
+          <TextField
+            label="Minimum Buy-In"
+            required
+            type="number"
+            value={editForm.minimumBuyIn}
+            onChange={handleEditInputChange('minimumBuyIn')}
+            error={!!editFormErrors.minimumBuyIn}
+            helperText={editFormErrors.minimumBuyIn}
             fullWidth
             sx={{ mb: 2 }}
             InputProps={{ startAdornment: '$' }}

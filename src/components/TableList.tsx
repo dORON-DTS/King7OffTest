@@ -124,7 +124,8 @@ const TableList: React.FC = () => {
     smallBlind: '',
     bigBlind: '',
     location: '',
-    groupId: ''
+    groupId: '',
+    minimumBuyIn: ''
   });
   const [formErrors, setFormErrors] = useState<Partial<CreateTableFormData>>({});
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +180,8 @@ const TableList: React.FC = () => {
       smallBlind: '',
       bigBlind: '',
       location: '',
-      groupId: ''
+      groupId: '',
+      minimumBuyIn: ''
     });
     setFormErrors({});
   };
@@ -211,6 +213,12 @@ const TableList: React.FC = () => {
       errors.bigBlind = 'Big blind must be at least equal to small blind';
     }
     
+    if (!formData.minimumBuyIn || isNaN(Number(formData.minimumBuyIn)) || Number(formData.minimumBuyIn) <= 0) {
+      errors.minimumBuyIn = 'Minimum buy-in is required and must be greater than 0';
+    } else if (Number(formData.minimumBuyIn) < Number(formData.bigBlind) * 2) {
+      errors.minimumBuyIn = 'Minimum buy-in must be at least 2x big blind';
+    }
+    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -219,11 +227,13 @@ const TableList: React.FC = () => {
     return formData.name.trim() !== '' && 
            Number(formData.smallBlind) > 0 && 
            Number(formData.bigBlind) > 0 && 
-           Number(formData.bigBlind) >= Number(formData.smallBlind);
+           Number(formData.bigBlind) >= Number(formData.smallBlind) &&
+           Number(formData.minimumBuyIn) > 0 &&
+           Number(formData.minimumBuyIn) >= Number(formData.bigBlind) * 2;
   };
 
   const handleCreateTable = async () => {
-    if (!formData.name || !formData.smallBlind || !formData.bigBlind || !formData.groupId) {
+    if (!formData.name || !formData.smallBlind || !formData.bigBlind || !formData.groupId || !formData.minimumBuyIn) {
       setError('Please fill in all required fields');
       return;
     }
@@ -234,7 +244,8 @@ const TableList: React.FC = () => {
         Number(formData.smallBlind),
         Number(formData.bigBlind),
         formData.groupId,
-        formData.location
+        formData.location,
+        Number(formData.minimumBuyIn)
       );
       handleCreateDialogClose();
     } catch (error: any) {
@@ -749,6 +760,19 @@ const TableList: React.FC = () => {
               onChange={handleInputChange('bigBlind')}
               error={!!formErrors.bigBlind}
               helperText={formErrors.bigBlind}
+              fullWidth
+              InputProps={{
+                startAdornment: '$'
+              }}
+            />
+            <TextField
+              label="Minimum Buy-In"
+              required
+              type="number"
+              value={formData.minimumBuyIn}
+              onChange={handleInputChange('minimumBuyIn')}
+              error={!!formErrors.minimumBuyIn}
+              helperText={formErrors.minimumBuyIn}
               fullWidth
               InputProps={{
                 startAdornment: '$'
