@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useTables } from '../contexts/TablesContext';
+import { useAuth } from '../context/AuthContext';
+import { useTables } from '../context/TablesContext';
 import { Table } from '../types';
 
 interface AddTableModalProps {

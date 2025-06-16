@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTables } from '../contexts/TablesContext';
+import { useTables } from '../context/TablesContext';
 import { Table } from '../types';
 
 interface EditTableModalProps {
