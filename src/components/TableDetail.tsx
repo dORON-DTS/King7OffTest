@@ -207,6 +207,11 @@ const TableDetail: React.FC = () => {
     return newPlayerName && newPlayerName.trim() !== '';
   };
 
+  const handleOpenAddPlayerDialog = () => {
+    setNewPlayerChips(table.minimumBuyIn || 50);
+    setOpenDialog(true);
+  };
+
   const handleAddPlayer = async () => {
     if (isFormValid() && newPlayerName) {
       // Check for duplicate names and nicknames
@@ -283,7 +288,7 @@ const TableDetail: React.FC = () => {
 
   const openBuyInDialog = (playerId: string) => {
     setSelectedPlayerId(playerId);
-    setBuyInAmount(0);
+    setBuyInAmount(table.minimumBuyIn || 0);
     setBuyInDialogOpen(true);
   };
 
@@ -666,7 +671,7 @@ const TableDetail: React.FC = () => {
         <Button 
           variant="contained" 
           startIcon={<PersonAddIcon />}
-          onClick={() => setOpenDialog(true)}
+          onClick={handleOpenAddPlayerDialog}
         >
           Add Player
         </Button>

@@ -504,53 +504,62 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
   const playerId = uuidv4();
   const initialBuyInId = uuidv4();
   const timestamp = new Date().toISOString();
-  const initialBuyInAmount = Number(chips) || 0;
+  
+  // Get table's minimumBuyIn
+  db.get('SELECT minimumBuyIn FROM tables WHERE id = ?', [tableId], (err, table) => {
+    if (err) {
+      console.error(`ADD PLAYER ERROR (GET TABLE): Table ${tableId} - ${err.message}`);
+      return res.status(500).json({ error: 'Failed to get table information' });
+    }
 
-  db.serialize(() => {
-    db.run(
-      'INSERT INTO players (id, tableId, name, nickname, chips, totalBuyIn, active, showMe) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [playerId, tableId, name, nickname, initialBuyInAmount, initialBuyInAmount, active, showMe],
-      function(err) {
-        if (err) {
-          console.error(`ADD PLAYER ERROR (INSERT PLAYER): Table ${tableId}, Player ${name} - ${err.message}`);
-          return res.status(500).json({ error: 'Failed to add player' });
-        }
-        console.log(`ADD PLAYER SUCCESS (INSERT PLAYER): Table ${tableId}, Player ID: ${playerId}, Name: ${name}`);
+    const initialBuyInAmount = Number(chips) || table.minimumBuyIn || 0;
 
-        db.run(
-          'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
-          [initialBuyInId, playerId, initialBuyInAmount, timestamp],
-          function(buyinErr) {
-            if (buyinErr) {
-              console.error(`ADD PLAYER ERROR (INSERT INITIAL BUYIN): Player ${playerId} - ${buyinErr.message}`);
-            } else {
-              console.log(`ADD PLAYER SUCCESS (INSERT INITIAL BUYIN): Player ID: ${playerId}, Buyin ID: ${initialBuyInId}, Amount: ${initialBuyInAmount}`);
-            }
-            
-            const newPlayerResponse = {
-              id: playerId,
-              tableId: tableId,
-              name: name,
-              nickname: nickname,
-              chips: initialBuyInAmount,
-              totalBuyIn: initialBuyInAmount,
-              active: active,
-              showMe: showMe,
-              buyIns: [
-                {
-                  id: initialBuyInId,
-                  playerId: playerId,
-                  amount: initialBuyInAmount,
-                  timestamp: timestamp
-                }
-              ],
-              cashOuts: []
-            };
-            res.status(201).json(newPlayerResponse);
+    db.serialize(() => {
+      db.run(
+        'INSERT INTO players (id, tableId, name, nickname, chips, totalBuyIn, active, showMe) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [playerId, tableId, name, nickname, initialBuyInAmount, initialBuyInAmount, active, showMe],
+        function(err) {
+          if (err) {
+            console.error(`ADD PLAYER ERROR (INSERT PLAYER): Table ${tableId}, Player ${name} - ${err.message}`);
+            return res.status(500).json({ error: 'Failed to add player' });
           }
-        );
-      }
-    );
+          console.log(`ADD PLAYER SUCCESS (INSERT PLAYER): Table ${tableId}, Player ID: ${playerId}, Name: ${name}`);
+
+          db.run(
+            'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
+            [initialBuyInId, playerId, initialBuyInAmount, timestamp],
+            function(buyinErr) {
+              if (buyinErr) {
+                console.error(`ADD PLAYER ERROR (INSERT INITIAL BUYIN): Player ${playerId} - ${buyinErr.message}`);
+              } else {
+                console.log(`ADD PLAYER SUCCESS (INSERT INITIAL BUYIN): Player ID: ${playerId}, Buyin ID: ${initialBuyInId}, Amount: ${initialBuyInAmount}`);
+              }
+              
+              const newPlayerResponse = {
+                id: playerId,
+                tableId: tableId,
+                name: name,
+                nickname: nickname,
+                chips: initialBuyInAmount,
+                totalBuyIn: initialBuyInAmount,
+                active: active,
+                showMe: showMe,
+                buyIns: [
+                  {
+                    id: initialBuyInId,
+                    playerId: playerId,
+                    amount: initialBuyInAmount,
+                    timestamp: timestamp
+                  }
+                ],
+                cashOuts: []
+              };
+              res.status(201).json(newPlayerResponse);
+            }
+          );
+        }
+      );
+    });
   });
 });
 
