@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table } from '../types';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '../context/UserContext';
 
 interface TableCardProps {
   table: Table;
@@ -15,7 +15,7 @@ export const TableCard: React.FC<TableCardProps> = ({
   onDelete
 }) => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser } = useUser();
 
   const handleClick = () => {
     navigate(`/tables/${table.id}`);

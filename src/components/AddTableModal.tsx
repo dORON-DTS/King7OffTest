@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '../context/UserContext';
 import { useTables } from '../context/TablesContext';
 import { Table } from '../types';
 
@@ -16,7 +16,7 @@ export const AddTableModal: React.FC<AddTableModalProps> = ({
   groupId
 }) => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser } = useUser();
   const { createTable } = useTables();
   const [name, setName] = useState('');
   const [smallBlind, setSmallBlind] = useState('');
