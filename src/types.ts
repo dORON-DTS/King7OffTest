@@ -81,6 +81,7 @@ export interface EditForm {
 }
 
 export interface EditFormErrors {
+  [key: string]: string | undefined;
   name?: string;
   smallBlind?: string;
   bigBlind?: string;
