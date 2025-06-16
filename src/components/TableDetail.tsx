@@ -452,6 +452,8 @@ const TableDetail: React.FC = () => {
     try {
       await updateTable(table.id, {
         ...editForm,
+        smallBlind: Number(editForm.smallBlind),
+        bigBlind: Number(editForm.bigBlind),
         minimumBuyIn: Number(editForm.minimumBuyIn)
       });
       setEditDialogOpen(false);
