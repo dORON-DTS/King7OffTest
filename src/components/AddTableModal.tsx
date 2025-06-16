@@ -16,7 +16,7 @@ export const AddTableModal: React.FC<AddTableModalProps> = ({
   groupId
 }) => {
   const navigate = useNavigate();
-  const { currentUser } = useUser();
+  const { user } = useUser();
   const { createTable } = usePoker();
   const [name, setName] = useState('');
   const [smallBlind, setSmallBlind] = useState('');
@@ -33,7 +33,7 @@ export const AddTableModal: React.FC<AddTableModalProps> = ({
     setIsLoading(true);
 
     try {
-      if (!currentUser) {
+      if (!user) {
         throw new Error('No user logged in');
       }
 
@@ -65,7 +65,7 @@ export const AddTableModal: React.FC<AddTableModalProps> = ({
         minimumBuyIn: minimumBuyInNum,
         createdAt: new Date(),
         isActive: true,
-        creatorId: currentUser.uid,
+        creatorId: user.id,
         location: location || undefined,
         food: food || undefined,
         groupId

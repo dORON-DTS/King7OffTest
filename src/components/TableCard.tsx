@@ -15,7 +15,7 @@ export const TableCard: React.FC<TableCardProps> = ({
   onDelete
 }) => {
   const navigate = useNavigate();
-  const { currentUser } = useUser();
+  const { user } = useUser();
 
   const handleClick = () => {
     navigate(`/tables/${table.id}`);
@@ -31,7 +31,7 @@ export const TableCard: React.FC<TableCardProps> = ({
     onDelete(table);
   };
 
-  const isCreator = currentUser?.uid === table.creatorId;
+  const isCreator = user?.id === table.creatorId;
 
   return (
     <div className="table-card" onClick={handleClick}>
