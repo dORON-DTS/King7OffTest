@@ -46,6 +46,7 @@ export interface Table {
   location?: string;
   food?: string;
   groupId: string;
+  minimumBuyIn: number;
 }
 
 export interface PlayerStats {
