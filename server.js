@@ -126,51 +126,21 @@ setInterval(backupDatabase, 24 * 60 * 60 * 1000);
 
 // Authentication middleware
 const authenticate = (req, res, next) => {
-  console.log('[Auth] Request received:', {
-    path: req.path,
-    method: req.method,
-    headers: {
-      ...req.headers,
-      authorization: req.headers.authorization ? 'Bearer ***' : undefined
-    },
-    ip: req.ip,
-    timestamp: new Date().toISOString()
-  });
-
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    console.log('[Auth] No authorization header found for path:', req.path);
     return res.status(401).json({ error: 'No token provided' });
   }
 
   const token = authHeader.split(' ')[1];
   if (!token) {
-    console.log('[Auth] Invalid authorization header format:', {
-      header: authHeader,
-      path: req.path
-    });
     return res.status(401).json({ error: 'Invalid token format' });
   }
 
   try {
-    console.log('[Auth] Verifying token for path:', req.path);
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('[Auth] Token verified successfully:', {
-      id: decoded.id,
-      username: decoded.username,
-      role: decoded.role,
-      path: req.path,
-      iat: new Date(decoded.iat * 1000).toISOString(),
-      exp: new Date(decoded.exp * 1000).toISOString()
-    });
     req.user = decoded;
     next();
   } catch (err) {
-    console.log('[Auth] Token verification failed:', {
-      error: err.message,
-      path: req.path,
-      token: token.substring(0, 10) + '...'
-    });
     res.status(401).json({ error: 'Invalid token' });
   }
 };
@@ -183,13 +153,6 @@ const authorize = (roles) => {
     }
     
     if (!roles.includes(req.user.role)) {
-      console.warn('[AUTHORIZE] Permission denied:', {
-        userId: req.user.id,
-        userRole: req.user.role,
-        requiredRoles: roles,
-        path: req.path,
-        method: req.method
-      });
       return res.status(403).json({ error: 'You do not have permission to perform this action' });
     }
     
@@ -199,83 +162,28 @@ const authorize = (roles) => {
 
 // Routes
 app.post('/api/login', (req, res) => {
-  console.log('[Login] Request received:', {
-    body: { ...req.body, password: req.body.password ? '***' : undefined },
-    headers: req.headers,
-    ip: req.ip,
-    timestamp: new Date().toISOString()
-  });
-
   const { username, password } = req.body;
   if (!username || !password) {
-    console.log('[Login] Missing credentials:', { username: !!username, password: !!password });
     return res.status(400).json({ message: 'Username and password are required' });
   }
 
   // First, let's check if the user exists
   db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
     if (err) {
-      console.error('[Login] Database error:', {
-        error: err.message,
-        username,
-        timestamp: new Date().toISOString()
-      });
       return res.status(500).json({ message: 'Database error' });
     }
 
-    console.log('[Login] User lookup result:', {
-      found: !!user,
-      username,
-      userId: user?.id,
-      role: user?.role,
-      hasPassword: !!user?.password,
-      passwordHash: user?.password ? user.password.substring(0, 10) + '...' : undefined,
-      timestamp: new Date().toISOString()
-    });
-
     if (!user) {
-      console.log('[Login] User not found:', {
-        username,
-        timestamp: new Date().toISOString()
-      });
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     if (!user.password) {
-      console.log('[Login] User has no password:', {
-        username,
-        userId: user.id,
-        timestamp: new Date().toISOString()
-      });
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Compare passwords
     bcrypt.compare(password, user.password, (err, isMatch) => {
-      if (err) {
-        console.error('[Login] Password comparison error:', {
-          error: err.message,
-          username,
-          timestamp: new Date().toISOString()
-        });
-        return res.status(500).json({ message: 'Authentication error' });
-      }
-
-      console.log('[Login] Password comparison result:', {
-        username,
-        isMatch,
-        providedPassword: password.substring(0, 3) + '...',
-        storedHash: user.password.substring(0, 10) + '...',
-        timestamp: new Date().toISOString()
-      });
-
       if (!isMatch) {
-        console.log('[Login] Password mismatch:', {
-          username,
-          providedPassword: password.substring(0, 3) + '...',
-          storedHash: user.password.substring(0, 10) + '...',
-          timestamp: new Date().toISOString()
-        });
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
@@ -285,14 +193,6 @@ app.post('/api/login', (req, res) => {
         process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '10y' }
       );
-
-      console.log('[Login] Token generated successfully:', {
-        username,
-        userId: user.id,
-        role: user.role,
-        token: token.substring(0, 10) + '...',
-        timestamp: new Date().toISOString()
-      });
 
       res.json({ 
         token, 
@@ -420,17 +320,7 @@ app.get('/api/public/tables', (req, res) => {
 app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const { name, smallBlind, bigBlind, location, groupId, minimumBuyIn } = req.body;
   
-  console.log('[CREATE TABLE] Received request:', {
-    userId: req.user.id,
-    userRole: req.user.role,
-    requestBody: req.body
-  });
-
   if (!groupId) {
-    console.warn('[CREATE TABLE] Missing groupId:', {
-      userId: req.user.id,
-      requestBody: req.body
-    });
     return res.status(400).json({ error: 'Group ID is required' });
   }
 
@@ -444,17 +334,9 @@ app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res)
     [id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn],
     function(err) {
       if (err) {
-        console.error('[CREATE TABLE] Database error:', {
-          userId: req.user.id,
-          error: err.message
-        });
         res.status(500).json({ error: err.message });
         return;
       }
-      console.log('[CREATE TABLE] Success:', {
-        userId: req.user.id,
-        tableId: id
-      });
       res.json({ ...req.body, id, players: [] });
     }
   );
@@ -507,7 +389,6 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
   
   db.get('SELECT minimumBuyIn FROM tables WHERE id = ?', [tableId], (err, table) => {
     if (err) {
-      console.error(`ADD PLAYER ERROR (GET TABLE): Table ${tableId} - ${err.message}`);
       return res.status(500).json({ error: 'Failed to get table information' });
     }
 
@@ -519,7 +400,6 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
         [playerId, tableId, name, nickname, initialBuyInAmount, initialBuyInAmount, active, showMe],
         function(err) {
           if (err) {
-            console.error(`ADD PLAYER ERROR (INSERT PLAYER): Table ${tableId}, Player ${name} - ${err.message}`);
             return res.status(500).json({ error: 'Failed to add player' });
           }
 
@@ -528,7 +408,6 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
             [initialBuyInId, playerId, initialBuyInAmount, timestamp],
             function(buyinErr) {
               if (buyinErr) {
-                console.error(`ADD PLAYER ERROR (INSERT INITIAL BUYIN): Player ${playerId} - ${buyinErr.message}`);
               }
               
               const newPlayerResponse = {
@@ -595,7 +474,6 @@ app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authoriz
   
   const numericAmount = Number(amount);
   if (isNaN(numericAmount)) {
-    console.error(`BUYIN ERROR (VALIDATION): Invalid amount type for player ${playerId} - amount: ${amount}`);
     return res.status(400).json({ error: 'Invalid amount for buyin' });
   }
 
@@ -605,7 +483,6 @@ app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authoriz
       [buyInId, playerId, amount, timestamp],
       function(err) {
         if (err) {
-          console.error(`BUYIN ERROR (INSERT): Player ${playerId} - ${err.message}`);
           return res.status(500).json({ error: 'Failed to record buyin' });
         }
 
@@ -614,7 +491,6 @@ app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authoriz
           [numericAmount, numericAmount, playerId],
           function(updateErr) {
             if (updateErr) {
-              console.error(`BUYIN ERROR (UPDATE): Player ${playerId} - ${updateErr.message}`);
               return res.status(500).json({ error: 'Failed to update player after buyin' });
             }
             res.json({ id: buyInId, amount: numericAmount, timestamp });
@@ -632,14 +508,9 @@ app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, author
   const playerId = req.params.playerId;
   const timestamp = new Date().toISOString();
 
-  console.log(`CASHOUT: Received for player ${playerId}, amount: ${amount} (Type: ${typeof amount})`);
-
   db.serialize(() => {
     db.run('DELETE FROM cashouts WHERE playerId = ?', [playerId], function(deleteErr) {
       if (deleteErr) {
-        console.error(`CASHOUT ERROR (DELETE PREVIOUS): Player ${playerId} - ${deleteErr.message}`);
-      } else {
-        console.log(`CASHOUT INFO (DELETE PREVIOUS): Deleted ${this.changes} previous cashouts for player ${playerId}`);
       }
 
       db.run(
@@ -647,14 +518,11 @@ app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, author
         [cashOutId, playerId, amount, timestamp],
         function(insertErr) {
           if (insertErr) {
-            console.error(`CASHOUT ERROR (INSERT NEW): Player ${playerId} - ${insertErr.message}`);
             return res.status(500).json({ error: 'Failed to record cashout' });
           }
-          console.log(`CASHOUT SUCCESS (INSERT NEW): Player ${playerId}, Cashout ID: ${cashOutId}, Amount: ${amount}`);
 
           const numericAmount = Number(amount);
           if (isNaN(numericAmount)) {
-            console.error(`CASHOUT ERROR (VALIDATION): Invalid amount type for player ${playerId} - amount: ${amount}`);
             return res.status(400).json({ error: 'Invalid amount for cashout' });
           }
 
@@ -663,10 +531,8 @@ app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, author
             [playerId],
             function(updateErr) {
               if (updateErr) {
-                console.error(`CASHOUT ERROR (UPDATE PLAYER): Player ${playerId} - ${updateErr.message}`);
                 return res.status(500).json({ error: 'Failed to update player status after cashout' });
               }
-              console.log(`CASHOUT SUCCESS (UPDATE PLAYER): Player ${playerId}, Status updated.`);
               res.json({ id: cashOutId, amount: numericAmount, timestamp });
             }
           );
@@ -742,11 +608,8 @@ app.put('/api/tables/:tableId/players/:playerId/showme', authenticate, authorize
     [showMe, playerId, tableId],
     function(err) {
       if (err) {
-        console.error(`SHOWME ERROR: Player ${playerId} - ${err.message}`);
-        res.status(500).json({ error: err.message });
-        return;
+        return res.status(500).json({ error: err.message });
       }
-      console.log(`SHOWME SUCCESS: Player ${playerId}, ShowMe set to: ${showMe}`);
       res.json({ success: true, showMe });
     }
   );
@@ -754,22 +617,12 @@ app.put('/api/tables/:tableId/players/:playerId/showme', authenticate, authorize
 
 // Get current user info
 app.get('/api/users/me', authenticate, (req, res) => {
-  console.log('[Users/Me] Request received:', {
-    user: req.user,
-    headers: req.headers,
-    ip: req.ip
-  });
-
   db.get('SELECT id, username, role FROM users WHERE id = ?', [req.user.id], (err, user) => {
     if (err) {
-      console.error('[Users/Me] Database error:', err);
       return res.status(500).json({ message: 'Database error' });
     }
 
-    console.log('[Users/Me] User found:', user);
-
     if (!user) {
-      console.log('[Users/Me] User not found');
       return res.status(404).json({ message: 'User not found' });
     }
 
@@ -789,18 +642,8 @@ app.get('/api/users', authenticate, authorize(['admin']), (req, res) => {
   console.log('[Users] Executing database query');
   db.all('SELECT id, username, role, createdAt FROM users', [], (err, users) => {
     if (err) {
-      console.error('[Users] Database error:', {
-        message: err.message,
-        code: err.code,
-        stack: err.stack
-      });
       return res.status(500).json({ error: 'Internal server error' });
     }
-
-    console.log('[Users] Database query completed:', {
-      userCount: users.length,
-      users: users.map(u => ({ id: u.id, username: u.username, role: u.role }))
-    });
 
     res.json(users);
   });
@@ -818,7 +661,6 @@ app.delete('/api/users/:id', authenticate, authorize(['admin']), (req, res) => {
   // First check if user exists
   db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
     if (err) {
-      console.error('[Users] Error checking user existence:', err);
       return res.status(500).json({ error: 'Internal server error' });
     }
 
@@ -835,14 +677,9 @@ app.delete('/api/users/:id', authenticate, authorize(['admin']), (req, res) => {
 
     db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
       if (err) {
-        console.error('[Users] Error deleting user:', err);
         return res.status(500).json({ error: 'Internal server error' });
       }
 
-      console.log('[Users] User deleted successfully:', {
-        userId,
-        rowsAffected: this.changes
-      });
       res.json({ message: 'User deleted successfully' });
     });
   });
@@ -863,7 +700,6 @@ app.put('/api/users/:id/role', authenticate, authorize(['admin']), (req, res) =>
   // First check if user exists
   db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
     if (err) {
-      console.error('[Users] Error checking user existence:', err);
       return res.status(500).json({ error: 'Internal server error' });
     }
 
@@ -881,15 +717,9 @@ app.put('/api/users/:id/role', authenticate, authorize(['admin']), (req, res) =>
 
     db.run('UPDATE users SET role = ? WHERE id = ?', [role, userId], function(err) {
       if (err) {
-        console.error('[Users] Error updating user role:', err);
         return res.status(500).json({ error: 'Internal server error' });
       }
 
-      console.log('[Users] User role updated successfully:', {
-        userId,
-        newRole: role,
-        rowsAffected: this.changes
-      });
       res.json({ message: 'User role updated successfully' });
     });
   });
@@ -906,13 +736,11 @@ app.put('/api/users/:id/password', authenticate, authorize(['admin']), (req, res
 
   bcrypt.hash(password, 10, (err, hash) => {
     if (err) {
-      console.error('[Users] Error hashing password:', err);
       return res.status(500).json({ error: 'Internal server error' });
     }
 
     db.run('UPDATE users SET password = ? WHERE id = ?', [hash, userId], function(err) {
       if (err) {
-        console.error('[Users] Error updating password:', err);
         return res.status(500).json({ error: 'Internal server error' });
       }
       res.json({ message: 'Password updated successfully' });
@@ -922,11 +750,8 @@ app.put('/api/users/:id/password', authenticate, authorize(['admin']), (req, res
 
 // Add a debug endpoint to check database status
 app.get('/api/debug/db', (req, res) => {
-  console.log('[Debug] Checking database status');
-  
   // Check if database file exists
   const dbExists = fs.existsSync(dbPath);
-  console.log('[Debug] Database file exists:', dbExists);
   
   if (!dbExists) {
     return res.status(500).json({ error: 'Database file not found', path: dbPath });
@@ -935,29 +760,20 @@ app.get('/api/debug/db', (req, res) => {
   // Get all tables
   db.all("SELECT name FROM sqlite_master WHERE type='table'", [], (err, tables) => {
     if (err) {
-      console.error('[Debug] Error getting tables:', err);
       return res.status(500).json({ error: err.message });
     }
-    
-    console.log('[Debug] Database tables:', tables);
     
     // Get all users
     db.all('SELECT id, username, role FROM users', [], (err, users) => {
       if (err) {
-        console.error('[Debug] Error getting users:', err);
         return res.status(500).json({ error: err.message });
       }
       
-      console.log('[Debug] All users:', users);
-
       // Get admin user specifically
       db.get('SELECT id, username, role FROM users WHERE username = ?', ['admin'], (err, admin) => {
         if (err) {
-          console.error('[Debug] Error getting admin user:', err);
           return res.status(500).json({ error: err.message });
         }
-
-        console.log('[Debug] Admin user:', admin);
         
         res.json({
           dbPath,
@@ -975,56 +791,20 @@ app.get('/api/debug/db', (req, res) => {
 // Get table by ID
 app.get('/api/tables/:id', authenticate, (req, res) => {
   const tableId = req.params.id;
-  console.log('[Tables] Fetching table by ID:', {
-    tableId,
-    user: req.user,
-    timestamp: new Date().toISOString(),
-    headers: {
-      ...req.headers,
-      authorization: req.headers.authorization ? 'Bearer ***' : undefined
-    }
-  });
-
   db.get('SELECT * FROM tables WHERE id = ?', [tableId], (err, table) => {
     if (err) {
-      console.error('[Tables] Database error:', {
-        message: err.message,
-        code: err.code,
-        stack: err.stack,
-        tableId
-      });
       return res.status(500).json({ error: 'Internal server error' });
     }
 
     if (!table) {
-      console.log('[Tables] Table not found:', {
-        tableId,
-        user: req.user
-      });
       return res.status(404).json({ error: 'Table not found' });
     }
-
-    console.log('[Tables] Table found:', {
-      id: table.id,
-      name: table.name,
-      isActive: table.isActive,
-      user: req.user
-    });
 
     // Get players for the table
     db.all('SELECT * FROM players WHERE tableId = ?', [tableId], (err, players) => {
       if (err) {
-        console.error('[Tables] Error fetching players:', {
-          error: err.message,
-          tableId
-        });
         return res.status(500).json({ error: 'Internal server error' });
       }
-
-      console.log('[Tables] Found players:', {
-        count: players.length,
-        tableId
-      });
 
       const playerPromises = players.map(player => {
         return new Promise((resolve, reject) => {
@@ -1050,18 +830,9 @@ app.get('/api/tables/:id', authenticate, (req, res) => {
 
       Promise.all(playerPromises)
         .then(playersWithTransactions => {
-          console.log('[Tables] Sending response:', {
-            tableId,
-            playerCount: playersWithTransactions.length,
-            user: req.user
-          });
           res.json({ ...table, players: playersWithTransactions });
         })
         .catch(err => {
-          console.error('[Tables] Error processing players:', {
-            error: err.message,
-            tableId
-          });
           res.status(500).json({ error: 'Internal server error' });
         });
     });
@@ -1074,19 +845,6 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
   const { name, smallBlind, bigBlind, location, createdAt, food, groupId, minimumBuyIn } = req.body;
   const userId = req.user.id;
   const userRole = req.user.role;
-
-  console.log('[UPDATE TABLE] Received request:', {
-    tableId,
-    userId,
-    userRole,
-    requestBody: req.body,
-    path: req.path,
-    method: req.method,
-    headers: {
-      ...req.headers,
-      authorization: req.headers.authorization ? 'Bearer ***' : undefined
-    }
-  });
 
   try {
     if (userRole === 'editor') {
@@ -1108,15 +866,6 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
 
     // Validate required fields
     if (!name || !smallBlind || !bigBlind) {
-      console.warn('[UPDATE TABLE] Validation failed:', {
-        tableId,
-        userId,
-        missing: {
-          name: !name,
-          smallBlind: !smallBlind,
-          bigBlind: !bigBlind
-        }
-      });
       return res.status(400).json({ error: 'Name, small blind, and big blind are required' });
     }
 
@@ -1124,28 +873,14 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
     const tableExists = await new Promise((resolve, reject) => {
       db.get('SELECT * FROM tables WHERE id = ?', [tableId], (err, row) => {
         if (err) {
-          console.error('[UPDATE TABLE] Error checking table existence:', {
-            tableId,
-            userId,
-            error: err.message
-          });
           reject(err);
           return;
         }
-        console.log('[UPDATE TABLE] Table lookup result:', {
-          tableId,
-          exists: !!row,
-          tableData: row
-        });
         resolve(row !== undefined);
       });
     });
 
     if (!tableExists) {
-      console.warn('[UPDATE TABLE] Table not found:', {
-        tableId,
-        userId
-      });
       return res.status(404).json({ error: 'Table not found' });
     }
 
@@ -1156,22 +891,11 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
         SET name = ?, smallBlind = ?, bigBlind = ?, location = ?, createdAt = ?, food = ?, groupId = ?, minimumBuyIn = ?
         WHERE id = ?
       `;
-      console.log('[UPDATE TABLE] Running SQL:', updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, groupId, minimumBuyIn, tableId]);
       db.run(updateQuery, [name, smallBlind, bigBlind, location, createdAt, food, groupId, minimumBuyIn, tableId], function(err) {
         if (err) {
-          console.error('[UPDATE TABLE] Error updating table:', {
-            tableId,
-            userId,
-            error: err.message
-          });
           reject(err);
           return;
         }
-        console.log('[UPDATE TABLE] Table updated successfully:', {
-          tableId,
-          userId,
-          changes: this.changes
-        });
         resolve();
       });
     });
@@ -1180,39 +904,21 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
     const updatedTable = await new Promise((resolve, reject) => {
       db.get('SELECT * FROM tables WHERE id = ?', [tableId], (err, row) => {
         if (err) {
-          console.error('[UPDATE TABLE] Error fetching updated table:', {
-            tableId,
-            userId,
-            error: err.message
-          });
           reject(err);
           return;
         }
-        console.log('[UPDATE TABLE] Sending response:', {
-          tableId,
-          userId,
-          updatedTable: row
-        });
         resolve(row);
       });
     });
 
     res.json(updatedTable);
   } catch (error) {
-    console.error('[UPDATE TABLE] Unexpected error:', {
-      tableId,
-      userId,
-      error: error.message,
-      stack: error.stack
-    });
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Add a new endpoint to update passwords
 app.post('/api/update-passwords', authenticate, authorize(['admin']), (req, res) => {
-  console.log('[Password Update] Starting password update process');
-  
   const users = [
     { username: 'Doron', password: '365Scores!' },
     { username: 'Ran', password: 'Rabad123456' },
@@ -1233,7 +939,6 @@ app.post('/api/update-passwords', authenticate, authorize(['admin']), (req, res)
   users.forEach(user => {
     bcrypt.hash(user.password, 10, (err, hash) => {
       if (err) {
-        console.error(`[Password Update] Error hashing password for ${user.username}:`, err);
         errors.push({ username: user.username, error: err.message });
         checkCompletion();
         return;
@@ -1244,10 +949,7 @@ app.post('/api/update-passwords', authenticate, authorize(['admin']), (req, res)
         [hash, user.username],
         function(err) {
           if (err) {
-            console.error(`[Password Update] Error updating password for ${user.username}:`, err);
             errors.push({ username: user.username, error: err.message });
-          } else {
-            console.log(`[Password Update] Successfully updated password for ${user.username}`);
           }
           completed++;
           checkCompletion();
@@ -1272,38 +974,24 @@ app.post('/api/update-passwords', authenticate, authorize(['admin']), (req, res)
 
 // Register new user
 app.post('/api/register', authenticate, authorize(['admin']), (req, res) => {
-  console.log('[Register] Request received:', {
-    body: { ...req.body, password: req.body.password ? '***' : undefined },
-    user: req.user,
-    timestamp: new Date().toISOString()
-  });
-
   const { username, password, role } = req.body;
   if (!username || !password || !role) {
-    console.log('[Register] Missing required fields:', {
-      username: !!username,
-      password: !!password,
-      role: !!role
-    });
     return res.status(400).json({ error: 'Username, password and role are required' });
   }
 
   // Check if username already exists
   db.get('SELECT * FROM users WHERE username = ?', [username], (err, existingUser) => {
     if (err) {
-      console.error('[Register] Database error checking username:', err);
       return res.status(500).json({ error: 'Database error' });
     }
 
     if (existingUser) {
-      console.log('[Register] Username already exists:', username);
       return res.status(400).json({ error: 'Username already exists' });
     }
 
     // Hash password
     bcrypt.hash(password, 10, (err, hash) => {
       if (err) {
-        console.error('[Register] Error hashing password:', err);
         return res.status(500).json({ error: 'Error creating user' });
       }
 
@@ -1316,16 +1004,8 @@ app.post('/api/register', authenticate, authorize(['admin']), (req, res) => {
         [id, username, hash, role, createdAt],
         function(err) {
           if (err) {
-            console.error('[Register] Error inserting user:', err);
             return res.status(500).json({ error: 'Error creating user' });
           }
-
-          console.log('[Register] User created successfully:', {
-            id,
-            username,
-            role,
-            createdAt
-          });
 
           res.status(201).json({
             id,
@@ -1342,45 +1022,17 @@ app.post('/api/register', authenticate, authorize(['admin']), (req, res) => {
 // Get shared table by ID (public access)
 app.get('/api/share/:id', (req, res) => {
   const tableId = req.params.id;
-  console.log('[Share] Fetching shared table by ID:', {
-    tableId,
-    timestamp: new Date().toISOString(),
-    ip: req.ip
-  });
-
   db.get('SELECT * FROM tables WHERE id = ?', [tableId], (err, table) => {
     if (err) {
-      console.error('[Share] Database error:', {
-        message: err.message,
-        code: err.code,
-        stack: err.stack,
-        tableId
-      });
       return res.status(500).json({ error: 'Internal server error' });
     }
 
     if (!table) {
-      console.log('[Share] Table not found:', {
-        tableId,
-        timestamp: new Date().toISOString()
-      });
       return res.status(404).json({ error: 'Table not found' });
     }
 
-    console.log('[Share] Table found, fetching players:', {
-      tableId,
-      tableName: table.name,
-      timestamp: new Date().toISOString()
-    });
-
     db.all('SELECT * FROM players WHERE tableId = ?', [tableId], (err, players) => {
       if (err) {
-        console.error('[Share] Error fetching players:', {
-          message: err.message,
-          code: err.code,
-          stack: err.stack,
-          tableId
-        });
         return res.status(500).json({ error: 'Error fetching players' });
       }
 
@@ -1406,20 +1058,9 @@ app.get('/api/share/:id', (req, res) => {
 
       Promise.all(playerPromises)
         .then(playersWithTransactions => {
-          console.log('[Share] Successfully fetched table with players:', {
-            tableId,
-            playerCount: playersWithTransactions.length,
-            timestamp: new Date().toISOString()
-          });
           res.json({ ...table, players: playersWithTransactions });
         })
         .catch(err => {
-          console.error('[Share] Error processing player transactions:', {
-            message: err.message,
-            code: err.code,
-            stack: err.stack,
-            tableId
-          });
           res.status(500).json({ error: 'Error processing player data' });
         });
     });
@@ -1438,9 +1079,6 @@ app.get('/api/statistics/players', (req, res) => {
   
   db.all(query, [], (err, players) => {
     if (err) {
-      console.error('[Statistics] Error fetching unique player names:', {
-        error: err.message
-      });
       res.status(500).json({ error: 'Failed to fetch player names' });
       return;
     }
@@ -1529,9 +1167,6 @@ app.delete('/api/groups/:id', authenticate, authorize(['admin']), (req, res) => 
 app.post('/api/player/payment', authenticate, (req, res) => {
   const { playerId, tableId, payment_method, payment_comment } = req.body;
 
-  // לוגים לאימות
-  console.log('Received payment update:', { playerId, tableId, payment_method, payment_comment });
-
   if (!playerId || !tableId) {
     return res.status(400).json({ error: 'Missing playerId or tableId' });
   }
@@ -1541,10 +1176,8 @@ app.post('/api/player/payment', authenticate, (req, res) => {
     [payment_method, payment_comment, playerId, tableId],
     function (err) {
       if (err) {
-        console.error('DB update error:', err);
         res.status(500).json({ error: 'Failed to update payment method' });
       } else {
-        console.log('DB update success:', { changes: this.changes });
         res.json({ success: true });
       }
     }
