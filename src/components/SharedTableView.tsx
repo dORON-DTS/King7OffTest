@@ -412,6 +412,11 @@ const SharedTableView: React.FC = () => {
               <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold', minWidth: '90px', fontSize: { xs: '0.9rem', sm: '1rem' }, px: { xs: 0.5, sm: 2 }, py: { xs: 0.5, sm: 1.5 } }}>
                 Total Cash-out
               </TableCell>
+              { !table.isActive && (
+                <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold', minWidth: '110px', fontSize: { xs: '0.9rem', sm: '1rem' }, px: { xs: 0.5, sm: 2 }, py: { xs: 0.5, sm: 1.5 } }}>
+                  Payment Method
+                </TableCell>
+              )}
               <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold', minWidth: '90px', fontSize: { xs: '0.9rem', sm: '1rem' }, px: { xs: 0.5, sm: 2 }, py: { xs: 0.5, sm: 1.5 } }}>
                 Balance
               </TableCell>
@@ -472,6 +477,11 @@ const SharedTableView: React.FC = () => {
                   <TableCell align="center" sx={{ color: 'white' }}>
                     {totalCashOutDisplay}
                   </TableCell>
+                  { !table.isActive && (
+                    <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      {player.payment_method || ''}
+                    </TableCell>
+                  )}
                   <TableCell align="center" sx={{ color: balanceColor, fontWeight: 'bold', fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
                     {formattedBalance}
                   </TableCell>
