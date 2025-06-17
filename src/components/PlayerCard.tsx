@@ -1,9 +1,10 @@
 import React from 'react';
 import { Player } from '../types';
 import { usePoker } from '../context/PokerContext';
-import { Card, CardContent, Typography, Button, IconButton } from '@mui/material';
+import { Card, CardContent, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, TextField } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import PaymentIcon from '@mui/icons-material/Payment';
 
 interface PlayerCardProps {
   player: Player;
@@ -19,6 +20,30 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, tableId, onAddBuyIn, on
   const totalCashout = player.cashOuts.reduce((sum, cashout) => sum + cashout.amount, 0);
   // Calculate balance (totalCashout - totalBuyIn)
   const balance = totalCashout - (player.totalBuyIn ?? 0);
+
+  // State for payment dialog
+  const [paymentDialogOpen, setPaymentDialogOpen] = React.useState(false);
+  const [paymentMethod, setPaymentMethod] = React.useState('');
+  const [comment, setComment] = React.useState('');
+  const [commentError, setCommentError] = React.useState('');
+
+  const handleOpenPaymentDialog = () => {
+    setPaymentDialogOpen(true);
+  };
+  const handleClosePaymentDialog = () => {
+    setPaymentDialogOpen(false);
+    setPaymentMethod('');
+    setComment('');
+    setCommentError('');
+  };
+  const handleSavePayment = () => {
+    if (comment.length > 100) {
+      setCommentError('Comment cannot exceed 100 characters');
+      return;
+    }
+    // כאן אפשר להוסיף לוגיקה לשמירה בסטייט/שרת בעתיד
+    handleClosePaymentDialog();
+  };
 
   return (
     <Card 
@@ -102,7 +127,62 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, tableId, onAddBuyIn, on
           >
             CASH OUT
           </Button>
+          {/* כפתור אמצעי תשלום - רק לשחקן לא אקטיבי עם CASHOUT */}
+          {!player.active && player.cashOuts.length > 0 && (
+            <Button
+              variant="outlined"
+              fullWidth
+              color="secondary"
+              startIcon={<PaymentIcon />}
+              onClick={handleOpenPaymentDialog}
+            >
+              PAYMENT METHOD
+            </Button>
+          )}
         </div>
+        {/* דיאלוג אמצעי תשלום */}
+        <Dialog open={paymentDialogOpen} onClose={handleClosePaymentDialog} maxWidth="xs" fullWidth>
+          <DialogTitle>Select Payment Method</DialogTitle>
+          <DialogContent>
+            <TextField
+              select
+              label="Payment Method"
+              value={paymentMethod}
+              onChange={e => setPaymentMethod(e.target.value)}
+              fullWidth
+              sx={{ mb: 2 }}
+            >
+              <MenuItem value="Paybox">Paybox</MenuItem>
+              <MenuItem value="Bit">Bit</MenuItem>
+              <MenuItem value="Cash">Cash</MenuItem>
+              <MenuItem value="Other">Other</MenuItem>
+            </TextField>
+            <TextField
+              label="Comment"
+              value={comment}
+              onChange={e => {
+                setComment(e.target.value);
+                if (e.target.value.length > 100) {
+                  setCommentError('Comment cannot exceed 100 characters');
+                } else {
+                  setCommentError('');
+                }
+              }}
+              fullWidth
+              multiline
+              rows={2}
+              inputProps={{ maxLength: 100 }}
+              helperText={commentError || `${comment.length}/100`}
+              error={!!commentError}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClosePaymentDialog}>Cancel</Button>
+            <Button onClick={handleSavePayment} disabled={!paymentMethod || !!commentError} variant="contained" color="primary">
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
     </Card>
   );
