@@ -582,12 +582,24 @@ const TableDetail: React.FC = () => {
     setComment('');
     setCommentError('');
   };
-  const handleSavePayment = () => {
+  const handleSavePayment = async () => {
     if (comment.length > 100) {
       setCommentError('Comment cannot exceed 100 characters');
       return;
     }
-    // כאן אפשר להוסיף לוגיקה לשמירה בסטייט/שרת בעתיד
+    // שלח לשרת
+    if (paymentDialogOpen && id) {
+      await fetch('/api/player/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: paymentDialogOpen,
+          tableId: id,
+          payment_method: paymentMethod,
+          payment_comment: comment
+        })
+      });
+    }
     handleClosePaymentDialog();
   };
 
