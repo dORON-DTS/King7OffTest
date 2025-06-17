@@ -36,6 +36,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import GroupIcon from '@mui/icons-material/Group';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import PaymentIcon from '@mui/icons-material/Payment';
 
 const TableDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -94,6 +95,12 @@ const TableDetail: React.FC = () => {
     minimumBuyIn: ''
   });
   const [editFormErrors, setEditFormErrors] = useState<EditFormErrors>({});
+
+  // סטייטים ופונקציות מתאימות בראש הקומפוננטה:
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [comment, setComment] = useState('');
+  const [commentError, setCommentError] = useState('');
 
   const table = id ? getTable(id) : null;
 
@@ -566,6 +573,24 @@ const TableDetail: React.FC = () => {
     return undefined;
   };
 
+  const handleOpenPaymentDialog = (playerId: string) => {
+    setPaymentDialogOpen(playerId);
+  };
+  const handleClosePaymentDialog = () => {
+    setPaymentDialogOpen(null);
+    setPaymentMethod('');
+    setComment('');
+    setCommentError('');
+  };
+  const handleSavePayment = () => {
+    if (comment.length > 100) {
+      setCommentError('Comment cannot exceed 100 characters');
+      return;
+    }
+    // כאן אפשר להוסיף לוגיקה לשמירה בסטייט/שרת בעתיד
+    handleClosePaymentDialog();
+  };
+
   return (
     <Box sx={{ p: 2, maxWidth: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -764,6 +789,20 @@ const TableDetail: React.FC = () => {
                         Cash Out
                       </Button>
                     </Grid>
+                    {/* כפתור אמצעי תשלום - רק לשחקן לא אקטיבי עם CASHOUT */}
+                    {!player.active && player.cashOuts && player.cashOuts.length > 0 && (
+                      <Grid item xs={12} sx={{ mt: 1 }}>
+                        <Button
+                          variant="outlined"
+                          fullWidth
+                          color="secondary"
+                          startIcon={<PaymentIcon />}
+                          onClick={() => handleOpenPaymentDialog(player.id)}
+                        >
+                          Payment Method
+                        </Button>
+                      </Grid>
+                    )}
                   </Grid>
                 </CardContent>
               </Card>
@@ -1234,8 +1273,67 @@ const TableDetail: React.FC = () => {
           <Button onClick={handleEditSubmit} variant="contained" color="primary">Save</Button>
         </DialogActions>
       </Dialog>
+
+      {/* דיאלוג אמצעי תשלום */}
+      <PaymentDialog
+        open={paymentDialogOpen === player.id}
+        onClose={handleClosePaymentDialog}
+        onSave={handleSavePayment}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        comment={comment}
+        setComment={setComment}
+        commentError={commentError}
+      />
     </Box>
   );
 };
+
+function PaymentDialog({ open, onClose, onSave, paymentMethod, setPaymentMethod, comment, setComment, commentError }: any) {
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Select Payment Method</DialogTitle>
+      <DialogContent>
+        <TextField
+          select
+          label="Payment Method"
+          value={paymentMethod}
+          onChange={e => setPaymentMethod(e.target.value)}
+          fullWidth
+          sx={{ mb: 2 }}
+        >
+          <MenuItem value="Paybox">Paybox</MenuItem>
+          <MenuItem value="Bit">Bit</MenuItem>
+          <MenuItem value="Cash">Cash</MenuItem>
+          <MenuItem value="Other">Other</MenuItem>
+        </TextField>
+        <TextField
+          label="Comment"
+          value={comment}
+          onChange={e => {
+            setComment(e.target.value);
+            if (e.target.value.length > 100) {
+              setCommentError('Comment cannot exceed 100 characters');
+            } else {
+              setCommentError('');
+            }
+          }}
+          fullWidth
+          multiline
+          rows={2}
+          inputProps={{ maxLength: 100 }}
+          helperText={commentError || `${comment.length}/100`}
+          error={!!commentError}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onSave} disabled={!paymentMethod || !!commentError} variant="contained" color="primary">
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 export default TableDetail; 
