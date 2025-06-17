@@ -764,6 +764,7 @@ const TableDetail: React.FC = () => {
                           color="success"
                           onClick={() => reactivatePlayer(id, player.id)}
                           sx={{ height: 'fit-content' }}
+                          disabled={!table.isActive}
                         >
                           Reactivate
                         </Button>
