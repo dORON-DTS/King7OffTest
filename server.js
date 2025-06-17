@@ -1529,6 +1529,9 @@ app.delete('/api/groups/:id', authenticate, authorize(['admin']), (req, res) => 
 app.post('/api/player/payment', authenticate, (req, res) => {
   const { playerId, tableId, payment_method, payment_comment } = req.body;
 
+  // לוגים לאימות
+  console.log('Received payment update:', { playerId, tableId, payment_method, payment_comment });
+
   if (!playerId || !tableId) {
     return res.status(400).json({ error: 'Missing playerId or tableId' });
   }
@@ -1538,8 +1541,10 @@ app.post('/api/player/payment', authenticate, (req, res) => {
     [payment_method, payment_comment, playerId, tableId],
     function (err) {
       if (err) {
+        console.error('DB update error:', err);
         res.status(500).json({ error: 'Failed to update payment method' });
       } else {
+        console.log('DB update success:', { changes: this.changes });
         res.json({ success: true });
       }
     }
