@@ -574,6 +574,11 @@ const TableDetail: React.FC = () => {
   };
 
   const handleOpenPaymentDialog = (playerId: string) => {
+    const player = table.players.find(p => p.id === playerId);
+    if (player) {
+      setPaymentMethod(player.payment_method || '');
+      setComment(player.payment_comment || '');
+    }
     setPaymentDialogOpen(playerId);
   };
   const handleClosePaymentDialog = () => {
@@ -595,19 +600,30 @@ const TableDetail: React.FC = () => {
         handleClosePaymentDialog();
         return;
       }
-      await fetch('/api/player/payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          playerId: paymentDialogOpen,
-          tableId: id,
-          payment_method: paymentMethod,
-          payment_comment: comment
-        })
-      });
+      try {
+        const response = await fetch('/api/player/payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            playerId: paymentDialogOpen,
+            tableId: id,
+            payment_method: paymentMethod,
+            payment_comment: comment
+          })
+        });
+        
+        if (response.ok) {
+          // Refresh table data to show updated payment info
+          await fetchTables();
+        } else {
+          showTransientError('Failed to save payment method');
+        }
+      } catch (error) {
+        showTransientError('Failed to save payment method');
+      }
     }
     handleClosePaymentDialog();
   };
