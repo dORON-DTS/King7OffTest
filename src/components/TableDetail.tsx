@@ -804,6 +804,16 @@ const TableDetail: React.FC = () => {
                       </Grid>
                     )}
                   </Grid>
+                  <PaymentDialog
+                    open={paymentDialogOpen === player.id}
+                    onClose={handleClosePaymentDialog}
+                    onSave={handleSavePayment}
+                    paymentMethod={paymentMethod}
+                    setPaymentMethod={setPaymentMethod}
+                    comment={comment}
+                    setComment={setComment}
+                    commentError={commentError}
+                  />
                 </CardContent>
               </Card>
             </Grid>
@@ -1273,18 +1283,6 @@ const TableDetail: React.FC = () => {
           <Button onClick={handleEditSubmit} variant="contained" color="primary">Save</Button>
         </DialogActions>
       </Dialog>
-
-      {/* דיאלוג אמצעי תשלום */}
-      <PaymentDialog
-        open={paymentDialogOpen === player.id}
-        onClose={handleClosePaymentDialog}
-        onSave={handleSavePayment}
-        paymentMethod={paymentMethod}
-        setPaymentMethod={setPaymentMethod}
-        comment={comment}
-        setComment={setComment}
-        commentError={commentError}
-      />
     </Box>
   );
 };
