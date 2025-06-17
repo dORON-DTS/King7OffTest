@@ -9,6 +9,8 @@ export interface Player {
   cashOuts: CashOut[];
   showMe: boolean;
   tableId: string;
+  payment_method?: string;
+  payment_comment?: string;
 }
 
 export interface BuyIn {
