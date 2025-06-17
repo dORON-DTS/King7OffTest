@@ -1164,7 +1164,7 @@ app.delete('/api/groups/:id', authenticate, authorize(['admin']), (req, res) => 
 });
 
 // Update payment method and comment for a player in a table
-app.post('/api/player/payment', authenticate, (req, res) => {
+app.post('/api/player/payment', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const { playerId, tableId, payment_method, payment_comment } = req.body;
 
   if (!playerId || !tableId) {
