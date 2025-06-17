@@ -24,7 +24,8 @@ import {
   Snackbar,
   Grid,
   Card,
-  CardContent
+  CardContent,
+  Tooltip
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -414,7 +415,7 @@ const SharedTableView: React.FC = () => {
               </TableCell>
               { !table.isActive && (
                 <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold', minWidth: '110px', fontSize: { xs: '0.9rem', sm: '1rem' }, px: { xs: 0.5, sm: 2 }, py: { xs: 0.5, sm: 1.5 } }}>
-                  Payment Method
+                  Payment
                 </TableCell>
               )}
               <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold', minWidth: '90px', fontSize: { xs: '0.9rem', sm: '1rem' }, px: { xs: 0.5, sm: 2 }, py: { xs: 0.5, sm: 1.5 } }}>
@@ -479,7 +480,13 @@ const SharedTableView: React.FC = () => {
                   </TableCell>
                   { !table.isActive && (
                     <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>
-                      {player.payment_method || ''}
+                      {player.payment_method ? (
+                        <Tooltip title={player.payment_comment || ''} arrow>
+                          <span>{player.payment_method}</span>
+                        </Tooltip>
+                      ) : (
+                        '-'
+                      )}
                     </TableCell>
                   )}
                   <TableCell align="center" sx={{ color: balanceColor, fontWeight: 'bold', fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
