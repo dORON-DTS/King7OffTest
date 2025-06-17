@@ -1525,6 +1525,27 @@ app.delete('/api/groups/:id', authenticate, authorize(['admin']), (req, res) => 
   });
 });
 
+// Update payment method and comment for a player in a table
+app.post('/api/player/payment', authenticate, (req, res) => {
+  const { playerId, tableId, payment_method, payment_comment } = req.body;
+
+  if (!playerId || !tableId) {
+    return res.status(400).json({ error: 'Missing playerId or tableId' });
+  }
+
+  db.run(
+    `UPDATE players SET payment_method = ?, payment_comment = ? WHERE id = ? AND tableId = ?`,
+    [payment_method, payment_comment, playerId, tableId],
+    function (err) {
+      if (err) {
+        res.status(500).json({ error: 'Failed to update payment method' });
+      } else {
+        res.json({ success: true });
+      }
+    }
+  );
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
