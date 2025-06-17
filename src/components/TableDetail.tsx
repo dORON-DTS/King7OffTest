@@ -42,7 +42,7 @@ const TableDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const pokerContext = usePoker();
-  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups, tables: allTables } = pokerContext;
+  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups, tables: allTables, getAuthToken } = pokerContext;
   const { user } = useUser();
   
   // Dialog state
@@ -587,11 +587,20 @@ const TableDetail: React.FC = () => {
       setCommentError('Comment cannot exceed 100 characters');
       return;
     }
-    // שלח לשרת
+    // שלח לשרת עם הרשאות
     if (paymentDialogOpen && id) {
+      const token = getAuthToken && getAuthToken();
+      if (!token) {
+        showTransientError && showTransientError('You do not have permission to perform this action');
+        handleClosePaymentDialog();
+        return;
+      }
       await fetch('/api/player/payment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           playerId: paymentDialogOpen,
           tableId: id,
