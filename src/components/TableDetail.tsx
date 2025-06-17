@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePoker } from '../context/PokerContext';
-import { useUser } from '../context/UserContext';
+import { useUser, getAuthToken } from '../context/UserContext';
 import { Player, BuyIn, CashOut, EditForm, EditFormErrors, Group } from '../types';
 import { 
   Box, 
@@ -42,7 +42,7 @@ const TableDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const pokerContext = usePoker();
-  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups, tables: allTables, getAuthToken } = pokerContext;
+  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups, tables: allTables } = pokerContext;
   const { user } = useUser();
   
   // Dialog state
@@ -589,7 +589,7 @@ const TableDetail: React.FC = () => {
     }
     // שלח לשרת עם הרשאות
     if (paymentDialogOpen && id) {
-      const token = getAuthToken && getAuthToken();
+      const token = getAuthToken();
       if (!token) {
         showTransientError && showTransientError('You do not have permission to perform this action');
         handleClosePaymentDialog();
