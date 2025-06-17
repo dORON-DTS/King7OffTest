@@ -813,6 +813,7 @@ const TableDetail: React.FC = () => {
                     comment={comment}
                     setComment={setComment}
                     commentError={commentError}
+                    setCommentError={setCommentError}
                   />
                 </CardContent>
               </Card>
@@ -1287,7 +1288,7 @@ const TableDetail: React.FC = () => {
   );
 };
 
-function PaymentDialog({ open, onClose, onSave, paymentMethod, setPaymentMethod, comment, setComment, commentError }: any) {
+function PaymentDialog({ open, onClose, onSave, paymentMethod, setPaymentMethod, comment, setComment, commentError, setCommentError }: any) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Select Payment Method</DialogTitle>
