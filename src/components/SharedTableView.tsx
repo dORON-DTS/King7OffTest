@@ -342,6 +342,11 @@ const SharedTableView: React.FC = () => {
           <Typography variant="body1" sx={{ color: 'grey.400', mr: { xs: 1, sm: 2 }, display: 'flex', alignItems: 'center', gap: 1 }}>
             <MonetizationOnIcon sx={{ fontSize: 18, color: '#388e3c' }} />
             Small Blind: {table.smallBlind} | Big Blind: {table.bigBlind}
+            {typeof table.minimumBuyIn !== 'undefined' && (
+              <>
+                {' | Min Buy-In: '}{table.minimumBuyIn}
+              </>
+            )}
           </Typography>
           {table.location && (
             <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
