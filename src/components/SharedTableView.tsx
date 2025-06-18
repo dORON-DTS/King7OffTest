@@ -45,6 +45,8 @@ import CloudIcon from '@mui/icons-material/Cloud';
 import OpacityIcon from '@mui/icons-material/Opacity';
 import NightlightIcon from '@mui/icons-material/Nightlight';
 import FastfoodIcon from '@mui/icons-material/Fastfood';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import Popover from '@mui/material/Popover';
 
 // Define Feedback type
 interface FeedbackState {
@@ -139,6 +141,8 @@ const SharedTableView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true); // Start loading initially
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [popoverContent, setPopoverContent] = useState<string>('');
 
   const fetchTableData = useCallback(async () => {
     if (!id) {
@@ -238,6 +242,17 @@ const SharedTableView: React.FC = () => {
     if (!player) return;
     setSelectedPlayer(player);
     setHistoryDialogOpen(true);
+  };
+
+  const handleCommentIconClick = (event: React.MouseEvent<HTMLElement>, comment: string) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+    setPopoverContent(comment);
+  };
+
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+    setPopoverContent('');
   };
 
   return (
@@ -486,9 +501,19 @@ const SharedTableView: React.FC = () => {
                   { !table.isActive && (
                     <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>
                       {player.payment_method ? (
-                        <Tooltip title={player.payment_comment || ''} arrow>
-                          <span>{player.payment_method}</span>
-                        </Tooltip>
+                        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          {player.payment_method}
+                          {player.payment_comment && (
+                            <IconButton
+                              size="small"
+                              sx={{ ml: 0.5 }}
+                              onClick={e => handleCommentIconClick(e, player.payment_comment!)}
+                              tabIndex={-1}
+                            >
+                              <ChatBubbleOutlineIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                        </span>
                       ) : (
                         '-'
                       )}
@@ -691,6 +716,25 @@ const SharedTableView: React.FC = () => {
           </Alert>
         </Snackbar>
       )}
+
+      {/* Add this Popover outside the table, at the end of the component's return */}
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handlePopoverClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+      >
+        <Box sx={{ p: 2, maxWidth: 250 }}>
+          <Typography variant="body2">{popoverContent}</Typography>
+        </Box>
+      </Popover>
     </Box>
   );
 };
