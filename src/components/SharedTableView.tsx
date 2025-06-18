@@ -71,7 +71,19 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string, iconSi
     const apiKey = process.env.REACT_APP_WEATHER_API_KEY;
     // תמיד Tel Aviv
     const city = 'Tel Aviv';
+    
+    // Check if date is valid
+    if (!date) {
+      setError('Invalid date');
+      return;
+    }
+    
     const dt = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dt.getTime())) {
+      setError('Invalid date');
+      return;
+    }
+    
     const yyyy = dt.getFullYear();
     const mm = String(dt.getMonth() + 1).padStart(2, '0');
     const dd = String(dt.getDate()).padStart(2, '0');
