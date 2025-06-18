@@ -211,9 +211,14 @@ const UserManagement: React.FC = () => {
   };
 
   // Role order for sorting
-  const roleOrder = { admin: 0, editor: 1, viewer: 2 };
+  const getRoleOrder = (role: string) => {
+    if (role === 'admin') return 0;
+    if (role === 'editor') return 1;
+    if (role === 'viewer') return 2;
+    return 99;
+  };
   const sortedUsers = [...users].sort((a, b) => {
-    const roleDiff = (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99);
+    const roleDiff = getRoleOrder(a.role) - getRoleOrder(b.role);
     if (roleDiff !== 0) return roleDiff;
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
