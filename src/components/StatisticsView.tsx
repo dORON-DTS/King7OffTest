@@ -416,11 +416,9 @@ const StatisticsView: React.FC = () => {
   // Set default selected group to the first in sortedGroups
   useEffect(() => {
     if (sortedGroups.length > 0) {
-      if (!selectedGroupId || !sortedGroups.some(g => g.id === selectedGroupId)) {
-        setSelectedGroupId(sortedGroups[0].id);
-      }
+      setSelectedGroupId(sortedGroups[0].id);
     }
-  }, [sortedGroups]);
+  }, [JSON.stringify(sortedGroups)]);
 
   // Fetch groups on component mount
   useEffect(() => {
