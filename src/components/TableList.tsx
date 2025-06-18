@@ -333,6 +333,18 @@ const TableList: React.FC = () => {
     ? sortedTables.filter((table) => table.groupId === selectedGroupId)
     : sortedTables;
 
+  // Calculate table count per group
+  const groupTableCounts = groups.map(group => ({
+    ...group,
+    tableCount: tables.filter(table => table.groupId === group.id).length
+  }));
+
+  // Sort groups: by table count desc, then alphabetically
+  const sortedGroups = [...groupTableCounts].sort((a, b) => {
+    if (b.tableCount !== a.tableCount) return b.tableCount - a.tableCount;
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <Box sx={{ 
       p: 3, 
@@ -404,9 +416,9 @@ const TableList: React.FC = () => {
             }}
           >
             <MenuItem value="">All Groups</MenuItem>
-            {groups.map((group) => (
+            {sortedGroups.map((group) => (
               <MenuItem key={group.id} value={group.id}>
-                {group.name}
+                {group.name} ({group.tableCount})
               </MenuItem>
             ))}
           </TextField>
@@ -518,9 +530,9 @@ const TableList: React.FC = () => {
               }}
             >
               <MenuItem value="">All Groups</MenuItem>
-              {groups.map((group) => (
+              {sortedGroups.map((group) => (
                 <MenuItem key={group.id} value={group.id}>
-                  {group.name}
+                  {group.name} ({group.tableCount})
                 </MenuItem>
               ))}
             </TextField>
