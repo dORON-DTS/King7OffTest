@@ -396,21 +396,24 @@ const StatisticsView: React.FC = () => {
   // Add state for Best Current Streak dialog
   const [isBestCurrentStreakDialogOpen, setIsBestCurrentStreakDialogOpen] = useState(false);
 
-  // Sort groups by createdAt (oldest first), or by id if no createdAt
-  const sortedGroups = useMemo(() => {
-    if (!groups || groups.length === 0) return [];
-    if (groups[0].createdAt) {
-      return [...groups].sort((a, b) => {
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateA - dateB;
-      });
-    }
-    // Fallback: sort by id (string compare)
-    return [...groups].sort((a, b) => a.id.localeCompare(b.id));
-  }, [groups]);
+  // Calculate table count per group
+  const groupTableCounts = useMemo(() => {
+    if (!groups || !contextTables) return [];
+    return groups.map(group => ({
+      ...group,
+      tableCount: contextTables.filter(table => table.groupId === group.id).length
+    }));
+  }, [groups, contextTables]);
 
-  // Set default selected group to the oldest
+  // Sort groups: by table count desc, then alphabetically
+  const sortedGroups = useMemo(() => {
+    return [...groupTableCounts].sort((a, b) => {
+      if (b.tableCount !== a.tableCount) return b.tableCount - a.tableCount;
+      return a.name.localeCompare(b.name);
+    });
+  }, [groupTableCounts]);
+
+  // Set default selected group to the first in sortedGroups
   useEffect(() => {
     if (sortedGroups.length > 0 && !selectedGroupId) {
       setSelectedGroupId(sortedGroups[0].id);
@@ -1246,7 +1249,7 @@ const StatisticsView: React.FC = () => {
           >
             {sortedGroups.map((group) => (
               <MenuItem key={group.id} value={group.id}>
-                {group.name}
+                {group.name} ({group.tableCount})
               </MenuItem>
             ))}
           </TextField>
