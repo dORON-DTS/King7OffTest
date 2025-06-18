@@ -400,7 +400,11 @@ const StatisticsView: React.FC = () => {
   const sortedGroups = useMemo(() => {
     if (!groups || groups.length === 0) return [];
     if (groups[0].createdAt) {
-      return [...groups].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      return [...groups].sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateA - dateB;
+      });
     }
     // Fallback: sort by id (string compare)
     return [...groups].sort((a, b) => a.id.localeCompare(b.id));
