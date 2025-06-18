@@ -160,6 +160,16 @@ const authorize = (roles) => {
   };
 };
 
+// Utility to check if table is active
+function checkTableActive(tableId, cb) {
+  db.get('SELECT isActive FROM tables WHERE id = ?', [tableId], (err, row) => {
+    if (err) return cb(err);
+    if (!row) return cb(new Error('Table not found'));
+    if (!row.isActive) return cb(new Error('This action is not allowed while the table is inactive.'));
+    cb(null);
+  });
+}
+
 // Routes
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
@@ -383,69 +393,80 @@ app.delete('/api/tables/:id', authenticate, authorize(['admin', 'editor']), (req
 app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const { name, nickname, chips, active = true, showMe = true } = req.body;
   const tableId = req.params.tableId;
-  const playerId = uuidv4();
-  const initialBuyInId = uuidv4();
-  const timestamp = new Date().toISOString();
-  
-  db.get('SELECT minimumBuyIn FROM tables WHERE id = ?', [tableId], (err, table) => {
+  checkTableActive(tableId, (err) => {
     if (err) {
-      return res.status(500).json({ error: 'Failed to get table information' });
+      return res.status(403).json({ error: err.message });
     }
+    const playerId = uuidv4();
+    const initialBuyInId = uuidv4();
+    const timestamp = new Date().toISOString();
+    
+    db.get('SELECT minimumBuyIn FROM tables WHERE id = ?', [tableId], (err, table) => {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to get table information' });
+      }
 
-    const initialBuyInAmount = Number(chips) || table.minimumBuyIn || 0;
+      const initialBuyInAmount = Number(chips) || table.minimumBuyIn || 0;
 
-    db.serialize(() => {
-      db.run(
-        'INSERT INTO players (id, tableId, name, nickname, chips, totalBuyIn, active, showMe) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [playerId, tableId, name, nickname, initialBuyInAmount, initialBuyInAmount, active, showMe],
-        function(err) {
-          if (err) {
-            return res.status(500).json({ error: 'Failed to add player' });
-          }
-
-          db.run(
-            'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
-            [initialBuyInId, playerId, initialBuyInAmount, timestamp],
-            function(buyinErr) {
-              if (buyinErr) {
-              }
-              
-              const newPlayerResponse = {
-                id: playerId,
-                tableId: tableId,
-                name: name,
-                nickname: nickname,
-                chips: initialBuyInAmount,
-                totalBuyIn: initialBuyInAmount,
-                active: active,
-                showMe: showMe,
-                buyIns: [
-                  {
-                    id: initialBuyInId,
-                    playerId: playerId,
-                    amount: initialBuyInAmount,
-                    timestamp: timestamp
-                  }
-                ],
-                cashOuts: []
-              };
-              res.status(201).json(newPlayerResponse);
+      db.serialize(() => {
+        db.run(
+          'INSERT INTO players (id, tableId, name, nickname, chips, totalBuyIn, active, showMe) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [playerId, tableId, name, nickname, initialBuyInAmount, initialBuyInAmount, active, showMe],
+          function(err) {
+            if (err) {
+              return res.status(500).json({ error: 'Failed to add player' });
             }
-          );
-        }
-      );
+
+            db.run(
+              'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
+              [initialBuyInId, playerId, initialBuyInAmount, timestamp],
+              function(buyinErr) {
+                if (buyinErr) {
+                }
+                
+                const newPlayerResponse = {
+                  id: playerId,
+                  tableId: tableId,
+                  name: name,
+                  nickname: nickname,
+                  chips: initialBuyInAmount,
+                  totalBuyIn: initialBuyInAmount,
+                  active: active,
+                  showMe: showMe,
+                  buyIns: [
+                    {
+                      id: initialBuyInId,
+                      playerId: playerId,
+                      amount: initialBuyInAmount,
+                      timestamp: timestamp
+                    }
+                  ],
+                  cashOuts: []
+                };
+                res.status(201).json(newPlayerResponse);
+              }
+            );
+          }
+        );
+      });
     });
   });
 });
 
 // Remove player from table
 app.delete('/api/tables/:tableId/players/:playerId', authenticate, authorize(['admin', 'editor']), (req, res) => {
-  db.run('DELETE FROM players WHERE id = ? AND tableId = ?', [req.params.playerId, req.params.tableId], function(err) {
+  const tableId = req.params.tableId;
+  checkTableActive(tableId, (err) => {
     if (err) {
-      res.status(500).json({ error: err.message });
-      return;
+      return res.status(403).json({ error: err.message });
     }
-    res.json({ message: 'Player removed' });
+    db.run('DELETE FROM players WHERE id = ? AND tableId = ?', [req.params.playerId, req.params.tableId], function(err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ message: 'Player removed' });
+    });
   });
 });
 
@@ -467,77 +488,89 @@ app.put('/api/tables/:tableId/players/:playerId/chips', authenticate, authorize(
 
 // Add buy-in for player
 app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authorize(['admin', 'editor']), (req, res) => {
-  const { amount } = req.body;
-  const buyInId = uuidv4();
-  const playerId = req.params.playerId;
-  const timestamp = new Date().toISOString();
-  
-  const numericAmount = Number(amount);
-  if (isNaN(numericAmount)) {
-    return res.status(400).json({ error: 'Invalid amount for buyin' });
-  }
+  const tableId = req.params.tableId;
+  checkTableActive(tableId, (err) => {
+    if (err) {
+      return res.status(403).json({ error: err.message });
+    }
+    const { amount } = req.body;
+    const buyInId = uuidv4();
+    const playerId = req.params.playerId;
+    const timestamp = new Date().toISOString();
+    
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount)) {
+      return res.status(400).json({ error: 'Invalid amount for buyin' });
+    }
 
-  db.serialize(() => {
-    db.run(
-      'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
-      [buyInId, playerId, amount, timestamp],
-      function(err) {
-        if (err) {
-          return res.status(500).json({ error: 'Failed to record buyin' });
-        }
-
-        db.run(
-          'UPDATE players SET chips = COALESCE(chips, 0) + ?, totalBuyIn = COALESCE(totalBuyIn, 0) + ? WHERE id = ?',
-          [numericAmount, numericAmount, playerId],
-          function(updateErr) {
-            if (updateErr) {
-              return res.status(500).json({ error: 'Failed to update player after buyin' });
-            }
-            res.json({ id: buyInId, amount: numericAmount, timestamp });
+    db.serialize(() => {
+      db.run(
+        'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
+        [buyInId, playerId, amount, timestamp],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Failed to record buyin' });
           }
-        );
-      }
-    );
+
+          db.run(
+            'UPDATE players SET chips = COALESCE(chips, 0) + ?, totalBuyIn = COALESCE(totalBuyIn, 0) + ? WHERE id = ?',
+            [numericAmount, numericAmount, playerId],
+            function(updateErr) {
+              if (updateErr) {
+                return res.status(500).json({ error: 'Failed to update player after buyin' });
+              }
+              res.json({ id: buyInId, amount: numericAmount, timestamp });
+            }
+          );
+        }
+      );
+    });
   });
 });
 
 // Add cash-out for player
 app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, authorize(['admin', 'editor']), (req, res) => {
-  const { amount } = req.body;
-  const cashOutId = uuidv4();
-  const playerId = req.params.playerId;
-  const timestamp = new Date().toISOString();
+  const tableId = req.params.tableId;
+  checkTableActive(tableId, (err) => {
+    if (err) {
+      return res.status(403).json({ error: err.message });
+    }
+    const { amount } = req.body;
+    const cashOutId = uuidv4();
+    const playerId = req.params.playerId;
+    const timestamp = new Date().toISOString();
 
-  db.serialize(() => {
-    db.run('DELETE FROM cashouts WHERE playerId = ?', [playerId], function(deleteErr) {
-      if (deleteErr) {
-      }
-
-      db.run(
-        'INSERT INTO cashouts (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
-        [cashOutId, playerId, amount, timestamp],
-        function(insertErr) {
-          if (insertErr) {
-            return res.status(500).json({ error: 'Failed to record cashout' });
-          }
-
-          const numericAmount = Number(amount);
-          if (isNaN(numericAmount)) {
-            return res.status(400).json({ error: 'Invalid amount for cashout' });
-          }
-
-          db.run(
-            'UPDATE players SET active = false, chips = 0 WHERE id = ?',
-            [playerId],
-            function(updateErr) {
-              if (updateErr) {
-                return res.status(500).json({ error: 'Failed to update player status after cashout' });
-              }
-              res.json({ id: cashOutId, amount: numericAmount, timestamp });
-            }
-          );
+    db.serialize(() => {
+      db.run('DELETE FROM cashouts WHERE playerId = ?', [playerId], function(deleteErr) {
+        if (deleteErr) {
         }
-      );
+
+        db.run(
+          'INSERT INTO cashouts (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
+          [cashOutId, playerId, amount, timestamp],
+          function(insertErr) {
+            if (insertErr) {
+              return res.status(500).json({ error: 'Failed to record cashout' });
+            }
+
+            const numericAmount = Number(amount);
+            if (isNaN(numericAmount)) {
+              return res.status(400).json({ error: 'Invalid amount for cashout' });
+            }
+
+            db.run(
+              'UPDATE players SET active = false, chips = 0 WHERE id = ?',
+              [playerId],
+              function(updateErr) {
+                if (updateErr) {
+                  return res.status(500).json({ error: 'Failed to update player status after cashout' });
+                }
+                res.json({ id: cashOutId, amount: numericAmount, timestamp });
+              }
+            );
+          }
+        );
+      });
     });
   });
 });
@@ -585,34 +618,45 @@ app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor
 
 // Reactivate player
 app.put('/api/tables/:tableId/players/:playerId/reactivate', authenticate, authorize(['admin', 'editor']), (req, res) => {
-  db.run(
-    'UPDATE players SET active = true WHERE id = ? AND tableId = ?',
-    [req.params.playerId, req.params.tableId],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json({ active: true });
+  const tableId = req.params.tableId;
+  checkTableActive(tableId, (err) => {
+    if (err) {
+      return res.status(403).json({ error: err.message });
     }
-  );
+    db.run(
+      'UPDATE players SET active = true WHERE id = ? AND tableId = ?',
+      [req.params.playerId, req.params.tableId],
+      function(err) {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+        res.json({ active: true });
+      }
+    );
+  });
 });
 
 // Update player showMe status
 app.put('/api/tables/:tableId/players/:playerId/showme', authenticate, authorize(['admin', 'editor']), (req, res) => {
-  const { tableId, playerId } = req.params;
-  const { showMe } = req.body;
-
-  db.run(
-    'UPDATE players SET showMe = ? WHERE id = ? AND tableId = ?',
-    [showMe, playerId, tableId],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ success: true, showMe });
+  const tableId = req.params.tableId;
+  checkTableActive(tableId, (err) => {
+    if (err) {
+      return res.status(403).json({ error: err.message });
     }
-  );
+    const { showMe } = req.body;
+
+    db.run(
+      'UPDATE players SET showMe = ? WHERE id = ? AND tableId = ?',
+      [showMe, req.params.playerId, req.params.tableId],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.json({ success: true, showMe });
+      }
+    );
+  });
 });
 
 // Get current user info
