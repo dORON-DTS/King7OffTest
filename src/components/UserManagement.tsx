@@ -210,6 +210,14 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  // Role order for sorting
+  const roleOrder = { admin: 0, editor: 1, viewer: 2 };
+  const sortedUsers = [...users].sort((a, b) => {
+    const roleDiff = (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99);
+    if (roleDiff !== 0) return roleDiff;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+
   return (
     <Box sx={{ mt: 4, maxWidth: 1200, mx: 'auto' }}>
       <Card sx={{ mb: 4, bgcolor: 'background.paper', borderRadius: 2 }}>
@@ -277,7 +285,7 @@ const UserManagement: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {users.map((user) => {
+                {sortedUsers.map((user) => {
                   return (
                     <TableRow key={user.id} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
                       <TableCell>
