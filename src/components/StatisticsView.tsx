@@ -52,6 +52,7 @@ import styles from './StatisticsView.module.css';
 interface Group {
   id: string;
   name: string;
+  createdAt?: string;
 }
 
 // Helper type for sorting
@@ -395,6 +396,23 @@ const StatisticsView: React.FC = () => {
   // Add state for Best Current Streak dialog
   const [isBestCurrentStreakDialogOpen, setIsBestCurrentStreakDialogOpen] = useState(false);
 
+  // Sort groups by createdAt (oldest first), or by id if no createdAt
+  const sortedGroups = useMemo(() => {
+    if (!groups || groups.length === 0) return [];
+    if (groups[0].createdAt) {
+      return [...groups].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+    // Fallback: sort by id (string compare)
+    return [...groups].sort((a, b) => a.id.localeCompare(b.id));
+  }, [groups]);
+
+  // Set default selected group to the oldest
+  useEffect(() => {
+    if (sortedGroups.length > 0 && !selectedGroupId) {
+      setSelectedGroupId(sortedGroups[0].id);
+    }
+  }, [sortedGroups, selectedGroupId]);
+
   // Fetch groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
@@ -403,17 +421,13 @@ const StatisticsView: React.FC = () => {
         if (!response.ok) throw new Error('Failed to fetch groups');
         const data = await response.json();
         setGroups(data);
-        // Set first group as default if available and no group is selected
-        if (data.length > 0 && !selectedGroupId) {
-          setSelectedGroupId(data[0].id);
-        }
       } catch (error) {
         console.error('Error fetching groups:', error);
       }
     };
 
     fetchGroups();
-  }, [selectedGroupId]);
+  }, []);
 
   // Filter tables by selected group
   const filteredTables = useMemo(() => {
@@ -1226,7 +1240,7 @@ const StatisticsView: React.FC = () => {
               },
             }}
           >
-            {groups.map((group) => (
+            {sortedGroups.map((group) => (
               <MenuItem key={group.id} value={group.id}>
                 {group.name}
               </MenuItem>
