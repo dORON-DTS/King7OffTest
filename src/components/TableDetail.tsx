@@ -478,7 +478,7 @@ const TableDetail: React.FC = () => {
     updateTable(id, updatedTable)
       .then(() => {
         setEditDialogOpen(false);
-        refreshTable();
+        fetchTables();
       })
       .catch(error => {
         console.error('Failed to update table:', error);
