@@ -935,7 +935,8 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
         SET name = ?, smallBlind = ?, bigBlind = ?, location = ?, food = ?, groupId = ?, minimumBuyIn = ?, createdAt = ?
         WHERE id = ?
       `;
-      db.run(updateQuery, [name, smallBlind, bigBlind, location, food, groupId, minimumBuyIn, createdAt, tableId], function(err) {
+      const createdAtStr = createdAt instanceof Date ? createdAt.toISOString() : new Date(createdAt).toISOString();
+      db.run(updateQuery, [name, smallBlind, bigBlind, location, food, groupId, minimumBuyIn, createdAtStr, tableId], function(err) {
         if (err) {
           reject(err);
           return;

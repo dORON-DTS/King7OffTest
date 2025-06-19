@@ -472,7 +472,7 @@ const TableDetail: React.FC = () => {
       food: editForm.food,
       groupId: editForm.groupId,
       minimumBuyIn: Number(editForm.minimumBuyIn),
-      createdAt: editForm.date.toISOString()
+      createdAt: editForm.date
     };
 
     updateTable(id, updatedTable)
