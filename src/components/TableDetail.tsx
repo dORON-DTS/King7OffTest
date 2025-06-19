@@ -459,19 +459,30 @@ const TableDetail: React.FC = () => {
   };
 
   // שמירה (TODO: לממש עדכון לשרת)
-  const handleEditSubmit = async () => {
-    if (!validateEditForm()) return;
-    try {
-      await updateTable(table.id, {
-        ...editForm,
-        smallBlind: Number(editForm.smallBlind),
-        bigBlind: Number(editForm.bigBlind),
-        minimumBuyIn: Number(editForm.minimumBuyIn)
-      });
-      setEditDialogOpen(false);
-    } catch (error: any) {
-      setErrorMessage(error.message || 'Failed to update table');
+  const handleEditSubmit = () => {
+    if (!validateEditForm()) {
+      return;
     }
+
+    const updatedTable = {
+      name: editForm.name,
+      smallBlind: Number(editForm.smallBlind),
+      bigBlind: Number(editForm.bigBlind),
+      location: editForm.location,
+      food: editForm.food,
+      groupId: editForm.groupId,
+      minimumBuyIn: Number(editForm.minimumBuyIn),
+      createdAt: editForm.date.toISOString()
+    };
+
+    updateTable(id, updatedTable)
+      .then(() => {
+        setEditDialogOpen(false);
+        refreshTable();
+      })
+      .catch(error => {
+        console.error('Failed to update table:', error);
+      });
   };
 
   const showTransientError = (message: string) => {
