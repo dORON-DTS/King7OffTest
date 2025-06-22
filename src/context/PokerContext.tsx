@@ -319,7 +319,28 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       
       if (response.ok) {
-        await fetchTables();
+        const newBuyIn = await response.json();
+        setTables(prevTables =>
+          prevTables.map(table => {
+            if (table.id !== tableId) {
+              return table;
+            }
+            return {
+              ...table,
+              players: table.players.map(player => {
+                if (player.id !== playerId) {
+                  return player;
+                }
+                return {
+                  ...player,
+                  chips: (player.chips || 0) + amount,
+                  totalBuyIn: (player.totalBuyIn || 0) + amount,
+                  buyIns: [...player.buyIns, newBuyIn]
+                };
+              })
+            };
+          })
+        );
       } else {
         if (response.status === 401 || response.status === 403) {
           showTransientError('You do not have permission to perform this action');
@@ -343,7 +364,29 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       
       if (response.ok) {
-        await fetchTables();
+        const newCashOut = await response.json();
+        setTables(prevTables =>
+          prevTables.map(table => {
+            if (table.id !== tableId) {
+              return table;
+            }
+            return {
+              ...table,
+              players: table.players.map(player => {
+                if (player.id !== playerId) {
+                  return player;
+                }
+                // Server sets active=false and chips=0
+                return {
+                  ...player,
+                  active: false,
+                  chips: 0,
+                  cashOuts: [...player.cashOuts, newCashOut]
+                };
+              })
+            };
+          })
+        );
       } else {
         if (response.status === 401 || response.status === 403) {
           showTransientError('You do not have permission to perform this action');
@@ -357,6 +400,8 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const toggleTableStatus = async (tableId: string, creatorId: string) => {
     const table = tables.find(t => t.id === tableId);
     if (!table) return;
+    const newStatus = !table.isActive;
+    
     try {
       const token = getAuthToken();
       if (!token) {
@@ -364,22 +409,23 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tables/${tableId}/status`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ isActive: !table.isActive })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ isActive: newStatus })
       });
-      
       if (response.ok) {
-        await fetchTables();
+        const { isActive } = await response.json();
+        setTables(prevTables =>
+          prevTables.map(t =>
+            t.id === tableId ? { ...t, isActive: isActive } : t
+          )
+        );
       } else {
-        if (response.status === 401 || response.status === 403) {
-          showTransientError('You do not have permission to perform this action');
-        }
+        const errorData = await response.json();
+        showTransientError(errorData.error || 'Failed to update table status');
       }
     } catch (error) {
       console.error('Error toggling table status:', error);
+      showTransientError('Failed to update table status');
     }
   };
 
@@ -391,18 +437,30 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tables/${tableId}/players/${playerId}/reactivate`, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-      
+
       if (response.ok) {
-        await fetchTables();
+        const { active } = await response.json();
+        setTables(prevTables =>
+          prevTables.map(table =>
+            table.id === tableId
+              ? {
+                  ...table,
+                  players: table.players.map(player =>
+                    player.id === playerId ? { ...player, active } : player
+                  )
+                }
+              : table
+          )
+        );
       } else {
-        if (response.status === 401 || response.status === 403) {
-          showTransientError('You do not have permission to perform this action');
-        }
+        const errorData = await response.json();
+        showTransientError(errorData.error || 'Failed to reactivate player');
       }
     } catch (error) {
       console.error('Error reactivating player:', error);
+      showTransientError('Failed to reactivate player');
     }
   };
 
