@@ -1221,10 +1221,19 @@ app.post('/api/player/payment', authenticate, authorize(['admin', 'editor']), (r
     [payment_method, payment_comment, playerId, tableId],
     function (err) {
       if (err) {
-        res.status(500).json({ error: 'Failed to update payment method' });
-      } else {
-        res.json({ success: true });
+        return res.status(500).json({ error: 'Failed to update payment method' });
       }
+
+      // After updating, fetch the updated player to return it
+      db.get('SELECT * FROM players WHERE id = ?', [playerId], (err, player) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to fetch updated player data' });
+        }
+        if (!player) {
+          return res.status(404).json({ error: 'Player not found after update' });
+        }
+        res.json(player);
+      });
     }
   );
 });

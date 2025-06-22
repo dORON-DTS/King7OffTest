@@ -42,7 +42,7 @@ const TableDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const pokerContext = usePoker();
-  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups, tables: allTables, fetchTables } = pokerContext;
+  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups, tables: allTables, fetchTables, updatePlayerPayment } = pokerContext;
   const { user } = useUser();
   
   // Dialog state
@@ -603,40 +603,16 @@ const TableDetail: React.FC = () => {
       setCommentError('Comment cannot exceed 100 characters');
       return;
     }
-    // שלח לשרת עם הרשאות
+    
     if (paymentDialogOpen && id) {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        showTransientError && showTransientError('You do not have permission to perform this action');
-        handleClosePaymentDialog();
-        return;
-      }
       try {
-        const response = await fetch('/api/player/payment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            playerId: paymentDialogOpen,
-            tableId: id,
-            payment_method: paymentMethod,
-            payment_comment: comment
-          })
-        });
-        
-        if (response.ok) {
-          // Refresh table data to show updated payment info
-          await fetchTables();
-        } else {
-          showTransientError('Failed to save payment method');
-        }
-      } catch (error) {
-        showTransientError('Failed to save payment method');
+        await updatePlayerPayment(id, paymentDialogOpen, paymentMethod, comment);
+      } catch (error: any) {
+        showTransientError(error.message || 'Failed to save payment method');
+      } finally {
+        handleClosePaymentDialog();
       }
     }
-    handleClosePaymentDialog();
   };
 
   return (

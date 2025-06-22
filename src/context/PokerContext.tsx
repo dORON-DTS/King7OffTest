@@ -21,6 +21,7 @@ export interface PokerContextType {
   isLoading: boolean;
   error: string | null;
   updateTable: (tableId: string, tableData: Partial<Table>) => Promise<void>;
+  updatePlayerPayment: (tableId: string, playerId: string, paymentMethod: string, paymentComment: string) => Promise<void>;
 }
 
 const PokerContext = createContext<PokerContextType | undefined>(undefined);
@@ -488,6 +489,50 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const updatePlayerPayment = async (tableId: string, playerId: string, paymentMethod: string, paymentComment: string) => {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error('Authentication required');
+      
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/player/payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          tableId,
+          playerId,
+          payment_method: paymentMethod,
+          payment_comment: paymentComment
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update payment method');
+      }
+
+      const updatedPlayer = await response.json();
+
+      setTables(prevTables =>
+        prevTables.map(table =>
+          table.id === tableId
+            ? {
+                ...table,
+                players: table.players.map(player =>
+                  player.id === playerId ? { ...player, ...updatedPlayer } : player
+                )
+              }
+            : table
+        )
+      );
+    } catch (error) {
+      console.error('Error updating payment method:', error);
+      throw error;
+    }
+  };
+
   // Add getTable function
   const getTable = (id: string): Table | null => {
     return tables.find(table => table.id === id) || null;
@@ -511,6 +556,7 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     isLoading,
     error,
     updateTable,
+    updatePlayerPayment,
   };
 
   return (
