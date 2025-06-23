@@ -1032,15 +1032,20 @@ const TableDetail: React.FC = () => {
             <List>
               <Typography variant="subtitle1" sx={{ pl: 2, pt: 1, fontWeight: 'bold' }}>Buy Ins</Typography>
               {selectedPlayerForHistory.buyIns.map((buyIn, index) => (
-                <ListItem key={`buyin-${buyIn.id}`} secondaryAction={
-                  user && (user.role === 'admin' || user.role === 'editor') && selectedPlayerForHistory.active && (
-                    <IconButton edge="end" aria-label="delete" onClick={() => console.log(`Delete icon clicked for buy-in: ${buyIn.id}`)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  )
-                }>
+                <ListItem 
+                  key={`buyin-${buyIn.id}`} 
+                  secondaryAction={
+                    user && (user.role === 'admin' || user.role === 'editor') && selectedPlayerForHistory.active
+                      ? (
+                        <IconButton edge="end" aria-label="delete" onClick={() => console.log(`Delete icon clicked for buy-in: ${buyIn.id}`)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      )
+                      : null
+                  }
+                >
                   <ListItemText 
-                    primary={`Buy In #${index + 1}: ${buyIn.amount}₪`}
+                    primary={`Buy In #${index + 1}: $${buyIn.amount}`}
                     secondary={new Date(buyIn.timestamp).toLocaleString()}
                   />
                 </ListItem>
@@ -1050,7 +1055,7 @@ const TableDetail: React.FC = () => {
               {selectedPlayerForHistory.cashOuts.map((cashOut, index) => (
                 <ListItem key={`cashout-${cashOut.id}`}>
                   <ListItemText 
-                    primary={`Cash Out #${index + 1}: ${cashOut.amount}₪`}
+                    primary={`Cash Out #${index + 1}: $${cashOut.amount}`}
                     secondary={new Date(cashOut.timestamp).toLocaleString()}
                   />
                 </ListItem>
