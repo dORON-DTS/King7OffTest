@@ -885,7 +885,9 @@ const TableDetail: React.FC = () => {
                     </Box>
                   </Box>
 
-                  <Typography variant="body2">Chips: {player.chips ?? 0}</Typography>
+                  {player.active && (
+                    <Typography variant="body2">Chips: {player.chips ?? 0}</Typography>
+                  )}
                   <Typography variant="body2">Total Buy In: {player.totalBuyIn ?? 0}</Typography>
 
                   <Button 
