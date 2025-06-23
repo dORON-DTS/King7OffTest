@@ -167,6 +167,10 @@ const TableDetail: React.FC = () => {
   const [comment, setComment] = useState('');
   const [commentError, setCommentError] = useState('');
 
+  // Add new state for delete confirmation
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [buyInToDelete, setBuyInToDelete] = useState<{ id: number; amount: number; playerName: string } | null>(null);
+
   const table = id ? getTable(id) : null;
 
   // אתחול ערכי הטופס בכל פתיחה של הדיאלוג
@@ -690,6 +694,25 @@ const TableDetail: React.FC = () => {
     setSelectedPlayerIdForHistory(null);
   };
 
+  const handleDeleteBuyIn = (buyIn: any, playerName: string) => {
+    setBuyInToDelete({ id: buyIn.id, amount: buyIn.amount, playerName });
+    setDeleteConfirmationOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (buyInToDelete) {
+      console.log(`Deleting buy-in: ${buyInToDelete.id} for player: ${buyInToDelete.playerName}`);
+      // TODO: Implement actual deletion logic here
+    }
+    setDeleteConfirmationOpen(false);
+    setBuyInToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmationOpen(false);
+    setBuyInToDelete(null);
+  };
+
   return (
     <Box sx={{ p: 2, maxWidth: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -1056,8 +1079,12 @@ const TableDetail: React.FC = () => {
                     secondaryAction={
                       user && (user.role === 'admin' || user.role === 'editor') && selectedPlayerForHistory.active
                       ? (
-                        <IconButton edge="end" aria-label="delete" onClick={() => console.log(`Delete icon clicked for buy-in: ${buyIn.id}`)}>
-                          <DeleteIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }}/>
+                        <IconButton 
+                          edge="end" 
+                          aria-label="delete" 
+                          onClick={() => handleDeleteBuyIn(buyIn, selectedPlayerForHistory.name)}
+                        >
+                          <DeleteIcon sx={{ color: '#d32f2f' }}/>
                         </IconButton>
                       )
                       : null
@@ -1342,6 +1369,48 @@ const TableDetail: React.FC = () => {
         <DialogActions>
           <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleEditSubmit} variant="contained" color="primary">Save</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmationOpen}
+        onClose={handleCancelDelete}
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
+          Confirm Deletion
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: 'white', mt: 1 }}>
+            Are you sure you want to delete this buy-in of ${buyInToDelete?.amount} for player "{buyInToDelete?.playerName}"?
+          </Typography>
+          <Typography sx={{ color: '#ff6b6b', mt: 2, fontWeight: 'bold' }}>
+            This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.12)' }}>
+          <Button onClick={handleCancelDelete} sx={{ color: 'white' }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleConfirmDelete} 
+            sx={{ 
+              color: 'white', 
+              bgcolor: '#d32f2f',
+              '&:hover': {
+                bgcolor: '#b71c1c'
+              }
+            }}
+          >
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
