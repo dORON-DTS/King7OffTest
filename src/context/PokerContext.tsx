@@ -13,6 +13,7 @@ export interface PokerContextType {
   removePlayer: (tableId: string, playerId: string) => void;
   updatePlayerChips: (tableId: string, playerId: string, newChips: number) => void;
   addBuyIn: (tableId: string, playerId: string, amount: number) => void;
+  deleteBuyIn: (tableId: string, buyinId: string) => Promise<void>;
   cashOut: (tableId: string, playerId: string, amount: number) => void;
   toggleTableStatus: (tableId: string, creatorId: string) => void;
   reactivatePlayer: (tableId: string, playerId: string) => void;
@@ -351,6 +352,50 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const deleteBuyIn = async (tableId: string, buyinId: string) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tables/${tableId}/buyins/${buyinId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        setTables(prevTables =>
+          prevTables.map(table =>
+            table.id === tableId
+              ? {
+                  ...table,
+                  players: table.players.map(player => {
+                    const foundBuyIn = player.buyIns.find(buyIn => buyIn.id === buyinId);
+                    const buyInAmount = foundBuyIn ? foundBuyIn.amount || 0 : 0;
+                    if (foundBuyIn) {
+                      return {
+                        ...player,
+                        chips: (player.chips || 0) - buyInAmount,
+                        totalBuyIn: (player.totalBuyIn || 0) - buyInAmount,
+                        buyIns: player.buyIns.filter(buyIn => buyIn.id !== buyinId)
+                      };
+                    }
+                    return player;
+                  })
+                }
+              : table
+          )
+        );
+      } else {
+        if (response.status === 401 || response.status === 403) {
+          showTransientError('You do not have permission to perform this action');
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting buy-in:', error);
+    }
+  };
+
   const cashOut = async (tableId: string, playerId: string, amount: number) => {
     try {
       const token = getAuthToken();
@@ -606,6 +651,7 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     removePlayer,
     updatePlayerChips,
     addBuyIn,
+    deleteBuyIn,
     cashOut,
     toggleTableStatus,
     reactivatePlayer,

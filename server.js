@@ -528,6 +528,90 @@ app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authoriz
   });
 });
 
+// Delete buy-in for player
+app.delete('/api/tables/:tableId/buyins/:buyinId', authenticate, authorize(['admin', 'editor']), (req, res) => {
+  const tableId = req.params.tableId;
+  const buyinId = req.params.buyinId;
+  
+  checkTableActive(tableId, (err) => {
+    if (err) {
+      return res.status(403).json({ error: err.message });
+    }
+
+    db.serialize(() => {
+      // First, get the buy-in details
+      db.get('SELECT playerId, amount FROM buyins WHERE id = ?', [buyinId], (err, buyin) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to get buy-in details' });
+        }
+        
+        if (!buyin) {
+          return res.status(404).json({ error: 'Buy-in not found' });
+        }
+
+        const numericAmount = Number(buyin.amount);
+        if (isNaN(numericAmount)) {
+          return res.status(400).json({ error: 'Invalid buy-in amount' });
+        }
+
+        // Delete the buy-in
+        db.run('DELETE FROM buyins WHERE id = ?', [buyinId], function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Failed to delete buy-in' });
+          }
+
+          // Update player's totalBuyIn and chips
+          db.run(
+            'UPDATE players SET totalBuyIn = COALESCE(totalBuyIn, 0) - ?, chips = COALESCE(chips, 0) - ? WHERE id = ?',
+            [numericAmount, numericAmount, buyin.playerId],
+            function(updateErr) {
+              if (updateErr) {
+                return res.status(500).json({ error: 'Failed to update player after buy-in deletion' });
+              }
+
+              // Get updated player data
+              db.get(
+                `SELECT p.*, 
+                 GROUP_CONCAT(b.id || '|' || b.amount || '|' || b.timestamp) as buyIns,
+                 GROUP_CONCAT(c.id || '|' || c.amount || '|' || c.timestamp) as cashOuts
+                 FROM players p 
+                 LEFT JOIN buyins b ON p.id = b.playerId 
+                 LEFT JOIN cashouts c ON p.id = c.playerId 
+                 WHERE p.id = ?
+                 GROUP BY p.id`,
+                [buyin.playerId],
+                (err, player) => {
+                  if (err) {
+                    return res.status(500).json({ error: 'Failed to get updated player data' });
+                  }
+
+                  // Parse buy-ins and cash-outs
+                  const parsedPlayer = {
+                    ...player,
+                    buyIns: player.buyIns ? player.buyIns.split(',').map(buyin => {
+                      const [id, amount, timestamp] = buyin.split('|');
+                      return { id, amount: Number(amount), timestamp };
+                    }) : [],
+                    cashOuts: player.cashOuts ? player.cashOuts.split(',').map(cashout => {
+                      const [id, amount, timestamp] = cashout.split('|');
+                      return { id, amount: Number(amount), timestamp };
+                    }) : []
+                  };
+
+                  res.json({ 
+                    message: 'Buy-in deleted successfully',
+                    player: parsedPlayer
+                  });
+                }
+              );
+            }
+          );
+        });
+      });
+    });
+  });
+});
+
 // Add cash-out for player
 app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const tableId = req.params.tableId;

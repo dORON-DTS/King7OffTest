@@ -107,7 +107,7 @@ const TableDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const pokerContext = usePoker();
-  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups, tables: allTables, fetchTables, updatePlayerPayment } = pokerContext;
+  const { getTable, addPlayer, removePlayer, addBuyIn, cashOut, toggleTableStatus, reactivatePlayer, disableShowMe, updateTable, groups, tables: allTables, fetchTables, updatePlayerPayment, deleteBuyIn } = pokerContext;
   const { user } = useUser();
   
   // Dialog state
@@ -699,13 +699,21 @@ const TableDetail: React.FC = () => {
     setDeleteConfirmationOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (buyInToDelete) {
-      console.log(`Deleting buy-in: ${buyInToDelete.id} for player: ${buyInToDelete.playerName}`);
-      // TODO: Implement actual deletion logic here
+  const handleConfirmDelete = async () => {
+    if (buyInToDelete && selectedPlayerForHistory) {
+      try {
+        await deleteBuyIn(table?.id || '', buyInToDelete.id.toString());
+        // Close the confirmation dialog
+        setDeleteConfirmationOpen(false);
+        setBuyInToDelete(null);
+        // Close the history dialog as well
+        setBuyInHistoryDialogOpen(false);
+        setSelectedPlayerIdForHistory(null);
+      } catch (error) {
+        console.error('Error deleting buy-in:', error);
+        // Keep the dialogs open if there was an error
+      }
     }
-    setDeleteConfirmationOpen(false);
-    setBuyInToDelete(null);
   };
 
   const handleCancelDelete = () => {
