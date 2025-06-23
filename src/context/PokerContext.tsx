@@ -464,6 +464,8 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             t.id === tableId ? { ...t, isActive: isActive } : t
           )
         );
+        // Fetch fresh data to ensure we have the latest player statuses and balances
+        await fetchTables();
       } else {
         const errorData = await response.json();
         showTransientError(errorData.error || 'Failed to update table status');
