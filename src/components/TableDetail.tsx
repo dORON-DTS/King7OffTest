@@ -1129,7 +1129,9 @@ const TableDetail: React.FC = () => {
               <Typography variant="h6" sx={{ color: '#ff9800', mb: 1 }}>Summary</Typography>
               <Typography sx={{ color: 'white' }}>Total Buy In: ${selectedPlayerForHistory.totalBuyIn || 0}</Typography>
               <Typography sx={{ color: 'white' }}>Total Cash Out: ${selectedPlayerForHistory.cashOuts.reduce((sum, co) => sum + (co.amount || 0), 0)}</Typography>
-              <Typography sx={{ color: 'white', mt: 1, fontWeight: 'bold' }}>Current Balance: ${calculatePlayerBalance(selectedPlayerForHistory)}</Typography>
+              {selectedPlayerForHistory.cashOuts && selectedPlayerForHistory.cashOuts.length > 0 && (
+                <Typography sx={{ color: 'white', mt: 1, fontWeight: 'bold' }}>Current Balance: ${calculatePlayerBalance(selectedPlayerForHistory)}</Typography>
+              )}
             </Box>
             </>
           ) : (
