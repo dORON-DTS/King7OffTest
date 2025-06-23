@@ -510,10 +510,10 @@ const SharedTableView: React.FC = () => {
                     </Box>
                   </TableCell>
                   <TableCell align="center" sx={{ color: 'white' }}>
-                    {formatNumericValue(player.totalBuyIn)}
+                    {(player.totalBuyIn ?? 0) > 0 ? player.totalBuyIn : '-'}
                   </TableCell>
                   <TableCell align="center" sx={{ color: 'white' }}>
-                    {formatNumericValue(totalCashOutDisplay)}
+                    {(player.cashOuts && player.cashOuts.length > 0) ? totalCashOutDisplay : '-'}
                   </TableCell>
                   { !table.isActive && (
                     <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>
@@ -537,7 +537,7 @@ const SharedTableView: React.FC = () => {
                     </TableCell>
                   )}
                   <TableCell align="center" sx={{ color: balanceColor, fontWeight: 'bold', fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
-                    {totalCashOutDisplay > 0 && balance !== 0 ? formattedBalance : '-'}
+                    {(player.cashOuts && player.cashOuts.length > 0) ? formattedBalance : '-'}
                   </TableCell>
                   <TableCell align="center">
                     <IconButton 
@@ -694,7 +694,7 @@ const SharedTableView: React.FC = () => {
               Total Buy In: ${ (selectedPlayer?.totalBuyIn ?? 0) > 0 ? selectedPlayer?.totalBuyIn : '-' }
             </Typography>
             <Typography sx={{ color: 'white' }}>
-              Total Cash Out: ${ (selectedPlayer?.cashOuts?.reduce((sum, cashOut) => sum + cashOut.amount, 0) ?? 0) > 0 ? selectedPlayer?.cashOuts?.reduce((sum, cashOut) => sum + cashOut.amount, 0) : '-' }
+              Total Cash Out: ${ (selectedPlayer?.cashOuts && selectedPlayer.cashOuts.length > 0) ? (selectedPlayer?.cashOuts?.reduce((sum, cashOut) => sum + cashOut.amount, 0) ?? 0) : '-' }
             </Typography>
             {selectedPlayer && selectedPlayer.cashOuts && selectedPlayer.cashOuts.length > 0 && (
               <Typography sx={{ 
