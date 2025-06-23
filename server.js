@@ -703,21 +703,68 @@ app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor
 // Reactivate player
 app.put('/api/tables/:tableId/players/:playerId/reactivate', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const tableId = req.params.tableId;
+  const playerId = req.params.playerId;
+  
   checkTableActive(tableId, (err) => {
     if (err) {
       return res.status(403).json({ error: err.message });
     }
-    db.run(
-      'UPDATE players SET active = true WHERE id = ? AND tableId = ?',
-      [req.params.playerId, req.params.tableId],
-      function(err) {
+    
+    db.serialize(() => {
+      // Delete the player's cash-out
+      db.run('DELETE FROM cashouts WHERE playerId = ?', [playerId], function(err) {
         if (err) {
-          res.status(500).json({ error: err.message });
-          return;
+          return res.status(500).json({ error: 'Failed to delete cash-out' });
         }
-        res.json({ active: true });
-      }
-    );
+        
+        // Reactivate the player
+        db.run(
+          'UPDATE players SET active = true WHERE id = ? AND tableId = ?',
+          [playerId, tableId],
+          function(err) {
+            if (err) {
+              return res.status(500).json({ error: err.message });
+            }
+            
+            // Get updated player data with empty cashOuts
+            db.get(
+              `SELECT p.*, 
+               GROUP_CONCAT(b.id || '|' || b.amount || '|' || b.timestamp) as buyIns,
+               GROUP_CONCAT(c.id || '|' || c.amount || '|' || c.timestamp) as cashOuts
+               FROM players p 
+               LEFT JOIN buyins b ON p.id = b.playerId 
+               LEFT JOIN cashouts c ON p.id = c.playerId 
+               WHERE p.id = ?
+               GROUP BY p.id`,
+              [playerId],
+              (err, player) => {
+                if (err) {
+                  return res.status(500).json({ error: 'Failed to get updated player data' });
+                }
+
+                // Parse buy-ins and cash-outs
+                const parsedPlayer = {
+                  ...player,
+                  buyIns: player.buyIns ? player.buyIns.split(',').map(buyin => {
+                    const [id, amount, timestamp] = buyin.split('|');
+                    return { id, amount: Number(amount), timestamp };
+                  }) : [],
+                  cashOuts: player.cashOuts ? player.cashOuts.split(',').map(cashout => {
+                    const [id, amount, timestamp] = cashout.split('|');
+                    return { id, amount: Number(amount), timestamp };
+                  }) : []
+                };
+
+                res.json({ 
+                  active: true,
+                  player: parsedPlayer
+                });
+              }
+            );
+          }
+        );
+      });
+    });
   });
 });
 

@@ -488,14 +488,23 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
 
       if (response.ok) {
-        const { active } = await response.json();
+        const { active, player: updatedPlayer } = await response.json();
+        
+        // Update the player with the new data from server (including empty cashOuts)
         setTables(prevTables =>
           prevTables.map(table =>
             table.id === tableId
               ? {
                   ...table,
                   players: table.players.map(player =>
-                    player.id === playerId ? { ...player, active } : player
+                    player.id === playerId 
+                      ? { 
+                          ...player, 
+                          active,
+                          cashOuts: updatedPlayer.cashOuts || [],
+                          buyIns: updatedPlayer.buyIns || player.buyIns
+                        } 
+                      : player
                   )
                 }
               : table
