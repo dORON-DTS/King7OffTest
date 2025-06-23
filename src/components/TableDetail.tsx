@@ -24,7 +24,9 @@ import {
   Snackbar,
   Alert,
   Autocomplete,
-  MenuItem
+  MenuItem,
+  AppBar,
+  Toolbar
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -37,6 +39,69 @@ import GroupIcon from '@mui/icons-material/Group';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import PaymentIcon from '@mui/icons-material/Payment';
+
+interface HistoryDialogProps {
+  open: boolean;
+  onClose: () => void;
+  player: Player | null;
+}
+
+const HistoryDialog: React.FC<HistoryDialogProps> = ({ open, onClose, player }) => {
+  const { user } = useUser();
+  const canEdit = user?.role === 'admin' || user?.role === 'editor';
+  const playerIsActive = player?.active === true;
+
+  const handleDeleteClick = (buyInId: any) => {
+    console.log(`Delete button clicked for Buy-in ID: ${buyInId}. User Role: ${user?.role}, Player Active: ${player?.active}`);
+  };
+
+  if (!player) return null;
+
+  const combinedHistory = [
+    ...(player.buyIns?.map(item => ({ ...item, type: 'buy-in' })) || []),
+    ...(player.cashOuts?.map(item => ({ ...item, type: 'cash-out' })) || []),
+  ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>History for {player.name}</DialogTitle>
+      <DialogContent dividers>
+        <List>
+          {combinedHistory.map((item, index) => {
+            if (item.type === 'buy-in') {
+              return (
+                <ListItem key={`buyin-${item.id}-${index}`} secondaryAction={
+                  canEdit && playerIsActive && (
+                    <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(item.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  )
+                }>
+                  <ListItemText
+                    primary={`Buy In #${index + 1}: $${item.amount}`}
+                    secondary={new Date(item.timestamp).toLocaleString()}
+                  />
+                </ListItem>
+              );
+            }
+            // Render cash-outs without delete icon for now
+            return (
+              <ListItem key={`cashout-${item.id}-${index}`}>
+                <ListItemText
+                  primary={`Cash Out: $${item.amount}`}
+                  secondary={new Date(item.timestamp).toLocaleString()}
+                />
+              </ListItem>
+            );
+          })}
+        </List>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 const TableDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,7 +124,7 @@ const TableDetail: React.FC = () => {
 
   // Buy In history dialog
   const [buyInHistoryDialogOpen, setBuyInHistoryDialogOpen] = useState(false);
-  const [selectedPlayerForHistory, setSelectedPlayerForHistory] = useState<string | null>(null);
+  const [selectedPlayerIdForHistory, setSelectedPlayerIdForHistory] = useState<string | null>(null);
 
   // Cash Out dialog
   const [cashOutDialogOpen, setCashOutDialogOpen] = useState(false);
@@ -300,12 +365,12 @@ const TableDetail: React.FC = () => {
   };
 
   const openBuyInHistory = (playerId: string) => {
-    setSelectedPlayerForHistory(playerId);
+    setSelectedPlayerIdForHistory(playerId);
     setBuyInHistoryDialogOpen(true);
   };
 
-  const selectedPlayer = selectedPlayerForHistory 
-    ? table.players.find(p => p.id === selectedPlayerForHistory)
+  const selectedPlayerForHistory = selectedPlayerIdForHistory
+    ? table?.players.find(p => p.id === selectedPlayerIdForHistory) ?? null
     : null;
 
   const calculatePlayerBalance = (player: any): number => {
@@ -615,6 +680,16 @@ const TableDetail: React.FC = () => {
     }
   };
 
+  const handleOpenHistoryDialog = (player: Player) => {
+    setSelectedPlayerIdForHistory(player.id);
+    setBuyInHistoryDialogOpen(true);
+  };
+
+  const handleCloseHistoryDialog = () => {
+    setBuyInHistoryDialogOpen(false);
+    setSelectedPlayerIdForHistory(null);
+  };
+
   return (
     <Box sx={{ p: 2, maxWidth: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -784,7 +859,7 @@ const TableDetail: React.FC = () => {
 
                   <Button 
                     size="small"
-                    onClick={() => openBuyInHistory(player.id)}
+                    onClick={() => handleOpenHistoryDialog(player)}
                     fullWidth
                     sx={{ mb: 2 }}
                   >
@@ -950,124 +1025,43 @@ const TableDetail: React.FC = () => {
       </Dialog>
 
       {/* Buy In History Dialog */}
-      <Dialog 
-        open={buyInHistoryDialogOpen} 
-        onClose={() => setBuyInHistoryDialogOpen(false)} 
-        maxWidth="sm" 
-        fullWidth
-        PaperProps={{
-          sx: {
-            bgcolor: '#1e1e1e',
-            color: 'white',
-            border: '1px solid rgba(255, 255, 255, 0.12)'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1
-        }}>
-          <GroupIcon sx={{ color: '#2196f3' }} />
-          {selectedPlayer?.name}'s History
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1,
-              color: '#2196f3',
-              mb: 1 
-            }}>
-              <AttachMoneyIcon />
-              Buy Ins
-            </Typography>
+      <Dialog open={buyInHistoryDialogOpen} onClose={handleCloseHistoryDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>History for {selectedPlayerForHistory?.name}</DialogTitle>
+        <DialogContent dividers>
+          {selectedPlayerForHistory ? (
             <List>
-              {selectedPlayer?.buyIns?.map((buyIn, index) => (
-                <ListItem key={buyIn.id} sx={{
-                  bgcolor: 'rgba(33, 150, 243, 0.1)',
-                  borderRadius: 1,
-                  mb: 1
-                }}>
-                  <ListItemText
-                    primary={
-                      <Typography sx={{ color: 'white' }}>
-                        Buy In #{index + 1}: ${buyIn.amount}
-                      </Typography>
-                    }
-                    secondary={
-                      <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                        {new Date(buyIn.timestamp).toLocaleString('he-IL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
-                      </Typography>
-                    }
+              <Typography variant="subtitle1" sx={{ pl: 2, pt: 1, fontWeight: 'bold' }}>Buy Ins</Typography>
+              {selectedPlayerForHistory.buyIns.map((buyIn, index) => (
+                <ListItem key={`buyin-${buyIn.id}`} secondaryAction={
+                  user && (user.role === 'admin' || user.role === 'editor') && selectedPlayerForHistory.active && (
+                    <IconButton edge="end" aria-label="delete" onClick={() => console.log(`Delete icon clicked for buy-in: ${buyIn.id}`)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  )
+                }>
+                  <ListItemText 
+                    primary={`Buy In #${index + 1}: ${buyIn.amount}₪`}
+                    secondary={new Date(buyIn.timestamp).toLocaleString()}
+                  />
+                </ListItem>
+              ))}
+              
+              <Typography variant="subtitle1" sx={{ pl: 2, pt: 2, fontWeight: 'bold' }}>Cash Outs</Typography>
+              {selectedPlayerForHistory.cashOuts.map((cashOut, index) => (
+                <ListItem key={`cashout-${cashOut.id}`}>
+                  <ListItemText 
+                    primary={`Cash Out #${index + 1}: ${cashOut.amount}₪`}
+                    secondary={new Date(cashOut.timestamp).toLocaleString()}
                   />
                 </ListItem>
               ))}
             </List>
-          </Box>
-
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1,
-              color: '#4caf50',
-              mb: 1 
-            }}>
-              <AccountBalanceIcon />
-              Cash Outs
-            </Typography>
-            <List>
-              {selectedPlayer?.cashOuts?.map((cashOut, index) => (
-                <ListItem key={index}>
-                  <ListItemText
-                    primary={`Cash Out #${index + 1}: $${cashOut.amount || 0}`}
-                    secondary={new Date(cashOut.timestamp).toLocaleString('he-IL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
-                    sx={{ color: 'white' }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-
-          <Box sx={{ 
-            mt: 3, 
-            p: 2, 
-            bgcolor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: 1
-          }}>
-            <Typography variant="h6" sx={{ color: '#ff9800', mb: 1 }}>
-              Summary
-            </Typography>
-            <Typography sx={{ color: 'white' }}>
-              Total Buy In: ${selectedPlayer?.totalBuyIn || 0}
-            </Typography>
-            <Typography sx={{ color: 'white' }}>
-              Total Cash Out: ${selectedPlayer?.cashOuts?.reduce((sum, cashOut) => sum + (Number(cashOut.amount) || 0), 0) || 0}
-            </Typography>
-            <Typography sx={{ 
-              color: 'white', 
-              mt: 1,
-              fontWeight: 'bold'
-            }}>
-              Current Balance: ${selectedPlayer ? calculatePlayerBalance(selectedPlayer) : 0}
-            </Typography>
-          </Box>
+          ) : (
+            <Typography>No player selected.</Typography>
+          )}
         </DialogContent>
-        <DialogActions sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.12)' }}>
-          <Button 
-            onClick={() => setBuyInHistoryDialogOpen(false)}
-            sx={{ 
-              color: 'white',
-              '&:hover': {
-                bgcolor: 'rgba(255, 255, 255, 0.1)'
-              }
-            }}
-          >
-            Close
-          </Button>
+        <DialogActions>
+          <Button onClick={handleCloseHistoryDialog}>Close</Button>
         </DialogActions>
       </Dialog>
 
