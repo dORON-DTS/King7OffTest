@@ -247,7 +247,7 @@ const SharedTableView: React.FC = () => {
     const totalCashOut = Array.isArray(player.cashOuts)
       ? player.cashOuts.reduce((sum, cashOut) => sum + (Number(cashOut?.amount) || 0), 0)
       : 0;
-    return (player.chips ?? 0) + totalCashOut - totalBuyIn;
+    return totalCashOut - totalBuyIn;
   };
 
   const handlePlayerClick = (player: Player) => {
