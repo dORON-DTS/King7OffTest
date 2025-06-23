@@ -373,13 +373,13 @@ const TableDetail: React.FC = () => {
     ? table?.players.find(p => p.id === selectedPlayerIdForHistory) ?? null
     : null;
 
-  const calculatePlayerBalance = (player: any): number => {
+  const calculatePlayerBalance = (player: Player | null): number => {
     if (!player) return 0;
     const totalBuyIn = player.totalBuyIn ?? 0;
     const totalCashOut = Array.isArray(player.cashOuts)
-      ? player.cashOuts.reduce((sum: number, cashOut: { amount: number }) => sum + cashOut.amount, 0)
+      ? player.cashOuts.reduce((sum, cashOut) => sum + (cashOut.amount ?? 0), 0)
       : 0;
-    return (player.chips ?? 0) + totalCashOut - totalBuyIn;
+    return totalCashOut - totalBuyIn;
   };
 
   // Add validation checks for table deactivation
@@ -1025,48 +1025,84 @@ const TableDetail: React.FC = () => {
       </Dialog>
 
       {/* Buy In History Dialog */}
-      <Dialog open={buyInHistoryDialogOpen} onClose={handleCloseHistoryDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>History for {selectedPlayerForHistory?.name}</DialogTitle>
-        <DialogContent dividers>
+      <Dialog 
+        open={buyInHistoryDialogOpen} 
+        onClose={handleCloseHistoryDialog} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)'}}>
+          History for {selectedPlayerForHistory?.name}
+        </DialogTitle>
+        <DialogContent>
           {selectedPlayerForHistory ? (
-            <List>
-              <Typography variant="subtitle1" sx={{ pl: 2, pt: 1, fontWeight: 'bold' }}>Buy Ins</Typography>
-              {selectedPlayerForHistory.buyIns.map((buyIn, index) => (
-                <ListItem 
-                  key={`buyin-${buyIn.id}`} 
-                  secondaryAction={
-                    user && (user.role === 'admin' || user.role === 'editor') && selectedPlayerForHistory.active
+            <>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#2196f3', mb: 1 }}>
+                <AttachMoneyIcon />
+                Buy Ins
+              </Typography>
+              <List>
+                {selectedPlayerForHistory.buyIns.map((buyIn, index) => (
+                  <ListItem
+                    key={`buyin-${buyIn.id}`}
+                    secondaryAction={
+                      user && (user.role === 'admin' || user.role === 'editor') && selectedPlayerForHistory.active
                       ? (
                         <IconButton edge="end" aria-label="delete" onClick={() => console.log(`Delete icon clicked for buy-in: ${buyIn.id}`)}>
-                          <DeleteIcon />
+                          <DeleteIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }}/>
                         </IconButton>
                       )
                       : null
-                  }
-                >
-                  <ListItemText 
-                    primary={`Buy In #${index + 1}: $${buyIn.amount}`}
-                    secondary={new Date(buyIn.timestamp).toLocaleString()}
-                  />
-                </ListItem>
-              ))}
-              
-              <Typography variant="subtitle1" sx={{ pl: 2, pt: 2, fontWeight: 'bold' }}>Cash Outs</Typography>
-              {selectedPlayerForHistory.cashOuts.map((cashOut, index) => (
-                <ListItem key={`cashout-${cashOut.id}`}>
-                  <ListItemText 
-                    primary={`Cash Out #${index + 1}: $${cashOut.amount}`}
-                    secondary={new Date(cashOut.timestamp).toLocaleString()}
-                  />
-                </ListItem>
-              ))}
-            </List>
+                    }
+                    sx={{ bgcolor: 'rgba(33, 150, 243, 0.1)', borderRadius: 1, mb: 1 }}
+                  >
+                    <ListItemText 
+                      primary={<Typography sx={{ color: 'white' }}>{`Buy In #${index + 1}: $${buyIn.amount}`}</Typography>}
+                      secondary={<Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>{new Date(buyIn.timestamp).toLocaleString()}</Typography>}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#4caf50', mb: 1 }}>
+                <AccountBalanceIcon />
+                Cash Outs
+              </Typography>
+              <List>
+                {selectedPlayerForHistory.cashOuts.map((cashOut, index) => (
+                  <ListItem key={`cashout-${cashOut.id}`} sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', borderRadius: 1, mb: 1 }}>
+                    <ListItemText 
+                      primary={<Typography sx={{ color: 'white' }}>{`Cash Out #${index + 1}: $${cashOut.amount}`}</Typography>}
+                      secondary={<Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>{new Date(cashOut.timestamp).toLocaleString()}</Typography>}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+            
+            <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(255, 255, 255, 0.05)', borderRadius: 1 }}>
+              <Typography variant="h6" sx={{ color: '#ff9800', mb: 1 }}>Summary</Typography>
+              <Typography sx={{ color: 'white' }}>Total Buy In: ${selectedPlayerForHistory.totalBuyIn || 0}</Typography>
+              <Typography sx={{ color: 'white' }}>Total Cash Out: ${selectedPlayerForHistory.cashOuts.reduce((sum, co) => sum + (co.amount || 0), 0)}</Typography>
+              <Typography sx={{ color: 'white', mt: 1, fontWeight: 'bold' }}>Current Balance: ${calculatePlayerBalance(selectedPlayerForHistory)}</Typography>
+            </Box>
+            </>
           ) : (
             <Typography>No player selected.</Typography>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseHistoryDialog}>Close</Button>
+        <DialogActions sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.12)' }}>
+          <Button onClick={handleCloseHistoryDialog} sx={{ color: 'white' }}>Close</Button>
         </DialogActions>
       </Dialog>
 
