@@ -48,6 +48,11 @@ import FastfoodIcon from '@mui/icons-material/Fastfood';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import Popover from '@mui/material/Popover';
 
+const formatNumericValue = (value: number | null | undefined) => {
+  const num = value ?? 0;
+  return num > 0 ? num : '-';
+};
+
 // Define Feedback type
 interface FeedbackState {
   message: string;
@@ -505,10 +510,10 @@ const SharedTableView: React.FC = () => {
                     </Box>
                   </TableCell>
                   <TableCell align="center" sx={{ color: 'white' }}>
-                    {player.totalBuyIn ?? 0}
+                    {formatNumericValue(player.totalBuyIn)}
                   </TableCell>
                   <TableCell align="center" sx={{ color: 'white' }}>
-                    {totalCashOutDisplay}
+                    {formatNumericValue(totalCashOutDisplay)}
                   </TableCell>
                   { !table.isActive && (
                     <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>
@@ -532,7 +537,7 @@ const SharedTableView: React.FC = () => {
                     </TableCell>
                   )}
                   <TableCell align="center" sx={{ color: balanceColor, fontWeight: 'bold', fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
-                    {formattedBalance}
+                    {totalCashOutDisplay > 0 && balance !== 0 ? formattedBalance : '-'}
                   </TableCell>
                   <TableCell align="center">
                     <IconButton 
@@ -686,18 +691,20 @@ const SharedTableView: React.FC = () => {
               Summary
             </Typography>
             <Typography sx={{ color: 'white' }}>
-              Total Buy In: ${selectedPlayer?.totalBuyIn ?? '-'}
+              Total Buy In: ${ (selectedPlayer?.totalBuyIn ?? 0) > 0 ? selectedPlayer?.totalBuyIn : '-' }
             </Typography>
             <Typography sx={{ color: 'white' }}>
-              Total Cash Out: ${selectedPlayer?.cashOuts?.reduce((sum, cashOut) => sum + cashOut.amount, 0) ?? '-'}
+              Total Cash Out: ${ (selectedPlayer?.cashOuts?.reduce((sum, cashOut) => sum + cashOut.amount, 0) ?? 0) > 0 ? selectedPlayer?.cashOuts?.reduce((sum, cashOut) => sum + cashOut.amount, 0) : '-' }
             </Typography>
-            <Typography sx={{ 
-              color: 'white', 
-              mt: 1,
-              fontWeight: 'bold'
-            }}>
-              Current Balance: ${calculatePlayerBalance(selectedPlayer as Player)}
-            </Typography>
+            {selectedPlayer && selectedPlayer.cashOuts && selectedPlayer.cashOuts.length > 0 && (
+              <Typography sx={{ 
+                color: 'white', 
+                mt: 1,
+                fontWeight: 'bold'
+              }}>
+                Current Balance: ${calculatePlayerBalance(selectedPlayer as Player)}
+              </Typography>
+            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.12)' }}>
