@@ -191,30 +191,17 @@ const getPlayerPotentialGames = (playerName: string, tables: Table[]): number =>
   });
   if (appearances.length === 0) return 0;
 
-  let potentialGames = 0;
-  let windowStart = appearances[0];
-  let lastAppearance = appearances[0];
-  let i = 1;
-  while (i < appearances.length) {
-    // If the gap between this appearance and the last is more than 5, close the previous window
-    if (appearances[i] - lastAppearance > 5) {
-      // Add window: from windowStart to lastAppearance+5 (inclusive)
-      potentialGames += (lastAppearance + 5) - windowStart + 1;
-      // Start new window
-      windowStart = appearances[i];
-    }
-    lastAppearance = appearances[i];
-    i++;
-  }
-  // After loop, handle the last window:
-  // If there are less than 5 games after lastAppearance, count up to the end, else up to lastAppearance+5 or end of table list
-  const gamesAfterLast = sortedTables.length - 1 - lastAppearance;
+  const firstIdx = appearances[0];
+  const lastIdx = appearances[appearances.length - 1];
+  const gamesAfterLast = sortedTables.length - 1 - lastIdx;
+
+  // אם עברו פחות מ-5 משחקים מההופעה האחרונה, הפוטנציאלי הוא עד סוף הרשימה
   if (gamesAfterLast < 5) {
-    potentialGames += (sortedTables.length - windowStart);
+    return sortedTables.length - firstIdx;
   } else {
-    potentialGames += (lastAppearance + 5) - windowStart + 1;
+    // אם עברו 5 משחקים מאז ההופעה האחרונה, הפוטנציאלי הוא עד lastIdx + 5
+    return (lastIdx + 5) - firstIdx + 1;
   }
-  return potentialGames;
 };
 
 // Helper to get ordinal suffix
