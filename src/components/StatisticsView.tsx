@@ -193,14 +193,16 @@ const getPlayerPotentialGames = (playerName: string, tables: Table[]): number =>
 
   const firstIdx = appearances[0];
   const lastIdx = appearances[appearances.length - 1];
-  const gamesAfterLast = sortedTables.length - 1 - lastIdx;
 
-  // אם עברו פחות מ-5 משחקים מההופעה האחרונה, הפוטנציאלי הוא עד סוף הרשימה
-  if (gamesAfterLast < 5) {
-    return sortedTables.length - firstIdx;
+  // נבדוק אם עברו 5 משחקים רצופים מאז ההופעה האחרונה
+  let cutoffIdx = sortedTables.length - 1;
+  let gamesSinceLast = cutoffIdx - lastIdx;
+  if (gamesSinceLast >= 5) {
+    // הפוטנציאלי נעצר בשולחן האחרון שבו הופיע
+    return lastIdx - firstIdx + 1;
   } else {
-    // אם עברו 5 משחקים מאז ההופעה האחרונה, הפוטנציאלי הוא עד lastIdx + 5
-    return (lastIdx + 5) - firstIdx + 1;
+    // הפוטנציאלי ממשיך עד סוף הרשימה
+    return sortedTables.length - firstIdx;
   }
 };
 
