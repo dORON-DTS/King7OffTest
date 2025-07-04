@@ -181,19 +181,40 @@ interface HeadCell {
 
 // Add helper to calculate potential games for each player
 const getPlayerPotentialGames = (playerName: string, tables: Table[]): number => {
-  // Get all tables sorted by date
+  // Sort tables by date ascending
   const sortedTables = [...tables].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  // Find indexes of first and last appearance
-  let firstIdx = -1;
-  let lastIdx = -1;
+  const appearances: number[] = [];
   sortedTables.forEach((table, idx) => {
     if (table.players.some(p => p.name.toLowerCase() === playerName.toLowerCase())) {
-      if (firstIdx === -1) firstIdx = idx;
-      lastIdx = idx;
+      appearances.push(idx);
     }
   });
-  if (firstIdx === -1 || lastIdx === -1) return 0;
-  return lastIdx - firstIdx + 1;
+  if (appearances.length === 0) return 0;
+
+  let potentialGames = 0;
+  let windowStart = appearances[0];
+  let lastAppearance = appearances[0];
+  let i = 1;
+  while (i < appearances.length) {
+    // If the gap between this appearance and the last is more than 5, close the previous window
+    if (appearances[i] - lastAppearance > 5) {
+      // Add window: from windowStart to lastAppearance+5 (inclusive)
+      potentialGames += (lastAppearance + 5) - windowStart + 1;
+      // Start new window
+      windowStart = appearances[i];
+    }
+    lastAppearance = appearances[i];
+    i++;
+  }
+  // After loop, handle the last window:
+  // If there are less than 5 games after lastAppearance, count up to the end, else up to lastAppearance+5 or end of table list
+  const gamesAfterLast = sortedTables.length - 1 - lastAppearance;
+  if (gamesAfterLast < 5) {
+    potentialGames += (sortedTables.length - windowStart);
+  } else {
+    potentialGames += (lastAppearance + 5) - windowStart + 1;
+  }
+  return potentialGames;
 };
 
 // Helper to get ordinal suffix
