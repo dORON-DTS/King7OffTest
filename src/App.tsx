@@ -18,6 +18,7 @@ import TableDetail from './components/TableDetail';
 import SharedTableView from './components/SharedTableView';
 import StatisticsView from './components/StatisticsView';
 import Login from './components/Login';
+import Register from './components/Register';
 import UserManagement from './components/UserManagement';
 import PersonIcon from '@mui/icons-material/Person';
 import LandingPage from './components/LandingPage';
@@ -94,14 +95,16 @@ const AppLayout = () => {
     );
   }
 
-  // Allow unauthenticated access to /statistics and /share/:id and landing page
+  // Allow unauthenticated access to /statistics, /share/:id, landing page, login, and register
   const isPublicRoute =
     location.pathname.startsWith('/share/') ||
     location.pathname === '/statistics' ||
-    location.pathname === '/';
+    location.pathname === '/' ||
+    location.pathname === '/login' ||
+    location.pathname === '/register';
 
   if (!user && !isPublicRoute) {
-    return <Login />;
+    return <Navigate to="/login" replace />;
   }
 
   return (
@@ -231,6 +234,8 @@ const router = createBrowserRouter(
       element={<AppLayout />}
     >
       <Route index element={<LandingPage />} />
+      <Route path="login" element={<Login />} />
+      <Route path="register" element={<Register />} />
       <Route path="tableslist" element={<TableList />} />
       <Route path="tables" element={<TableList />} />
       <Route path="table/:id" element={

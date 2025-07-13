@@ -83,6 +83,35 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (createdBy) REFERENCES users(id)
       )
     `);
+
+    // Create users table if it doesn't exist
+    db.run(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        email TEXT UNIQUE,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user',
+        createdAt TEXT NOT NULL
+      )
+    `, (err) => {
+      if (err) {
+        console.error('[DB] Error creating users table:', err);
+      } else {
+        console.log('[DB] Users table ready');
+      }
+    });
+
+    // Add email column to users table if it doesn't exist
+    db.run(`
+      ALTER TABLE users ADD COLUMN email TEXT
+    `, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('[DB] Error adding email column:', err);
+      } else if (!err) {
+        console.log('[DB] Email column added to users table');
+      }
+    });
   }
 });
 
@@ -177,8 +206,8 @@ app.post('/api/login', (req, res) => {
     return res.status(400).json({ message: 'Username and password are required' });
   }
 
-  // First, let's check if the user exists
-  db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
+  // Check if the user exists by username or email
+  db.get('SELECT * FROM users WHERE username = ? OR email = ?', [username, username], (err, user) => {
     if (err) {
       return res.status(500).json({ message: 'Database error' });
     }
@@ -792,7 +821,7 @@ app.put('/api/tables/:tableId/players/:playerId/showme', authenticate, authorize
 
 // Get current user info
 app.get('/api/users/me', authenticate, (req, res) => {
-  db.get('SELECT id, username, role FROM users WHERE id = ?', [req.user.id], (err, user) => {
+  db.get('SELECT id, username, email, role FROM users WHERE id = ?', [req.user.id], (err, user) => {
     if (err) {
       return res.status(500).json({ message: 'Database error' });
     }
@@ -1148,8 +1177,81 @@ app.post('/api/update-passwords', authenticate, authorize(['admin']), (req, res)
   }
 });
 
-// Register new user
-app.post('/api/register', authenticate, authorize(['admin']), (req, res) => {
+// Public user registration
+app.post('/api/register', (req, res) => {
+  const { email, username, password } = req.body;
+  if (!email || !username || !password) {
+    return res.status(400).json({ error: 'Email, username and password are required' });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  // Validate password length
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+  }
+
+  // Validate username length
+  if (username.trim().length < 2) {
+    return res.status(400).json({ error: 'Username must be at least 2 characters long' });
+  }
+
+  // Check if email already exists
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    // Hash password
+    bcrypt.hash(password, 10, (err, hash) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error creating user' });
+      }
+
+      const id = uuidv4();
+      const createdAt = new Date().toISOString();
+      const role = 'user'; // Default role for new registrations
+
+      // Insert new user
+      db.run(
+        'INSERT INTO users (id, username, email, password, role, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, username, email, hash, role, createdAt],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Error creating user' });
+          }
+
+          // Generate token for auto-login
+          const token = jwt.sign(
+            { id, username, role },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+          );
+
+          res.status(201).json({
+            id,
+            username,
+            email,
+            role,
+            createdAt,
+            token
+          });
+        }
+      );
+    });
+  });
+});
+
+// Admin user registration (for admin panel)
+app.post('/api/admin/register', authenticate, authorize(['admin']), (req, res) => {
   const { username, password, role } = req.body;
   if (!username || !password || !role) {
     return res.status(400).json({ error: 'Username, password and role are required' });

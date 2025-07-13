@@ -39,11 +39,14 @@ const pulse = keyframes`
   }
 `;
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, user } = useUser();
+  const [success, setSuccess] = useState('');
+  const { login, register, user } = useUser();
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -54,29 +57,56 @@ const Login: React.FC = () => {
     }
   }, [user, navigate]);
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string) => {
+    return password.length >= 6;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+
+    // Validation
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (username.trim().length < 2) {
+      setError('Username must be at least 2 characters long');
+      return;
+    }
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL;
-      const response = await fetch(`${apiUrl}/api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      const result = await register(email, username, password);
+      
+      if (result.success) {
+        setSuccess('Registration successful! You can now login with your credentials.');
+        
+        // Auto-login after successful registration
+        if (result.token) {
+          await login(result.token);
+        }
+      } else {
+        setError(result.error || 'Registration failed');
       }
-
-      await login(data.token);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login error');
+      setError(err instanceof Error ? err.message : 'Registration error');
     }
   };
 
@@ -129,10 +159,10 @@ const Login: React.FC = () => {
                 mb: 1,
               }}
             >
-              King 7 Offsuit
+              Join King 7 Offsuit
             </Typography>
             <Typography variant="subtitle1" color="text.secondary" align="center">
-              Welcome back! Please login to continue
+              Create your account to start managing poker games
             </Typography>
           </Box>
           
@@ -148,7 +178,42 @@ const Login: React.FC = () => {
             </Alert>
           )}
 
+          {success && (
+            <Alert 
+              severity="success" 
+              sx={{ 
+                mb: 3,
+                animation: `${fadeIn} 0.3s ease-out`,
+              }}
+            >
+              {success}
+            </Alert>
+          )}
+
           <Box component="form" onSubmit={handleSubmit}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Email Address"
+              type="email"
+              variant="filled"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoFocus
+              autoComplete="email"
+              sx={{
+                '& .MuiFilledInput-root': {
+                  borderRadius: 2,
+                  backgroundColor: alpha(theme.palette.primary.light, 0.07),
+                  paddingLeft: 1.5,
+                  paddingRight: 1.5,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.light, 0.13),
+                  },
+                },
+              }}
+            />
             <TextField
               margin="normal"
               required
@@ -157,7 +222,7 @@ const Login: React.FC = () => {
               variant="filled"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              autoFocus
+              autoComplete="username"
               sx={{
                 '& .MuiFilledInput-root': {
                   borderRadius: 2,
@@ -179,7 +244,29 @@ const Login: React.FC = () => {
               variant="filled"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
+              autoComplete="new-password"
+              sx={{
+                '& .MuiFilledInput-root': {
+                  borderRadius: 2,
+                  backgroundColor: alpha(theme.palette.primary.light, 0.07),
+                  paddingLeft: 1.5,
+                  paddingRight: 1.5,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.light, 0.13),
+                  },
+                },
+              }}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Confirm Password"
+              type="password"
+              variant="filled"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
               sx={{
                 '& .MuiFilledInput-root': {
                   borderRadius: 2,
@@ -211,15 +298,15 @@ const Login: React.FC = () => {
                 },
               }}
             >
-              Sign In
+              Create Account
             </Button>
             
             <Box sx={{ textAlign: 'center', mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Don't have an account?{' '}
+                Already have an account?{' '}
                 <Link 
                   component={RouterLink} 
-                  to="/register" 
+                  to="/login" 
                   sx={{ 
                     color: theme.palette.primary.main,
                     textDecoration: 'none',
@@ -229,7 +316,7 @@ const Login: React.FC = () => {
                     }
                   }}
                 >
-                  Create one here
+                  Sign in here
                 </Link>
               </Typography>
             </Box>
@@ -240,4 +327,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default Register; 
