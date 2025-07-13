@@ -40,7 +40,7 @@ const pulse = keyframes`
 `;
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<React.ReactNode>('');
   const { login, user } = useUser();
@@ -65,7 +65,7 @@ const Login: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
@@ -80,6 +80,10 @@ const Login: React.FC = () => {
               </Link>
             </span>
           );
+          return;
+        }
+        if (response.status === 400 && data.message && data.message.includes('valid email')) {
+          setError('Please enter a valid email address');
           return;
         }
         throw new Error(data.error || data.message || 'Login failed');
@@ -164,11 +168,13 @@ const Login: React.FC = () => {
               margin="normal"
               required
               fullWidth
-              label="Username"
+              label="Email Address"
+              type="email"
               variant="filled"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               autoFocus
+              autoComplete="email"
               sx={{
                 '& .MuiFilledInput-root': {
                   borderRadius: 2,

@@ -217,13 +217,19 @@ function generateVerificationCode() {
 
 // Routes
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required' });
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
   }
 
-  // Check if the user exists by username or email
-  db.get('SELECT * FROM users WHERE username = ? OR email = ?', [username, username], (err, user) => {
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: 'Please enter a valid email address' });
+  }
+
+  // Check if the user exists by email
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
     if (err) {
       return res.status(500).json({ message: 'Database error' });
     }
