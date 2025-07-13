@@ -978,6 +978,56 @@ app.put('/api/users/:id/password', authenticate, authorize(['admin']), (req, res
   });
 });
 
+// Update user email (admin only)
+app.put('/api/users/:id/email', authenticate, authorize(['admin']), (req, res) => {
+  const userId = req.params.id;
+  const { email } = req.body;
+
+  console.log('[Users] Email update request received:', {
+    userId,
+    newEmail: email,
+    requestingUser: req.user,
+    timestamp: new Date().toISOString()
+  });
+
+  // Validate email format if provided
+  if (email && email.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+  }
+
+  // Check if email is already in use by another user
+  if (email && email.trim()) {
+    db.get('SELECT id FROM users WHERE email = ? AND id != ?', [email.trim(), userId], (err, existingUser) => {
+      if (err) {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      if (existingUser) {
+        return res.status(409).json({ error: 'Email is already in use by another user' });
+      }
+
+      // Update email
+      const emailToSave = email.trim() || null;
+      db.run('UPDATE users SET email = ? WHERE id = ?', [emailToSave, userId], function(err) {
+        if (err) {
+          return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json({ message: 'Email updated successfully' });
+      });
+    });
+  } else {
+    // Update with null/empty email
+    db.run('UPDATE users SET email = ? WHERE id = ?', [null, userId], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      res.json({ message: 'Email updated successfully' });
+    });
+  }
+});
+
 // Add a debug endpoint to check database status
 app.get('/api/debug/db', (req, res) => {
   // Check if database file exists

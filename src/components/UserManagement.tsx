@@ -25,6 +25,9 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { useUser } from '../context/UserContext';
 
 interface User {
@@ -49,6 +52,10 @@ const UserManagement: React.FC = () => {
   const [resetPassword, setResetPassword] = useState('');
   const [resetError, setResetError] = useState('');
   const [resetSuccess, setResetSuccess] = useState('');
+  const [editingEmail, setEditingEmail] = useState<string | null>(null);
+  const [emailValue, setEmailValue] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [emailSuccess, setEmailSuccess] = useState('');
 
   const { user: currentUser } = useUser();
   const currentUserId = currentUser?.id;
@@ -211,6 +218,69 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const handleStartEditEmail = (userId: string, currentEmail: string) => {
+    setEditingEmail(userId);
+    setEmailValue(currentEmail || '');
+    setEmailError('');
+    setEmailSuccess('');
+  };
+
+  const handleCancelEditEmail = () => {
+    setEditingEmail(null);
+    setEmailValue('');
+    setEmailError('');
+    setEmailSuccess('');
+  };
+
+  const validateEmail = (email: string) => {
+    if (!email.trim()) return true; // Allow empty email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleSaveEmail = async (userId: string) => {
+    if (!validateEmail(emailValue)) {
+      setEmailError('Please enter a valid email address');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/email`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ email: emailValue.trim() || null })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 403 || errorText.includes('permission')) {
+          setEmailError('You do not have permission to perform this action');
+          return;
+        }
+        if (response.status === 409) {
+          setEmailError('This email is already in use by another user');
+          return;
+        }
+        throw new Error('Failed to update email');
+      }
+      
+      setEmailSuccess('Email updated successfully');
+      await fetchUsers(); // Refresh the user list
+      setTimeout(() => {
+        setEditingEmail(null);
+        setEmailValue('');
+        setEmailError('');
+        setEmailSuccess('');
+      }, 1200);
+    } catch (error) {
+      setEmailError('Error updating email');
+    }
+  };
+
   // Role order for sorting
   const getRoleOrder = (role: string) => {
     if (role === 'admin') return 0;
@@ -351,7 +421,54 @@ const UserManagement: React.FC = () => {
                         </Select>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                        {user.email || '-'}
+                        {editingEmail === user.id ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <TextField
+                              size="small"
+                              value={emailValue}
+                              onChange={(e) => setEmailValue(e.target.value)}
+                              placeholder="Enter email"
+                              sx={{ minWidth: 200 }}
+                            />
+                            {emailError && (
+                              <Typography variant="caption" color="error">
+                                {emailError}
+                              </Typography>
+                            )}
+                            {emailSuccess && (
+                              <Typography variant="caption" color="success.main">
+                                {emailSuccess}
+                              </Typography>
+                            )}
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleSaveEmail(user.id)}
+                                sx={{ color: 'success.main', '&:hover': { bgcolor: 'success.main', color: 'white' } }}
+                              >
+                                <SaveIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={handleCancelEditEmail}
+                                sx={{ color: 'error.main', '&:hover': { bgcolor: 'error.main', color: 'white' } }}
+                              >
+                                <CancelIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        ) : (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <span>{user.email || '-'}</span>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleStartEditEmail(user.id, user.email || '')}
+                              sx={{ color: 'primary.main', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        )}
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                         {new Date(user.createdAt).toLocaleDateString()}
