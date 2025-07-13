@@ -36,9 +36,11 @@ const VerifyEmail: React.FC = () => {
 
   // Try to get email from location state (after register)
   React.useEffect(() => {
-    if (location.state && location.state.email) {
-      setEmail(location.state.email);
-    }
+    // Check for email in URL params
+    const params = new URLSearchParams(window.location.search);
+    const emailFromUrl = params.get('email');
+    if (emailFromUrl) setEmail(emailFromUrl);
+    else if (location.state && location.state.email) setEmail(location.state.email);
   }, [location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {

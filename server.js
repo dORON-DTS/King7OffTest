@@ -1252,11 +1252,12 @@ app.post('/api/register', (req, res) => {
           }
 
           // Send verification email
+          const verifyUrl = `https://poker-management.onrender.com/verify-email?email=${encodeURIComponent(email)}`;
           const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
             subject: 'King7Offsuit - Email Verification',
-            text: `Welcome to King7Offsuit!\n\nYour verification code is: ${verificationCode}\n\nEnter this code in the app to verify your email.`,
+            text: `Welcome to King7Offsuit!\n\nYour verification code is: ${verificationCode}\n\nTo verify your email, click the link below or enter the code in the app:\n${verifyUrl}`,
           };
 
           transporter.sendMail(mailOptions, (error, info) => {
