@@ -52,10 +52,10 @@ const Register: React.FC = () => {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (user && !success) {
       navigate('/', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, success]);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
