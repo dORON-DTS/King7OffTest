@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
@@ -92,7 +93,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
         email TEXT UNIQUE,
         password TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'user',
-        createdAt TEXT NOT NULL
+        createdAt TEXT NOT NULL,
+        isVerified INTEGER DEFAULT 0,
+        verificationCode TEXT
       )
     `, (err) => {
       if (err) {
@@ -199,6 +202,19 @@ function checkTableActive(tableId, cb) {
   });
 }
 
+// Nodemailer transporter
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+function generateVerificationCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
+}
+
 // Routes
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
@@ -218,6 +234,10 @@ app.post('/api/login', (req, res) => {
 
     if (!user.password) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({ message: 'Please verify your email before logging in.' });
     }
 
     // Compare passwords
@@ -1177,7 +1197,7 @@ app.post('/api/update-passwords', authenticate, authorize(['admin']), (req, res)
   }
 });
 
-// Public user registration
+// Public user registration with email verification
 app.post('/api/register', (req, res) => {
   const { email, username, password } = req.body;
   if (!email || !username || !password) {
@@ -1218,34 +1238,64 @@ app.post('/api/register', (req, res) => {
 
       const id = uuidv4();
       const createdAt = new Date().toISOString();
-      const role = 'user'; // Default role for new registrations
+      const role = 'user';
+      const verificationCode = generateVerificationCode();
+      const isVerified = 0;
 
-      // Insert new user
+      // Insert new user (not verified yet)
       db.run(
-        'INSERT INTO users (id, username, email, password, role, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
-        [id, username, email, hash, role, createdAt],
+        'INSERT INTO users (id, username, email, password, role, createdAt, isVerified, verificationCode) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, username, email, hash, role, createdAt, isVerified, verificationCode],
         function(err) {
           if (err) {
             return res.status(500).json({ error: 'Error creating user' });
           }
 
-          // Generate token for auto-login
-          const token = jwt.sign(
-            { id, username, role },
-            JWT_SECRET,
-            { expiresIn: '24h' }
-          );
+          // Send verification email
+          const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'King7Offsuit - Email Verification',
+            text: `Welcome to King7Offsuit!\n\nYour verification code is: ${verificationCode}\n\nEnter this code in the app to verify your email.`,
+          };
 
-          res.status(201).json({
-            id,
-            username,
-            email,
-            role,
-            createdAt,
-            token
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              return res.status(500).json({ error: 'Failed to send verification email' });
+            }
+            res.status(201).json({ message: 'Registration successful! Please check your email for the verification code.' });
           });
         }
       );
+    });
+  });
+});
+
+// Email verification endpoint
+app.post('/api/verify-email', (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) {
+    return res.status(400).json({ error: 'Email and code are required' });
+  }
+
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    if (user.isVerified) {
+      return res.status(400).json({ error: 'User already verified' });
+    }
+    if (user.verificationCode !== code) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+    db.run('UPDATE users SET isVerified = 1, verificationCode = NULL WHERE email = ?', [email], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to verify user' });
+      }
+      res.json({ message: 'Email verified successfully! You can now log in.' });
     });
   });
 });

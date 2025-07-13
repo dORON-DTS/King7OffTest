@@ -19,6 +19,7 @@ import SharedTableView from './components/SharedTableView';
 import StatisticsView from './components/StatisticsView';
 import Login from './components/Login';
 import Register from './components/Register';
+import VerifyEmail from './components/VerifyEmail';
 import UserManagement from './components/UserManagement';
 import PersonIcon from '@mui/icons-material/Person';
 import LandingPage from './components/LandingPage';
@@ -236,6 +237,7 @@ const router = createBrowserRouter(
       <Route index element={<LandingPage />} />
       <Route path="login" element={<Login />} />
       <Route path="register" element={<Register />} />
+      <Route path="verify-email" element={<VerifyEmail />} />
       <Route path="tableslist" element={<TableList />} />
       <Route path="tables" element={<TableList />} />
       <Route path="table/:id" element={

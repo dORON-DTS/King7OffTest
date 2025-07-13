@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  TextField, 
-  Button, 
-  Typography, 
+import React, { useState } from 'react';
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
   Paper,
   Container,
   Alert,
@@ -11,83 +11,58 @@ import {
   alpha,
   Link
 } from '@mui/material';
-import { useUser } from '../context/UserContext';
 import { keyframes } from '@mui/system';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
 
-// Define animations
 const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 `;
-
 const pulse = keyframes`
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 `;
 
-const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<React.ReactNode>('');
-  const { login, user } = useUser();
+const VerifyEmail: React.FC = () => {
+  const [code, setCode] = useState('');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      navigate('/', { replace: true });
+  // Try to get email from location state (after register)
+  React.useEffect(() => {
+    if (location.state && location.state.email) {
+      setEmail(location.state.email);
     }
-  }, [user, navigate]);
+  }, [location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
+    setSuccess('');
+    setLoading(true);
     try {
       const apiUrl = process.env.REACT_APP_API_URL;
-      const response = await fetch(`${apiUrl}/api/login`, {
+      const response = await fetch(`${apiUrl}/api/verify-email`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
-        if (response.status === 403 && data.message && data.message.includes('verify your email')) {
-          setError(
-            <span>
-              Please verify your email before logging in.<br />
-              <Link component={RouterLink} to="/verify-email" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-                Click here to verify
-              </Link>
-            </span>
-          );
-          return;
-        }
-        throw new Error(data.error || data.message || 'Login failed');
+        throw new Error(data.error || 'Verification failed');
       }
-
-      await login(data.token);
+      setSuccess('Email verified successfully! You can now log in.');
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login error');
+      setError(err instanceof Error ? err.message : 'Verification error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -99,10 +74,7 @@ const Login: React.FC = () => {
       justifyContent: 'center',
       background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.primary.dark, 0.2)} 100%)`,
     }}>
-      <Box sx={{
-        width: '100%',
-        animation: `${fadeIn} 0.8s ease-out`,
-      }}>
+      <Box sx={{ width: '100%', animation: `${fadeIn} 0.8s ease-out` }}>
         <Paper elevation={12} sx={{
           p: 4,
           borderRadius: 2,
@@ -110,65 +82,46 @@ const Login: React.FC = () => {
           backdropFilter: 'blur(10px)',
           boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
         }}>
-          <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            mb: 4,
-          }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
             <Box sx={{
               width: 120,
               height: 120,
               mb: 2,
               animation: `${pulse} 2s infinite ease-in-out`,
-              '& img': {
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-              }
+              '& img': { width: '100%', height: '100%', objectFit: 'contain' }
             }}>
               <img src="/logo.png" alt="Poker Management Logo" />
             </Box>
-            <Typography 
-              component="h1" 
-              variant="h4" 
-              sx={{
-                fontWeight: 700,
-                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                backgroundClip: 'text',
-                textFillColor: 'transparent',
-                mb: 1,
-              }}
-            >
-              King 7 Offsuit
+            <Typography component="h1" variant="h4" sx={{
+              fontWeight: 700,
+              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+              backgroundClip: 'text',
+              textFillColor: 'transparent',
+              mb: 1,
+            }}>
+              Email Verification
             </Typography>
             <Typography variant="subtitle1" color="text.secondary" align="center">
-              Welcome back! Please login to continue
+              Please enter the 6-digit code sent to your email
             </Typography>
           </Box>
-          
           {error && (
-            <Alert 
-              severity="error" 
-              sx={{ 
-                mb: 3,
-                animation: `${fadeIn} 0.3s ease-out`,
-              }}
-            >
-              {error}
-            </Alert>
+            <Alert severity="error" sx={{ mb: 3, animation: `${fadeIn} 0.3s ease-out` }}>{error}</Alert>
           )}
-
+          {success && (
+            <Alert severity="success" sx={{ mb: 3, animation: `${fadeIn} 0.3s ease-out` }}>{success}</Alert>
+          )}
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
               margin="normal"
               required
               fullWidth
-              label="Username"
+              label="Email Address"
+              type="email"
               variant="filled"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               sx={{
                 '& .MuiFilledInput-root': {
                   borderRadius: 2,
@@ -185,12 +138,11 @@ const Login: React.FC = () => {
               margin="normal"
               required
               fullWidth
-              label="Password"
-              type="password"
+              label="Verification Code"
               variant="filled"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              autoFocus
               sx={{
                 '& .MuiFilledInput-root': {
                   borderRadius: 2,
@@ -207,6 +159,7 @@ const Login: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
+              disabled={loading}
               sx={{
                 mt: 4,
                 mb: 2,
@@ -222,25 +175,13 @@ const Login: React.FC = () => {
                 },
               }}
             >
-              Sign In
+              Verify Email
             </Button>
-            
             <Box sx={{ textAlign: 'center', mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Don't have an account?{' '}
-                <Link 
-                  component={RouterLink} 
-                  to="/register" 
-                  sx={{ 
-                    color: theme.palette.primary.main,
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    }
-                  }}
-                >
-                  Create one here
+                Didn't get the code? Check your spam folder or&nbsp;
+                <Link component={RouterLink} to="/register" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+                  Register again
                 </Link>
               </Typography>
             </Box>
@@ -251,4 +192,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default VerifyEmail; 

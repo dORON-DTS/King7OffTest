@@ -96,12 +96,10 @@ const Register: React.FC = () => {
       const result = await register(email, username, password);
       
       if (result.success) {
-        setSuccess('Registration successful! You can now login with your credentials.');
-        
-        // Auto-login after successful registration
-        if (result.token) {
-          await login(result.token);
-        }
+        setSuccess('Registration successful! Please check your email for the verification code.');
+        setTimeout(() => {
+          navigate('/verify-email', { state: { email } });
+        }, 1500);
       } else {
         setError(result.error || 'Registration failed');
       }
