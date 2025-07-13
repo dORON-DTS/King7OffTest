@@ -1301,6 +1301,97 @@ app.post('/api/verify-email', (req, res) => {
   });
 });
 
+// Forgot password endpoint
+app.post('/api/forgot-password', (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Generate new verification code for password reset
+    const resetCode = generateVerificationCode();
+    
+    db.run('UPDATE users SET verificationCode = ? WHERE email = ?', [resetCode, email], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to generate reset code' });
+      }
+
+      // Send password reset email
+      const resetUrl = `https://poker-management.onrender.com/reset-password?email=${encodeURIComponent(email)}`;
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'King7Offsuit - Password Reset',
+        text: `Hello ${user.username},\n\nYou requested a password reset for your King7Offsuit account.\n\nYour reset code is: ${resetCode}\n\nTo reset your password, click the link below or enter the code in the app:\n${resetUrl}\n\nIf you didn't request this reset, please ignore this email.\n\nThis code will expire in 1 hour.`,
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          return res.status(500).json({ error: 'Failed to send reset email' });
+        }
+        res.json({ message: 'Password reset email sent successfully' });
+      });
+    });
+  });
+});
+
+// Reset password endpoint
+app.post('/api/reset-password', (req, res) => {
+  const { email, verificationCode, newPassword } = req.body;
+  if (!email || !verificationCode || !newPassword) {
+    return res.status(400).json({ error: 'Email, verification code and new password are required' });
+  }
+
+  // Validate password length
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+  }
+
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.verificationCode !== verificationCode) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    // Hash new password
+    bcrypt.hash(newPassword, 10, (err, hash) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error updating password' });
+      }
+
+      // Update password and clear verification code
+      db.run('UPDATE users SET password = ?, verificationCode = NULL WHERE email = ?', [hash, email], function(err) {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to update password' });
+        }
+        res.json({ message: 'Password reset successfully' });
+      });
+    });
+  });
+});
+
 // Admin user registration (for admin panel)
 app.post('/api/admin/register', authenticate, authorize(['admin']), (req, res) => {
   const { username, password, role } = req.body;

@@ -20,6 +20,8 @@ import StatisticsView from './components/StatisticsView';
 import Login from './components/Login';
 import Register from './components/Register';
 import VerifyEmail from './components/VerifyEmail';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import UserManagement from './components/UserManagement';
 import PersonIcon from '@mui/icons-material/Person';
 import LandingPage from './components/LandingPage';
@@ -96,13 +98,15 @@ const AppLayout = () => {
     );
   }
 
-  // Allow unauthenticated access to /statistics, /share/:id, landing page, login, and register
+  // Allow unauthenticated access to /statistics, /share/:id, landing page, login, register, and password reset pages
   const isPublicRoute =
     location.pathname.startsWith('/share/') ||
     location.pathname === '/statistics' ||
     location.pathname === '/' ||
     location.pathname === '/login' ||
-    location.pathname === '/register';
+    location.pathname === '/register' ||
+    location.pathname === '/forgot-password' ||
+    location.pathname === '/reset-password';
 
   if (!user && !isPublicRoute) {
     return <Navigate to="/login" replace />;
@@ -238,6 +242,8 @@ const router = createBrowserRouter(
       <Route path="login" element={<Login />} />
       <Route path="register" element={<Register />} />
       <Route path="verify-email" element={<VerifyEmail />} />
+      <Route path="forgot-password" element={<ForgotPassword />} />
+      <Route path="reset-password" element={<ResetPassword />} />
       <Route path="tableslist" element={<TableList />} />
       <Route path="tables" element={<TableList />} />
       <Route path="table/:id" element={

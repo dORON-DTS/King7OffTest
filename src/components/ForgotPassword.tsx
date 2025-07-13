@@ -39,11 +39,12 @@ const pulse = keyframes`
   }
 `;
 
-const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<React.ReactNode>('');
-  const { login, user } = useUser();
+const ForgotPassword: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useUser();
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -54,40 +55,47 @@ const Login: React.FC = () => {
     }
   }, [user, navigate]);
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+    setIsLoading(true);
+
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const apiUrl = process.env.REACT_APP_API_URL;
-      const response = await fetch(`${apiUrl}/api/login`, {
+      const response = await fetch(`${apiUrl}/api/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 403 && data.message && data.message.includes('verify your email')) {
-          setError(
-            <span>
-              Please verify your email before logging in.<br />
-              <Link component={RouterLink} to="/verify-email" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-                Click here to verify
-              </Link>
-            </span>
-          );
-          return;
-        }
-        throw new Error(data.error || data.message || 'Login failed');
+        throw new Error(data.error || data.message || 'Failed to send reset email');
       }
 
-      await login(data.token);
+      setSuccess('Password reset email sent! Please check your inbox for the verification code.');
+      setTimeout(() => {
+        navigate('/reset-password', { state: { email } });
+      }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login error');
+      setError(err instanceof Error ? err.message : 'Failed to send reset email');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -140,10 +148,10 @@ const Login: React.FC = () => {
                 mb: 1,
               }}
             >
-              King 7 Offsuit
+              Reset Password
             </Typography>
             <Typography variant="subtitle1" color="text.secondary" align="center">
-              Welcome back! Please login to continue
+              Enter your email to receive a password reset code
             </Typography>
           </Box>
           
@@ -159,38 +167,31 @@ const Login: React.FC = () => {
             </Alert>
           )}
 
+          {success && (
+            <Alert 
+              severity="success" 
+              sx={{ 
+                mb: 3,
+                animation: `${fadeIn} 0.3s ease-out`,
+              }}
+            >
+              {success}
+            </Alert>
+          )}
+
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
               margin="normal"
               required
               fullWidth
-              label="Username"
+              label="Email Address"
+              type="email"
               variant="filled"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               autoFocus
-              sx={{
-                '& .MuiFilledInput-root': {
-                  borderRadius: 2,
-                  backgroundColor: alpha(theme.palette.primary.light, 0.07),
-                  paddingLeft: 1.5,
-                  paddingRight: 1.5,
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.light, 0.13),
-                  },
-                },
-              }}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="Password"
-              type="password"
-              variant="filled"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
+              autoComplete="email"
+              disabled={isLoading}
               sx={{
                 '& .MuiFilledInput-root': {
                   borderRadius: 2,
@@ -207,6 +208,7 @@ const Login: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
+              disabled={isLoading}
               sx={{
                 mt: 4,
                 mb: 2,
@@ -220,35 +222,21 @@ const Login: React.FC = () => {
                   transform: 'translateY(-2px)',
                   boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
                 },
+                '&:disabled': {
+                  transform: 'none',
+                  boxShadow: 'none',
+                }
               }}
             >
-              Sign In
+              {isLoading ? 'Sending...' : 'Send Reset Code'}
             </Button>
-            
-            <Box sx={{ textAlign: 'center', mt: 1 }}>
-              <Link 
-                component={RouterLink} 
-                to="/forgot-password" 
-                sx={{ 
-                  color: theme.palette.text.secondary,
-                  textDecoration: 'none',
-                  fontSize: '0.9rem',
-                  '&:hover': {
-                    color: theme.palette.primary.main,
-                    textDecoration: 'underline',
-                  }
-                }}
-              >
-                Forgot your password?
-              </Link>
-            </Box>
             
             <Box sx={{ textAlign: 'center', mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Don't have an account?{' '}
+                Remember your password?{' '}
                 <Link 
                   component={RouterLink} 
-                  to="/register" 
+                  to="/login" 
                   sx={{ 
                     color: theme.palette.primary.main,
                     textDecoration: 'none',
@@ -258,7 +246,7 @@ const Login: React.FC = () => {
                     }
                   }}
                 >
-                  Create one here
+                  Sign in here
                 </Link>
               </Typography>
             </Box>
@@ -269,4 +257,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default ForgotPassword; 
