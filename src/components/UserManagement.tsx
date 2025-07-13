@@ -35,6 +35,7 @@ interface User {
   username: string;
   email?: string;
   role: string;
+  isVerified?: boolean;
   createdAt: string;
 }
 
@@ -268,14 +269,15 @@ const UserManagement: React.FC = () => {
         throw new Error('Failed to update email');
       }
       
-      setEmailSuccess('Email updated successfully');
+      const responseData = await response.json();
+      setEmailSuccess(responseData.message || 'Email updated successfully');
       await fetchUsers(); // Refresh the user list
       setTimeout(() => {
         setEditingEmail(null);
         setEmailValue('');
         setEmailError('');
         setEmailSuccess('');
-      }, 1200);
+      }, 2000); // Longer timeout to read the message
     } catch (error) {
       setEmailError('Error updating email');
     }
@@ -359,6 +361,10 @@ const UserManagement: React.FC = () => {
                   }}>Email</TableCell>
                   <TableCell sx={{ 
                     fontWeight: 'bold',
+                    display: { xs: 'none', lg: 'table-cell' }
+                  }}>Verified</TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 'bold',
                     display: { xs: 'none', sm: 'table-cell' }
                   }}>Created At</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
@@ -404,6 +410,9 @@ const UserManagement: React.FC = () => {
                                 Email: {user.email}
                               </Box>
                             )}
+                            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                              Verified: {user.isVerified ? 'Yes' : 'No'}
+                            </Box>
                             <Box>Created: {new Date(user.createdAt).toLocaleDateString()}</Box>
                           </Box>
                         </Box>
@@ -469,6 +478,17 @@ const UserManagement: React.FC = () => {
                             </IconButton>
                           </Box>
                         )}
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 1,
+                          color: user.isVerified ? 'success.main' : 'error.main',
+                          fontWeight: user.isVerified ? 'bold' : 'normal'
+                        }}>
+                          {user.isVerified ? '✓ Verified' : '✗ Not Verified'}
+                        </Box>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                         {new Date(user.createdAt).toLocaleDateString()}

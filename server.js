@@ -870,7 +870,7 @@ app.get('/api/users', authenticate, authorize(['admin']), (req, res) => {
   });
 
   console.log('[Users] Executing database query');
-  db.all('SELECT id, username, email, role, createdAt FROM users', [], (err, users) => {
+  db.all('SELECT id, username, email, role, isVerified, createdAt FROM users', [], (err, users) => {
     if (err) {
       return res.status(500).json({ error: 'Internal server error' });
     }
@@ -1008,13 +1008,30 @@ app.put('/api/users/:id/email', authenticate, authorize(['admin']), (req, res) =
         return res.status(409).json({ error: 'Email is already in use by another user' });
       }
 
-      // Update email
+      // Update email and set isVerified to true if email is being added
       const emailToSave = email.trim() || null;
-      db.run('UPDATE users SET email = ? WHERE id = ?', [emailToSave, userId], function(err) {
+      
+      // Check if user currently has no email (to determine if we're adding one)
+      db.get('SELECT email FROM users WHERE id = ?', [userId], (err, currentUser) => {
         if (err) {
           return res.status(500).json({ error: 'Internal server error' });
         }
-        res.json({ message: 'Email updated successfully' });
+        
+        const isAddingEmail = !currentUser.email && emailToSave;
+        const updateQuery = isAddingEmail 
+          ? 'UPDATE users SET email = ?, isVerified = 1 WHERE id = ?'
+          : 'UPDATE users SET email = ? WHERE id = ?';
+        const updateParams = isAddingEmail ? [emailToSave, userId] : [emailToSave, userId];
+        
+        db.run(updateQuery, updateParams, function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Internal server error' });
+          }
+          const message = isAddingEmail 
+            ? 'Email added and user verified successfully' 
+            : 'Email updated successfully';
+          res.json({ message });
+        });
       });
     });
   } else {
