@@ -870,7 +870,7 @@ app.get('/api/users', authenticate, authorize(['admin']), (req, res) => {
   });
 
   console.log('[Users] Executing database query');
-  db.all('SELECT id, username, role, createdAt FROM users', [], (err, users) => {
+  db.all('SELECT id, username, email, role, createdAt FROM users', [], (err, users) => {
     if (err) {
       return res.status(500).json({ error: 'Internal server error' });
     }

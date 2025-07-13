@@ -30,6 +30,7 @@ import { useUser } from '../context/UserContext';
 interface User {
   id: string;
   username: string;
+  email?: string;
   role: string;
   createdAt: string;
 }
@@ -284,6 +285,10 @@ const UserManagement: React.FC = () => {
                   }}>Role</TableCell>
                   <TableCell sx={{ 
                     fontWeight: 'bold',
+                    display: { xs: 'none', md: 'table-cell' }
+                  }}>Email</TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 'bold',
                     display: { xs: 'none', sm: 'table-cell' }
                   }}>Created At</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
@@ -324,6 +329,11 @@ const UserManagement: React.FC = () => {
                                 <MenuItem value="admin">Admin</MenuItem>
                               </Select>
                             </Box>
+                            {user.email && (
+                              <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                                Email: {user.email}
+                              </Box>
+                            )}
                             <Box>Created: {new Date(user.createdAt).toLocaleDateString()}</Box>
                           </Box>
                         </Box>
@@ -339,6 +349,9 @@ const UserManagement: React.FC = () => {
                           <MenuItem value="editor">Editor</MenuItem>
                           <MenuItem value="admin">Admin</MenuItem>
                         </Select>
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                        {user.email || '-'}
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                         {new Date(user.createdAt).toLocaleDateString()}
