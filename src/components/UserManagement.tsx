@@ -405,12 +405,55 @@ const UserManagement: React.FC = () => {
                                 <MenuItem value="admin">Admin</MenuItem>
                               </Select>
                             </Box>
-                            {user.email && (
-                              <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                                Email: {user.email}
+                            {editingEmail === user.id ? (
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+                                <TextField
+                                  size="small"
+                                  value={emailValue}
+                                  onChange={(e) => setEmailValue(e.target.value)}
+                                  placeholder="Enter email"
+                                  sx={{ minWidth: 180 }}
+                                />
+                                {emailError && (
+                                  <Typography variant="caption" color="error">
+                                    {emailError}
+                                  </Typography>
+                                )}
+                                {emailSuccess && (
+                                  <Typography variant="caption" color="success.main">
+                                    {emailSuccess}
+                                  </Typography>
+                                )}
+                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => handleSaveEmail(user.id)}
+                                    sx={{ color: 'success.main', '&:hover': { bgcolor: 'success.main', color: 'white' } }}
+                                  >
+                                    <SaveIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton
+                                    size="small"
+                                    onClick={handleCancelEditEmail}
+                                    sx={{ color: 'error.main', '&:hover': { bgcolor: 'error.main', color: 'white' } }}
+                                  >
+                                    <CancelIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+                            ) : (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                                <span>Email: {user.email || '-'}</span>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleStartEditEmail(user.id, user.email || '')}
+                                  sx={{ color: 'primary.main', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
                               </Box>
                             )}
-                            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                            <Box sx={{ fontSize: '0.75rem', color: user.isVerified ? 'success.main' : 'error.main', fontWeight: user.isVerified ? 'bold' : 'normal', mt: 0.5 }}>
                               Verified: {user.isVerified ? 'Yes' : 'No'}
                             </Box>
                             <Box>Created: {new Date(user.createdAt).toLocaleDateString()}</Box>
