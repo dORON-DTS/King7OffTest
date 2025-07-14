@@ -30,6 +30,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useUser } from '../context/UserContext';
+import { apiFetch } from '../utils/apiInterceptor';
 
 interface User {
   id: string;
@@ -61,23 +62,27 @@ const UserManagement: React.FC = () => {
   const [emailSuccess, setEmailSuccess] = useState('');
   const [blockError, setBlockError] = useState('');
 
-  const { user: currentUser } = useUser();
+  const { user: currentUser, logout } = useUser();
   const currentUserId = currentUser?.id;
 
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users`, {
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      });
+      }, logout);
+      
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
       const data = await response.json();
       setUsers(data);
     } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return; // User was blocked and logged out
+      }
       setError('Error loading users');
     }
   };
@@ -89,7 +94,7 @@ const UserManagement: React.FC = () => {
   const handleCreateUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/register`, {
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +105,8 @@ const UserManagement: React.FC = () => {
           password: newPassword,
           role: newRole
         })
-      });
+      }, logout);
+      
       if (!response.ok) {
         const errorText = await response.text();
         if (response.status === 403 || errorText.includes('permission')) {
@@ -115,6 +121,9 @@ const UserManagement: React.FC = () => {
       setNewRole('viewer');
       setShowAddUser(false);
     } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return; // User was blocked and logged out
+      }
       setError('Error creating user');
     }
   };
@@ -135,12 +144,13 @@ const UserManagement: React.FC = () => {
     if (!userToDelete) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${userToDelete}`, {
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/users/${userToDelete}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      });
+      }, logout);
+      
       if (!response.ok) {
         const errorText = await response.text();
         if (response.status === 403 || errorText.includes('permission')) {
@@ -153,6 +163,9 @@ const UserManagement: React.FC = () => {
       setDeleteConfirmOpen(false);
       setUserToDelete(null);
     } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return; // User was blocked and logged out
+      }
       setError('Error deleting user');
     }
   };
@@ -160,14 +173,15 @@ const UserManagement: React.FC = () => {
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/role`, {
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/role`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ role: newRole })
-      });
+      }, logout);
+      
       if (!response.ok) {
         const errorText = await response.text();
         if (response.status === 403 || errorText.includes('permission')) {
@@ -178,6 +192,9 @@ const UserManagement: React.FC = () => {
       }
       await fetchUsers();
     } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return; // User was blocked and logged out
+      }
       setError('Error updating role');
     }
   };
@@ -194,14 +211,15 @@ const UserManagement: React.FC = () => {
     if (!resetUserId || !resetPassword) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${resetUserId}/password`, {
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/users/${resetUserId}/password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ password: resetPassword })
-      });
+      }, logout);
+      
       if (!response.ok) {
         const errorText = await response.text();
         if (response.status === 403 || errorText.includes('permission')) {
@@ -218,6 +236,9 @@ const UserManagement: React.FC = () => {
         setResetSuccess('');
       }, 1200);
     } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return; // User was blocked and logged out
+      }
       setResetError('Error resetting password');
     }
   };
@@ -250,14 +271,14 @@ const UserManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/email`, {
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/email`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ email: emailValue.trim() || null })
-      });
+      }, logout);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -282,6 +303,9 @@ const UserManagement: React.FC = () => {
         setEmailSuccess('');
       }, 2000); // Longer timeout to read the message
     } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return; // User was blocked and logged out
+      }
       setEmailError('Error updating email');
     }
   };
@@ -290,20 +314,24 @@ const UserManagement: React.FC = () => {
     setBlockError('');
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/blocked`, {
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/blocked`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ isBlocked: currentBlocked ? 0 : 1 })
-      });
+      }, logout);
+      
       if (!response.ok) {
         setBlockError('Failed to update blocked status');
         return;
       }
       await fetchUsers();
     } catch (err) {
+      if (err instanceof Error && err.message === 'User blocked') {
+        return; // User was blocked and logged out
+      }
       setBlockError('Error updating blocked status');
     }
   };

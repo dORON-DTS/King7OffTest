@@ -44,6 +44,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+      } else if (response.status === 403) {
+        const data = await response.json();
+        if (data.blocked) {
+          // User is blocked - show message and logout
+          alert('Your account has been blocked. Please contact an administrator.');
+          logout();
+        } else {
+          logout();
+        }
       } else {
         logout();
       }

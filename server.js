@@ -171,7 +171,26 @@ const authenticate = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
-    next();
+    
+    // Check if user is blocked
+    db.get('SELECT isBlocked FROM users WHERE id = ?', [decoded.id], (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+      
+      if (user.isBlocked) {
+        return res.status(403).json({ 
+          error: 'Your account has been blocked. Please contact an administrator.',
+          blocked: true 
+        });
+      }
+      
+      next();
+    });
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
   }
