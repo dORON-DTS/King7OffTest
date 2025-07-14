@@ -26,6 +26,7 @@ import UserManagement from './components/UserManagement';
 import PersonIcon from '@mui/icons-material/Person';
 import LandingPage from './components/LandingPage';
 import Footer from './components/Footer';
+import MyGroups from './components/MyGroups';
 import './App.css';
 
 // Create emotion cache
@@ -183,6 +184,11 @@ const AppLayout = () => {
                         User Management
                       </MenuItem>
                     )}
+                    {(user.role === 'admin' || user.role === 'editor') && (
+                      <MenuItem component={RouterLink} to="/my-groups" onClick={handleClose}>
+                        My Groups
+                      </MenuItem>
+                    )}
                     <MenuItem onClick={handleLogout}>Logout</MenuItem>
                   </Menu>
                 </>
@@ -211,7 +217,7 @@ const AppLayout = () => {
 };
 
 // Protected Route component
-const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode, requiredRole?: string }) => {
+const ProtectedRoute = ({ children, requiredRole, allowedRoles }: { children: React.ReactNode, requiredRole?: string, allowedRoles?: string[] }) => {
   const { user, isLoading } = useUser();
 
   if (isLoading) {
@@ -227,6 +233,10 @@ const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode,
   }
 
   if (requiredRole && user.role !== requiredRole) {
+    return <Navigate to="/tableslist" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/tableslist" replace />;
   }
 
@@ -257,6 +267,11 @@ const router = createBrowserRouter(
       <Route path="users" element={
         <ProtectedRoute requiredRole="admin">
           <UserManagement />
+        </ProtectedRoute>
+      } />
+      <Route path="my-groups" element={
+        <ProtectedRoute allowedRoles={['admin', 'editor']}>
+          <MyGroups />
         </ProtectedRoute>
       } />
     </Route>
