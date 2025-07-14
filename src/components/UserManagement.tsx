@@ -483,6 +483,19 @@ const UserManagement: React.FC = () => {
                               Verified: {user.isVerified ? 'Yes' : 'No'}
                             </Box>
                             <Box>Created: {new Date(user.createdAt).toLocaleDateString()}</Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                              <span>Status:</span>
+                              <Switch
+                                checked={!!user.isBlocked}
+                                onChange={() => handleToggleBlocked(user.id, user.isBlocked || false)}
+                                color={user.isBlocked ? 'error' : 'success'}
+                                size="small"
+                                inputProps={{ 'aria-label': 'blocked toggle' }}
+                              />
+                              <Typography variant="caption" sx={{ color: user.isBlocked ? 'error.main' : 'success.main', fontWeight: 600 }}>
+                                {user.isBlocked ? 'Blocked' : 'Active'}
+                              </Typography>
+                            </Box>
                           </Box>
                         </Box>
                       </TableCell>
