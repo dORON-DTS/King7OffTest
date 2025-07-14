@@ -242,6 +242,11 @@ app.post('/api/login', (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Check if user is blocked
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact an administrator.' });
+    }
+
     if (!user.isVerified) {
       return res.status(403).json({ message: 'Please verify your email before logging in.' });
     }
@@ -1300,6 +1305,9 @@ app.post('/api/register', (req, res) => {
     }
 
     if (existingUser) {
+      if (existingUser.isBlocked) {
+        return res.status(403).json({ error: 'Your account has been blocked. Please contact an administrator.' });
+      }
       return res.status(409).json({ error: 'Email already exists' });
     }
 
@@ -1359,6 +1367,9 @@ app.post('/api/verify-email', (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
+    if (user.isBlocked) {
+      return res.status(403).json({ error: 'Your account has been blocked. Please contact an administrator.' });
+    }
     if (user.isVerified) {
       return res.status(400).json({ error: 'User already verified' });
     }
@@ -1394,6 +1405,11 @@ app.post('/api/forgot-password', (req, res) => {
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if user is blocked
+    if (user.isBlocked) {
+      return res.status(403).json({ error: 'Your account has been blocked. Please contact an administrator.' });
     }
 
     // Generate new verification code for password reset
@@ -1442,6 +1458,11 @@ app.post('/api/reset-password', (req, res) => {
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if user is blocked
+    if (user.isBlocked) {
+      return res.status(403).json({ error: 'Your account has been blocked. Please contact an administrator.' });
     }
 
     if (user.verificationCode !== verificationCode) {

@@ -85,6 +85,10 @@ const ForgotPassword: React.FC = () => {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 403 && data.error && data.error.includes('blocked')) {
+          setError('Your account has been blocked. Please contact an administrator.');
+          return;
+        }
         throw new Error(data.error || data.message || 'Failed to send reset email');
       }
 

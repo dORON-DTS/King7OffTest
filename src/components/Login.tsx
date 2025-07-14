@@ -82,6 +82,10 @@ const Login: React.FC = () => {
           );
           return;
         }
+        if (response.status === 403 && data.message && data.message.includes('blocked')) {
+          setError('Your account has been blocked. Please contact an administrator.');
+          return;
+        }
         if (response.status === 400 && data.message && data.message.includes('valid email')) {
           setError('Please enter a valid email address');
           return;

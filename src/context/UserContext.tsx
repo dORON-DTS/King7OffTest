@@ -74,6 +74,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 403 && data.error && data.error.includes('blocked')) {
+          return { success: false, error: 'Your account has been blocked. Please contact an administrator.' };
+        }
         if (response.status === 409) {
           return { success: false, error: 'Email already exists. Please use a different email address.' };
         }

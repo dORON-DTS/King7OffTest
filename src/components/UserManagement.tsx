@@ -21,7 +21,8 @@ import {
   Typography,
   Card,
   CardContent,
-  Tooltip
+  Tooltip,
+  Switch
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
@@ -36,6 +37,7 @@ interface User {
   email?: string;
   role: string;
   isVerified?: boolean;
+  isBlocked?: boolean | number;
   createdAt: string;
 }
 
@@ -57,6 +59,7 @@ const UserManagement: React.FC = () => {
   const [emailValue, setEmailValue] = useState('');
   const [emailError, setEmailError] = useState('');
   const [emailSuccess, setEmailSuccess] = useState('');
+  const [blockError, setBlockError] = useState('');
 
   const { user: currentUser } = useUser();
   const currentUserId = currentUser?.id;
@@ -283,6 +286,28 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const handleToggleBlocked = async (userId: string, currentBlocked: boolean | number) => {
+    setBlockError('');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/blocked`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ isBlocked: currentBlocked ? 0 : 1 })
+      });
+      if (!response.ok) {
+        setBlockError('Failed to update blocked status');
+        return;
+      }
+      await fetchUsers();
+    } catch (err) {
+      setBlockError('Error updating blocked status');
+    }
+  };
+
   // Role order for sorting
   const getRoleOrder = (role: string) => {
     if (role === 'admin') return 0;
@@ -367,6 +392,7 @@ const UserManagement: React.FC = () => {
                     fontWeight: 'bold',
                     display: { xs: 'none', sm: 'table-cell' }
                   }}>Created At</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'table-cell' } }}>Blocked</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -535,6 +561,19 @@ const UserManagement: React.FC = () => {
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                         {new Date(user.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Switch
+                            checked={!!user.isBlocked}
+                            onChange={() => handleToggleBlocked(user.id, user.isBlocked || false)}
+                            color={user.isBlocked ? 'error' : 'success'}
+                            inputProps={{ 'aria-label': 'blocked toggle' }}
+                          />
+                          <Typography variant="body2" sx={{ color: user.isBlocked ? 'error.main' : 'success.main', fontWeight: 600 }}>
+                            {user.isBlocked ? 'Blocked' : 'Active'}
+                          </Typography>
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Tooltip title="Delete User">
@@ -750,6 +789,8 @@ const UserManagement: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {blockError && <Alert severity="error">{blockError}</Alert>}
     </Box>
   );
 };
