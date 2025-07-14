@@ -875,7 +875,7 @@ app.get('/api/users', authenticate, authorize(['admin']), (req, res) => {
   });
 
   console.log('[Users] Executing database query');
-  db.all('SELECT id, username, email, role, isVerified, createdAt FROM users', [], (err, users) => {
+  db.all('SELECT id, username, email, role, isVerified, isBlocked, createdAt FROM users', [], (err, users) => {
     if (err) {
       return res.status(500).json({ error: 'Internal server error' });
     }
@@ -1048,6 +1048,46 @@ app.put('/api/users/:id/email', authenticate, authorize(['admin']), (req, res) =
       res.json({ message: 'Email updated successfully' });
     });
   }
+});
+
+// Update user blocked status (admin only)
+app.put('/api/users/:id/blocked', authenticate, authorize(['admin']), (req, res) => {
+  const userId = req.params.id;
+  const { isBlocked } = req.body;
+
+  console.log('[Users] Blocked status update request received:', {
+    userId,
+    newBlockedStatus: isBlocked,
+    requestingUser: req.user,
+    timestamp: new Date().toISOString()
+  });
+
+  // First check if user exists
+  db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    if (!user) {
+      console.log('[Users] User not found for blocked status update:', userId);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('[Users] User found, proceeding with blocked status update:', {
+      id: user.id,
+      username: user.username,
+      currentBlockedStatus: user.isBlocked,
+      newBlockedStatus: isBlocked
+    });
+
+    db.run('UPDATE users SET isBlocked = ? WHERE id = ?', [isBlocked, userId], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+
+      res.json({ message: 'User blocked status updated successfully' });
+    });
+  });
 });
 
 // Add a debug endpoint to check database status
