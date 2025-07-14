@@ -106,7 +106,8 @@ const AppLayout = () => {
     location.pathname === '/login' ||
     location.pathname === '/register' ||
     location.pathname === '/forgot-password' ||
-    location.pathname === '/reset-password';
+    location.pathname === '/reset-password' ||
+    location.pathname === '/verify-email';
 
   if (!user && !isPublicRoute) {
     return <Navigate to="/login" replace />;

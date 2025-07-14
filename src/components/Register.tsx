@@ -98,7 +98,7 @@ const Register: React.FC = () => {
       if (result.success) {
         setSuccess('Registration successful! Please check your email for the verification code.');
         setTimeout(() => {
-          navigate('/verify-email', { state: { email } });
+          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
         }, 1500);
       } else {
         setError(result.error || 'Registration failed');
