@@ -575,7 +575,9 @@ const TableList: React.FC = () => {
                 },
               }}
             >
-              <MenuItem value="">All Groups</MenuItem>
+              {user?.role === 'admin' && (
+                <MenuItem value="">All Groups</MenuItem>
+              )}
               {sortedGroups.map((group) => (
                 <MenuItem key={group.id} value={group.id}>
                   {group.name} ({group.tableCount})
