@@ -434,7 +434,21 @@ const StatisticsView: React.FC = () => {
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Authentication required');
+        }
+
+        // Use different endpoint based on user role
+        const endpoint = user?.role === 'admin' 
+          ? `${process.env.REACT_APP_API_URL}/api/groups`
+          : `${process.env.REACT_APP_API_URL}/api/my-groups`;
+
+        const response = await fetch(endpoint, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (!response.ok) throw new Error('Failed to fetch groups');
         const data = await response.json();
         setGroups(data);
@@ -444,7 +458,7 @@ const StatisticsView: React.FC = () => {
     };
 
     fetchGroups();
-  }, []);
+  }, [user?.role]);
 
   // Filter tables by selected group
   const filteredTables = useMemo(() => {
