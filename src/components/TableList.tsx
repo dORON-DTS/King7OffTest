@@ -160,8 +160,11 @@ const TableList: React.FC = () => {
     const groupParam = searchParams.get('group');
     if (groupParam) {
       setSelectedGroupId(groupParam);
+    } else if (user?.role !== 'admin' && groups.length === 1) {
+      // For non-admin users with only one group, auto-select it
+      setSelectedGroupId(groups[0].id);
     }
-  }, [location.search]);
+  }, [location.search, groups, user?.role]);
 
   const fetchGroups = async () => {
     try {
@@ -456,7 +459,9 @@ const TableList: React.FC = () => {
               },
             }}
           >
-            <MenuItem value="">All Groups</MenuItem>
+            {user?.role === 'admin' && (
+              <MenuItem value="">All Groups</MenuItem>
+            )}
             {sortedGroups.map((group) => (
               <MenuItem key={group.id} value={group.id}>
                 {group.name} ({group.tableCount})
