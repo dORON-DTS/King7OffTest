@@ -170,7 +170,12 @@ const TableList: React.FC = () => {
         throw new Error('Authentication required');
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`, {
+      // Use different endpoint based on user role
+      const endpoint = user?.role === 'admin' 
+        ? `${process.env.REACT_APP_API_URL}/api/groups`
+        : `${process.env.REACT_APP_API_URL}/api/my-groups`;
+
+      const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -385,6 +390,15 @@ const TableList: React.FC = () => {
         }}>
           Manage your poker games with ease
         </Typography>
+        {user?.role !== 'admin' && (
+          <Typography variant="body2" sx={{ 
+            color: 'rgba(255,255,255,0.5)',
+            fontStyle: 'italic',
+            mt: 1
+          }}>
+            Showing only groups you have access to
+          </Typography>
+        )}
         {selectedGroupId && (
           <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(33, 150, 243, 0.1)', borderRadius: 2, border: '1px solid rgba(33, 150, 243, 0.3)' }}>
             <Typography variant="body2" sx={{ color: '#2196f3', fontWeight: 'bold' }}>
