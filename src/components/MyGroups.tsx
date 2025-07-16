@@ -11,15 +11,19 @@ import {
   Alert,
   useTheme,
   IconButton,
-  Tooltip
+  Tooltip,
+  Button
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import GroupIcon from '@mui/icons-material/Group';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
+import AddIcon from '@mui/icons-material/Add';
 import { Group } from '../types';
 import GroupMembersDialog from './GroupMembersDialog';
+import CreateGroupDialog from './CreateGroupDialog';
+import { useUser } from '../context/UserContext';
 
 // Styled card with different border colors based on role
 const StyledCard = styled(Card)<{ userRole: string }>(({ theme, userRole }) => {
@@ -74,10 +78,12 @@ const StyledCard = styled(Card)<{ userRole: string }>(({ theme, userRole }) => {
 });
 
 const MyGroups: React.FC = () => {
+  const { user } = useUser();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
+  const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const theme = useTheme();
   const navigate = useNavigate();
@@ -145,6 +151,9 @@ const MyGroups: React.FC = () => {
     return dateObj.toLocaleDateString('he-IL');
   };
 
+  // Check if user can create groups (admin or editor)
+  const canCreateGroups = user?.role === 'admin' || user?.role === 'editor';
+
   if (loading) {
     return (
       <Box sx={{ 
@@ -197,6 +206,38 @@ const MyGroups: React.FC = () => {
           Groups you own or are a member of
         </Typography>
       </Box>
+
+      {/* Create Group Button */}
+      {canCreateGroups && (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          mb: 3 
+        }}>
+          <Button 
+            variant="contained" 
+            color="secondary"
+            onClick={() => setCreateGroupDialogOpen(true)}
+            startIcon={<AddIcon />}
+            sx={{ 
+              borderRadius: 2,
+              px: 4,
+              py: 1.5,
+              fontSize: '1.1rem',
+              background: '#dc004e',
+              boxShadow: '0 3px 5px 2px rgba(220, 0, 78, .3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .4)',
+                background: '#9a0036'
+              }
+            }}
+          >
+            CREATE NEW GROUP
+          </Button>
+        </Box>
+      )}
 
       <Box sx={{ width: '100%', maxWidth: { xs: 400, sm: '100%' }, mx: { xs: 'auto', sm: 0 } }}>
         {groups.length === 0 ? (
@@ -337,6 +378,16 @@ const MyGroups: React.FC = () => {
           groupName={selectedGroup.name}
         />
       )}
+
+      {/* Create Group Dialog */}
+      <CreateGroupDialog
+        open={createGroupDialogOpen}
+        onClose={() => setCreateGroupDialogOpen(false)}
+        onSuccess={() => {
+          setCreateGroupDialogOpen(false);
+          fetchMyGroups(); // Refresh the groups list
+        }}
+      />
     </Box>
   );
 };

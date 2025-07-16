@@ -494,32 +494,6 @@ const TableList: React.FC = () => {
             >
               CREATE NEW TABLE
             </Button>
-            {user?.role === 'admin' && (
-              <Button 
-                variant="contained" 
-                color="secondary"
-                onClick={() => setCreateGroupDialogOpen(true)}
-                startIcon={<GroupIcon />}
-                sx={{ 
-                  borderRadius: 2,
-                  px: { xs: 2, sm: 4 },
-                  py: { xs: 1, sm: 1.5 },
-                  fontSize: { xs: '1rem', sm: '1.1rem' },
-                  background: '#dc004e',
-                  boxShadow: '0 3px 5px 2px rgba(220, 0, 78, .3)',
-                  transition: 'all 0.3s ease',
-                  width: { xs: '100%', sm: 'auto' },
-                  mb: { xs: 1, sm: 0 },
-                  '&:hover': {
-                    transform: { xs: 'none', sm: 'translateY(-2px)' },
-                    boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .4)',
-                    background: '#9a0036'
-                  }
-                }}
-              >
-                CREATE NEW GROUP
-              </Button>
-            )}
             <Button 
               variant="outlined" 
               color="secondary"
@@ -611,32 +585,6 @@ const TableList: React.FC = () => {
             >
               CREATE NEW TABLE
             </Button>
-            {user?.role === 'admin' && (
-              <Button 
-                variant="contained" 
-                color="secondary"
-                onClick={() => setCreateGroupDialogOpen(true)}
-                startIcon={<GroupIcon />}
-                sx={{ 
-                  borderRadius: 2,
-                  px: { xs: 2, sm: 4 },
-                  py: { xs: 1, sm: 1.5 },
-                  fontSize: { xs: '1rem', sm: '1.1rem' },
-                  background: '#dc004e',
-                  boxShadow: '0 3px 5px 2px rgba(220, 0, 78, .3)',
-                  transition: 'all 0.3s ease',
-                  width: { xs: '100%', sm: 'auto' },
-                  mb: { xs: 1, sm: 0 },
-                  '&:hover': {
-                    transform: { xs: 'none', sm: 'translateY(-2px)' },
-                    boxShadow: '0 5px 8px 2px rgba(220, 0, 78, .4)',
-                    background: '#9a0036'
-                  }
-                }}
-              >
-                CREATE NEW GROUP
-              </Button>
-            )}
             <Button 
               variant="outlined" 
               color="secondary"
