@@ -80,10 +80,23 @@ const db = new sqlite3.Database(dbPath, (err) => {
         description TEXT,
         createdAt TEXT NOT NULL,
         createdBy TEXT NOT NULL,
+        owner_id TEXT,
         isActive INTEGER DEFAULT 1,
-        FOREIGN KEY (createdBy) REFERENCES users(id)
+        FOREIGN KEY (createdBy) REFERENCES users(id),
+        FOREIGN KEY (owner_id) REFERENCES users(id)
       )
     `);
+
+    // Add owner_id column if it doesn't exist (for existing databases)
+    db.run(`
+      ALTER TABLE groups ADD COLUMN owner_id TEXT REFERENCES users(id)
+    `, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('[DB] Error adding owner_id column:', err);
+      } else if (!err) {
+        console.log('[DB] owner_id column added to groups table');
+      }
+    });
 
     // Create users table if it doesn't exist
     db.run(`
@@ -1759,14 +1772,14 @@ app.post('/api/groups', authenticate, authorize(['admin', 'editor']), (req, res)
   const createdBy = req.user.id;
 
   db.run(
-    'INSERT INTO groups (id, name, description, createdAt, createdBy) VALUES (?, ?, ?, ?, ?)',
-    [id, name, description, createdAt, createdBy],
+    'INSERT INTO groups (id, name, description, createdAt, createdBy, owner_id) VALUES (?, ?, ?, ?, ?, ?)',
+    [id, name, description, createdAt, createdBy, createdBy],
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({ id, name, description, createdAt, createdBy, isActive: true });
+      res.json({ id, name, description, createdAt, createdBy, owner_id: createdBy, isActive: true });
     }
   );
 });
