@@ -1802,28 +1802,49 @@ app.put('/api/groups/:id', authenticate, authorize(['admin']), (req, res) => {
   );
 });
 
-// Delete group (admin only)
-app.delete('/api/groups/:id', authenticate, authorize(['admin']), (req, res) => {
+// Delete group (admin or group owner only)
+app.delete('/api/groups/:id', authenticate, (req, res) => {
   const groupId = req.params.id;
+  const userId = req.user.id;
 
-  // First check if there are any tables using this group
-  db.get('SELECT COUNT(*) as count FROM tables WHERE groupId = ?', [groupId], (err, result) => {
+  // Check if user is admin or group owner
+  db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
     }
-
-    if (result.count > 0) {
-      res.status(400).json({ error: 'Cannot delete group that has tables assigned to it' });
+    if (!group) {
+      res.status(404).json({ error: 'Group not found' });
       return;
     }
 
-    db.run('DELETE FROM groups WHERE id = ?', [groupId], function(err) {
+    const isAdmin = req.user.role === 'admin';
+    const isOwner = group.owner_id === userId;
+
+    if (!isAdmin && !isOwner) {
+      res.status(403).json({ error: 'Only admin or group owner can delete this group' });
+      return;
+    }
+
+    // First check if there are any tables using this group
+    db.get('SELECT COUNT(*) as count FROM tables WHERE groupId = ?', [groupId], (err, result) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({ message: 'Group deleted successfully' });
+
+      if (result.count > 0) {
+        res.status(400).json({ error: 'Cannot delete group that has tables assigned to it' });
+        return;
+      }
+
+      db.run('DELETE FROM groups WHERE id = ?', [groupId], function(err) {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+        res.json({ message: 'Group deleted successfully' });
+      });
     });
   });
 });
