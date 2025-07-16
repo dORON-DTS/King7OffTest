@@ -39,7 +39,9 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose, on
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create group');
+        const errorText = await response.text();
+        console.error('Server error:', response.status, errorText);
+        throw new Error(`Failed to create group: ${response.status} - ${errorText}`);
       }
 
       setGroupName('');

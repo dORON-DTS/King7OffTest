@@ -1751,8 +1751,8 @@ app.get('/api/my-groups', authenticate, (req, res) => {
   });
 });
 
-// Create new group (admin only)
-app.post('/api/groups', authenticate, authorize(['admin']), (req, res) => {
+// Create new group (admin and editor only)
+app.post('/api/groups', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const { name, description } = req.body;
   const id = uuidv4();
   const createdAt = new Date().toISOString();
