@@ -402,23 +402,7 @@ const TableList: React.FC = () => {
             Showing only groups you have access to
           </Typography>
         )}
-        {selectedGroupId && (
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(33, 150, 243, 0.1)', borderRadius: 2, border: '1px solid rgba(33, 150, 243, 0.3)' }}>
-            <Typography variant="body2" sx={{ color: '#2196f3', fontWeight: 'bold' }}>
-              🔍 Filtered by group: {groups.find(g => g.id === selectedGroupId)?.name || 'Unknown Group'}
-            </Typography>
-            <Button 
-              size="small" 
-              onClick={() => {
-                setSelectedGroupId('');
-                navigate('/tables');
-              }}
-              sx={{ mt: 1, color: '#2196f3' }}
-            >
-              Clear Filter
-            </Button>
-          </Box>
-        )}
+
       </Box>
 
       {/* Groups Filter Dropdown and Action Buttons */}
