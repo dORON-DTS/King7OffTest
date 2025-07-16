@@ -211,6 +211,57 @@ const authorize = (roles) => {
   };
 };
 
+// Group authorization middleware
+const authorizeGroupAccess = (requiredRole) => {
+  return (req, res, next) => {
+    const groupId = req.params.id || req.params.groupId;
+    const userId = req.user.id;
+
+    if (!groupId) {
+      return res.status(400).json({ error: 'Group ID is required' });
+    }
+
+    // Check if user is group owner
+    db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
+      }
+
+      // If user is owner, they have all permissions
+      if (group.owner_id === userId) {
+        req.groupMember = { role: 'owner' };
+        return next();
+      }
+
+      // Check if user is member with required role
+      db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], (err, member) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (!member) {
+          return res.status(403).json({ error: 'Access denied to this group' });
+        }
+
+        // Check role hierarchy: owner > editor > viewer
+        const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
+        const userRoleLevel = roleHierarchy[member.role] || 0;
+        const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
+
+        if (userRoleLevel < requiredRoleLevel) {
+          return res.status(403).json({ error: 'Insufficient permissions for this group' });
+        }
+
+        req.groupMember = member;
+        next();
+      });
+    });
+  };
+};
+
 // Utility to check if table is active
 function checkTableActive(tableId, cb) {
   db.get('SELECT isActive FROM tables WHERE id = ?', [tableId], (err, row) => {
@@ -1672,6 +1723,34 @@ app.get('/api/groups', (req, res) => {
   });
 });
 
+// Get user's groups (groups where user is owner or member)
+app.get('/api/my-groups', authenticate, (req, res) => {
+  const userId = req.user.id;
+
+  // Get groups where user is owner
+  db.all('SELECT *, "owner" as userRole FROM groups WHERE owner_id = ?', [userId], (err, ownedGroups) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    // Get groups where user is member
+    db.all(`
+      SELECT g.*, gm.role as userRole 
+      FROM groups g 
+      JOIN group_members gm ON g.id = gm.group_id 
+      WHERE gm.user_id = ?
+    `, [userId], (err, memberGroups) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      // Combine and sort by name
+      const allGroups = [...ownedGroups, ...memberGroups].sort((a, b) => a.name.localeCompare(b.name));
+      res.json(allGroups);
+    });
+  });
+});
+
 // Create new group (admin only)
 app.post('/api/groups', authenticate, authorize(['admin']), (req, res) => {
   const { name, description } = req.body;
@@ -1732,6 +1811,289 @@ app.delete('/api/groups/:id', authenticate, authorize(['admin']), (req, res) => 
         return;
       }
       res.json({ message: 'Group deleted successfully' });
+    });
+  });
+});
+
+// ===== GROUP MEMBERS MANAGEMENT =====
+
+// Helper function to check if user is group owner
+const isGroupOwner = (groupId, userId, callback) => {
+  db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+    if (err) {
+      callback(err);
+      return;
+    }
+    if (!group) {
+      callback(new Error('Group not found'));
+      return;
+    }
+    callback(null, group.owner_id === userId);
+  });
+};
+
+// Helper function to check if user is group member with specific role
+const getGroupMemberRole = (groupId, userId, callback) => {
+  db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], (err, member) => {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, member ? member.role : null);
+  });
+};
+
+// Get group members
+app.get('/api/groups/:id/members', authenticate, (req, res) => {
+  const groupId = req.params.id;
+  const userId = req.user.id;
+
+  // Check if user has access to this group
+  db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // Check if user is owner or member
+    const isOwner = group.owner_id === userId;
+    if (!isOwner) {
+      // Check if user is a member
+      db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], (err, member) => {
+        if (err || !member) {
+          return res.status(403).json({ error: 'Access denied' });
+        }
+        // Continue to fetch members
+        fetchGroupMembers();
+      });
+    } else {
+      fetchGroupMembers();
+    }
+
+    function fetchGroupMembers() {
+      // Get owner info
+      db.get('SELECT id, username, email FROM users WHERE id = ?', [group.owner_id], (err, owner) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        // Get all members
+        db.all(`
+          SELECT gm.role, gm.created_at, u.id, u.username, u.email 
+          FROM group_members gm 
+          JOIN users u ON gm.user_id = u.id 
+          WHERE gm.group_id = ?
+          ORDER BY gm.created_at ASC
+        `, [groupId], (err, members) => {
+          if (err) {
+            return res.status(500).json({ error: 'Database error' });
+          }
+
+          res.json({
+            owner: { ...owner, role: 'owner' },
+            members: members || []
+          });
+        });
+      });
+    }
+  });
+});
+
+// Add member to group (owner only)
+app.post('/api/groups/:id/members', authenticate, (req, res) => {
+  const groupId = req.params.id;
+  const { userId, role } = req.body;
+  const requestingUserId = req.user.id;
+
+  if (!userId || !role) {
+    return res.status(400).json({ error: 'User ID and role are required' });
+  }
+
+  if (!['editor', 'viewer'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role. Must be editor or viewer' });
+  }
+
+  // Check if requesting user is group owner
+  isGroupOwner(groupId, requestingUserId, (err, isOwner) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Only group owner can add members' });
+    }
+
+    // Check if user exists
+    db.get('SELECT id FROM users WHERE id = ?', [userId], (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Check if user is already a member
+      db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], (err, existingMember) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+        if (existingMember) {
+          return res.status(409).json({ error: 'User is already a member of this group' });
+        }
+
+        // Add member
+        const memberId = uuidv4();
+        db.run('INSERT INTO group_members (id, group_id, user_id, role) VALUES (?, ?, ?, ?)', 
+          [memberId, groupId, userId, role], function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Database error' });
+          }
+          res.status(201).json({ message: 'Member added successfully' });
+        });
+      });
+    });
+  });
+});
+
+// Update member role (owner only)
+app.put('/api/groups/:id/members/:userId', authenticate, (req, res) => {
+  const groupId = req.params.id;
+  const memberUserId = req.params.userId;
+  const { role } = req.body;
+  const requestingUserId = req.user.id;
+
+  if (!role || !['editor', 'viewer'].includes(role)) {
+    return res.status(400).json({ error: 'Valid role is required' });
+  }
+
+  // Check if requesting user is group owner
+  isGroupOwner(groupId, requestingUserId, (err, isOwner) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Only group owner can update member roles' });
+    }
+
+    // Update member role
+    db.run('UPDATE group_members SET role = ? WHERE group_id = ? AND user_id = ?', 
+      [role, groupId, memberUserId], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Member not found' });
+      }
+      res.json({ message: 'Member role updated successfully' });
+    });
+  });
+});
+
+// Remove member from group (owner only)
+app.delete('/api/groups/:id/members/:userId', authenticate, (req, res) => {
+  const groupId = req.params.id;
+  const memberUserId = req.params.userId;
+  const requestingUserId = req.user.id;
+
+  // Check if requesting user is group owner
+  isGroupOwner(groupId, requestingUserId, (err, isOwner) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Only group owner can remove members' });
+    }
+
+    // Remove member
+    db.run('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', 
+      [groupId, memberUserId], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Member not found' });
+      }
+      res.json({ message: 'Member removed successfully' });
+    });
+  });
+});
+
+// Get user by email (for adding members to groups)
+app.get('/api/users/by-email/:email', authenticate, (req, res) => {
+  const email = decodeURIComponent(req.params.email);
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  db.get('SELECT id, username, email FROM users WHERE email = ?', [email], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
+  });
+});
+
+// Transfer group ownership (owner only)
+app.put('/api/groups/:id/transfer-ownership', authenticate, (req, res) => {
+  const groupId = req.params.id;
+  const { newOwnerId } = req.body;
+  const currentOwnerId = req.user.id;
+
+  if (!newOwnerId) {
+    return res.status(400).json({ error: 'New owner ID is required' });
+  }
+
+  // Check if requesting user is current group owner
+  isGroupOwner(groupId, currentOwnerId, (err, isOwner) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Only current owner can transfer ownership' });
+    }
+
+    // Check if new owner exists
+    db.get('SELECT id FROM users WHERE id = ?', [newOwnerId], (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!user) {
+        return res.status(404).json({ error: 'New owner not found' });
+      }
+
+      // Check if new owner is already a member
+      db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, newOwnerId], (err, member) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        // Start transaction
+        db.serialize(() => {
+          // Update group owner
+          db.run('UPDATE groups SET owner_id = ? WHERE id = ?', [newOwnerId, groupId], function(err) {
+            if (err) {
+              return res.status(500).json({ error: 'Database error' });
+            }
+
+            // If new owner was a member, remove them from members table
+            if (member) {
+              db.run('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, newOwnerId], function(err) {
+                if (err) {
+                  return res.status(500).json({ error: 'Database error' });
+                }
+                res.json({ message: 'Ownership transferred successfully' });
+              });
+            } else {
+              res.json({ message: 'Ownership transferred successfully' });
+            }
+          });
+        });
+      });
     });
   });
 });

@@ -34,6 +34,8 @@ export interface Group {
   createdAt: Date;
   createdBy: string;
   isActive: boolean;
+  owner_id?: string;
+  userRole?: string; // 'owner', 'editor', 'viewer' - for groups where user is a member
 }
 
 export interface Table {
