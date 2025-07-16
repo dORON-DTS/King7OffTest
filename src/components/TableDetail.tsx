@@ -534,6 +534,26 @@ const TableDetail: React.FC = () => {
       return;
     }
 
+    // Check if user is trying to change groups
+    if (table && editForm.groupId !== table.groupId) {
+      const currentGroup = groups.find(g => g.id === table.groupId);
+      const targetGroup = groups.find(g => g.id === editForm.groupId);
+      
+      // Check if user is owner of both groups (unless admin)
+      if (user?.role !== 'admin') {
+        const isOwnerOfCurrentGroup = currentGroup?.userRole === 'owner';
+        const isOwnerOfTargetGroup = targetGroup?.userRole === 'owner';
+        
+        if (!isOwnerOfCurrentGroup || !isOwnerOfTargetGroup) {
+          setEditFormErrors(prev => ({
+            ...prev,
+            groupId: 'You can only change groups if you are the owner of both the current and target groups'
+          }));
+          return;
+        }
+      }
+    }
+
     const updatedTable = {
       name: editForm.name,
       smallBlind: Number(editForm.smallBlind),
@@ -1325,16 +1345,32 @@ const TableDetail: React.FC = () => {
             value={editForm.groupId}
             onChange={handleEditInputChange('groupId')}
             error={!!editFormErrors.groupId}
-            helperText={editFormErrors.groupId}
+            helperText={editFormErrors.groupId || (table && editForm.groupId !== table.groupId ? 'You can only change groups if you are the owner of both the current and target groups' : '')}
             fullWidth
             sx={{ mb: 2 }}
             disabled={!user || (user.role !== 'admin' && user.role !== 'editor')}
           >
-            {groups.map((group) => (
-              <MenuItem key={group.id} value={group.id}>
-                {group.name}
-              </MenuItem>
-            ))}
+            {groups.map((group) => {
+              // Check if user can select this group
+              const isCurrentGroup = table?.groupId === group.id;
+              const isOwnerOfCurrentGroup = table?.groupId === group.id && group.userRole === 'owner';
+              const isOwnerOfTargetGroup = group.userRole === 'owner';
+              const canSelect = isCurrentGroup || (isOwnerOfCurrentGroup && isOwnerOfTargetGroup) || user?.role === 'admin';
+              
+              return (
+                <MenuItem 
+                  key={group.id} 
+                  value={group.id}
+                  disabled={!canSelect}
+                  sx={{ 
+                    opacity: canSelect ? 1 : 0.5,
+                    color: canSelect ? 'inherit' : 'grey'
+                  }}
+                >
+                  {group.name} {!canSelect && '(Owner access required)'}
+                </MenuItem>
+              );
+            })}
           </TextField>
           <Autocomplete
             options={foodDropdownPlayers}

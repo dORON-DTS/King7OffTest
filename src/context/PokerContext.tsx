@@ -187,7 +187,12 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           throw new Error('Authentication required');
         }
 
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups`, {
+        // Use different endpoint based on user role
+        const endpoint = user?.role === 'admin' 
+          ? `${process.env.REACT_APP_API_URL}/api/groups`
+          : `${process.env.REACT_APP_API_URL}/api/my-groups`;
+
+        const response = await fetch(endpoint, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
