@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
   Typography, 
@@ -79,6 +80,7 @@ const MyGroups: React.FC = () => {
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const theme = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchMyGroups();
@@ -226,6 +228,7 @@ const MyGroups: React.FC = () => {
               <Grid item xs={12} sm={6} md={2.4} key={group.id} sx={{ ml: { xs: '-8px', sm: 0 } }}>
                 <StyledCard
                   userRole={group.userRole || 'viewer'}
+                  onClick={() => navigate(`/tables?group=${group.id}`)}
                   sx={{ 
                     cursor: 'pointer', 
                     '&:hover': { 

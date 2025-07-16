@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePoker } from '../context/PokerContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Table, CreateTableFormData, Group } from '../types';
 import { useUser } from '../context/UserContext';
 import CreateGroupDialog from './CreateGroupDialog';
@@ -130,6 +130,7 @@ const TableList: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Partial<CreateTableFormData>>({});
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
@@ -152,6 +153,15 @@ const TableList: React.FC = () => {
   useEffect(() => {
     fetchGroups();
   }, []);
+
+  // Check for group parameter in URL and set initial filter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const groupParam = searchParams.get('group');
+    if (groupParam) {
+      setSelectedGroupId(groupParam);
+    }
+  }, [location.search]);
 
   const fetchGroups = async () => {
     try {
@@ -375,6 +385,23 @@ const TableList: React.FC = () => {
         }}>
           Manage your poker games with ease
         </Typography>
+        {selectedGroupId && (
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(33, 150, 243, 0.1)', borderRadius: 2, border: '1px solid rgba(33, 150, 243, 0.3)' }}>
+            <Typography variant="body2" sx={{ color: '#2196f3', fontWeight: 'bold' }}>
+              🔍 Filtered by group: {groups.find(g => g.id === selectedGroupId)?.name || 'Unknown Group'}
+            </Typography>
+            <Button 
+              size="small" 
+              onClick={() => {
+                setSelectedGroupId('');
+                navigate('/tables');
+              }}
+              sx={{ mt: 1, color: '#2196f3' }}
+            >
+              Clear Filter
+            </Button>
+          </Box>
+        )}
       </Box>
 
       {/* Groups Filter Dropdown and Action Buttons */}
