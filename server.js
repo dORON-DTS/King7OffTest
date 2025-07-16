@@ -1736,32 +1736,51 @@ app.get('/api/groups', (req, res) => {
   });
 });
 
-// Get user's groups (groups where user is owner or member)
+// Get user's groups (groups where user is owner or member, or all groups for admin)
 app.get('/api/my-groups', authenticate, (req, res) => {
   const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
 
-  // Get groups where user is owner
-  db.all('SELECT *, "owner" as userRole FROM groups WHERE owner_id = ?', [userId], (err, ownedGroups) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
-    }
-
-    // Get groups where user is member
+  if (isAdmin) {
+    // Admin gets all groups with their actual roles
     db.all(`
-      SELECT g.*, gm.role as userRole 
-      FROM groups g 
-      JOIN group_members gm ON g.id = gm.group_id 
-      WHERE gm.user_id = ?
-    `, [userId], (err, memberGroups) => {
+      SELECT g.*, 
+        CASE 
+          WHEN g.owner_id = ? THEN 'owner'
+          WHEN gm.role IS NOT NULL THEN gm.role
+          ELSE 'none'
+        END as userRole
+      FROM groups g
+      LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = ?
+      ORDER BY g.name
+    `, [userId, userId], (err, allGroups) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(allGroups);
+    });
+  } else {
+    // Non-admin gets only groups where they are owner or member
+    db.all('SELECT *, "owner" as userRole FROM groups WHERE owner_id = ?', [userId], (err, ownedGroups) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' });
       }
 
-      // Combine and sort by name
-      const allGroups = [...ownedGroups, ...memberGroups].sort((a, b) => a.name.localeCompare(b.name));
-      res.json(allGroups);
+      db.all(`
+        SELECT g.*, gm.role as userRole 
+        FROM groups g 
+        JOIN group_members gm ON g.id = gm.group_id 
+        WHERE gm.user_id = ?
+      `, [userId], (err, memberGroups) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        const allGroups = [...ownedGroups, ...memberGroups].sort((a, b) => a.name.localeCompare(b.name));
+        res.json(allGroups);
+      });
     });
-  });
+  }
 });
 
 // Create new group (admin and editor only)

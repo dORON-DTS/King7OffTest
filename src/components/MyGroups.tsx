@@ -331,8 +331,8 @@ const MyGroups: React.FC = () => {
                         {group.name}
                       </Typography>
                       
-                      {/* Management and Delete buttons for owners */}
-                      {group.userRole === 'owner' && (
+                      {/* Management and Delete buttons for owners or admin */}
+                      {(group.userRole === 'owner' || user?.role === 'admin') && (
                         <Box sx={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 0.5 }}>
                           <Tooltip title="Manage Group Members" arrow>
                             <IconButton
@@ -452,6 +452,11 @@ const MyGroups: React.FC = () => {
           <Typography>
             Are you sure you want to delete the group "{selectedGroup?.name}"?
           </Typography>
+          {user?.role === 'admin' && selectedGroup?.userRole !== 'owner' && (
+            <Typography sx={{ color: '#ff9800', mt: 1, fontStyle: 'italic' }}>
+              Note: You are deleting this group as an administrator.
+            </Typography>
+          )}
           <Typography sx={{ color: '#f44336', mt: 2, fontWeight: 'bold' }}>
             This action cannot be undone.
           </Typography>
