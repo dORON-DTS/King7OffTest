@@ -12,7 +12,11 @@ import {
   useTheme,
   IconButton,
   Tooltip,
-  Button
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import GroupIcon from '@mui/icons-material/Group';
@@ -20,6 +24,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { Group } from '../types';
 import GroupMembersDialog from './GroupMembersDialog';
 import CreateGroupDialog from './CreateGroupDialog';
@@ -84,6 +89,7 @@ const MyGroups: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const theme = useTheme();
   const navigate = useNavigate();
@@ -153,6 +159,42 @@ const MyGroups: React.FC = () => {
 
   // Check if user can create groups (admin or editor)
   const canCreateGroups = user?.role === 'admin' || user?.role === 'editor';
+
+  const handleDeleteClick = (group: Group, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setSelectedGroup(group);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedGroup) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups/${selectedGroup.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete group');
+      }
+
+      // Close dialog and refresh groups
+      setDeleteDialogOpen(false);
+      setSelectedGroup(null);
+      fetchMyGroups();
+    } catch (err) {
+      console.error('Error deleting group:', err);
+      alert('Failed to delete group. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -289,30 +331,44 @@ const MyGroups: React.FC = () => {
                         {group.name}
                       </Typography>
                       
-                      {/* Management button for owners */}
+                      {/* Management and Delete buttons for owners */}
                       {group.userRole === 'owner' && (
-                        <Tooltip title="Manage Group Members" arrow>
-                          <IconButton
-                            size="small"
-                            sx={{
-                              position: 'absolute',
-                              top: 0,
-                              right: 0,
-                              color: '#FFD700',
-                              '&:hover': {
-                                backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                                transform: 'scale(1.1)',
-                              },
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedGroup(group);
-                              setMembersDialogOpen(true);
-                            }}
-                          >
-                            <SettingsIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <Box sx={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 0.5 }}>
+                          <Tooltip title="Manage Group Members" arrow>
+                            <IconButton
+                              size="small"
+                              sx={{
+                                color: '#FFD700',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                                  transform: 'scale(1.1)',
+                                },
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedGroup(group);
+                                setMembersDialogOpen(true);
+                              }}
+                            >
+                              <SettingsIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Group" arrow>
+                            <IconButton
+                              size="small"
+                              sx={{
+                                color: '#f44336',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                  transform: 'scale(1.1)',
+                                },
+                              }}
+                              onClick={(e) => handleDeleteClick(group, e)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       )}
                     </Box>
 
@@ -388,6 +444,25 @@ const MyGroups: React.FC = () => {
           fetchMyGroups(); // Refresh the groups list
         }}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Group</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the group "{selectedGroup?.name}"?
+          </Typography>
+          <Typography sx={{ color: '#f44336', mt: 2, fontWeight: 'bold' }}>
+            This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
