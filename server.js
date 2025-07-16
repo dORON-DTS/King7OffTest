@@ -1499,7 +1499,7 @@ app.post('/api/verify-email', (req, res) => {
     if (user.verificationCode !== code) {
       return res.status(400).json({ error: 'Invalid verification code' });
     }
-    db.run('UPDATE users SET isVerified = 1, verificationCode = NULL WHERE email = ?', [email], function(err) {
+    db.run('UPDATE users SET isVerified = 1, verificationCode = NULL, role = ? WHERE email = ?', ['editor', email], function(err) {
       if (err) {
         return res.status(500).json({ error: 'Failed to verify user' });
       }
