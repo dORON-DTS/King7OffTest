@@ -138,6 +138,25 @@ const db = new sqlite3.Database(dbPath, (err) => {
     // but groups and users tables use TEXT (UUID) columns
     // We'll handle this mismatch in the code by not using foreign keys
     console.log('[DB] group_join_requests table exists (using INTEGER columns)');
+
+    // Create notifications table if it doesn't exist
+    db.run(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        group_id TEXT,
+        request_id INTEGER,
+        is_read BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `, (err) => {
+      if (err) { console.error('[DB] Error creating notifications table:', err); }
+      else { console.log('[DB] notifications table ready'); }
+    });
   }
 });
 
@@ -2298,6 +2317,21 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
             // Don't fail the request if email setup fails
           }
 
+          // Create notification for group owner
+          db.run(`
+            INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
+            VALUES (?, 'join_request', 'New Join Request', ?, ?, ?)
+          `, [
+            group.owner_id,
+            `${req.user.username} wants to join your group "${group.name}"`,
+            groupId,
+            this.lastID
+          ], function(err) {
+            if (err) {
+              console.error('Error creating join request notification:', err);
+            }
+          });
+
           res.status(201).json({ 
             message: 'Join request sent successfully',
             requestId: this.lastID
@@ -2337,6 +2371,188 @@ app.post('/api/player/payment', authenticate, authorize(['admin', 'editor']), (r
     }
   );
 });
+
+// Get notifications for a user
+app.get('/api/notifications', authenticate, (req, res) => {
+  const userId = req.user.id;
+  
+  db.all(`
+    SELECT id, type, title, message, group_id, request_id, is_read, created_at
+    FROM notifications 
+    WHERE user_id = ? 
+    ORDER BY created_at DESC
+    LIMIT 50
+  `, [userId], (err, notifications) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(notifications);
+  });
+});
+
+// Mark notification as read
+app.put('/api/notifications/:id/read', authenticate, (req, res) => {
+  const notificationId = req.params.id;
+  const userId = req.user.id;
+  
+  db.run('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?', 
+    [notificationId, userId], function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    res.json({ message: 'Notification marked as read' });
+  });
+});
+
+// Approve join request
+app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (req, res) => {
+  const groupId = req.params.groupId;
+  const requestId = req.params.requestId;
+  const userId = req.user.id;
+
+  // Check if user is group owner
+  db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+    if (group.owner_id !== userId) {
+      return res.status(403).json({ error: 'Only group owner can approve requests' });
+    }
+
+    // Get the join request
+    db.get('SELECT * FROM group_join_requests WHERE id = ? AND group_id = ? AND status = "pending"', 
+      [requestId, parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10)], (err, request) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!request) {
+        return res.status(404).json({ error: 'Join request not found or already processed' });
+      }
+
+      // Get requesting user details
+      db.get('SELECT username, email FROM users WHERE id = ?', [request.user_id], (err, requestingUser) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+        if (!requestingUser) {
+          return res.status(404).json({ error: 'Requesting user not found' });
+        }
+
+        // Start transaction
+        db.serialize(() => {
+          // Update request status
+          db.run('UPDATE group_join_requests SET status = "approved", updated_at = CURRENT_TIMESTAMP WHERE id = ?', 
+            [requestId], function(err) {
+            if (err) {
+              return res.status(500).json({ error: 'Database error' });
+            }
+
+            // Add user to group members
+            db.run('INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, "viewer")', 
+              [groupId, request.user_id], function(err) {
+              if (err) {
+                return res.status(500).json({ error: 'Database error' });
+              }
+
+              // Create notification for requesting user
+              db.run(`
+                INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
+                VALUES (?, 'request_approved', 'Join Request Approved', ?, ?, ?)
+              `, [
+                request.user_id,
+                `Your request to join group "${group.name}" has been approved!`,
+                groupId,
+                requestId
+              ], function(err) {
+                if (err) {
+                  console.error('Error creating approval notification:', err);
+                }
+              });
+
+              res.json({ message: 'Join request approved successfully' });
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
+// Reject join request
+app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (req, res) => {
+  const groupId = req.params.groupId;
+  const requestId = req.params.requestId;
+  const userId = req.user.id;
+
+  // Check if user is group owner
+  db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+    if (group.owner_id !== userId) {
+      return res.status(403).json({ error: 'Only group owner can reject requests' });
+    }
+
+    // Get the join request
+    db.get('SELECT * FROM group_join_requests WHERE id = ? AND group_id = ? AND status = "pending"', 
+      [requestId, parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10)], (err, request) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!request) {
+        return res.status(404).json({ error: 'Join request not found or already processed' });
+      }
+
+      // Update request status
+      db.run('UPDATE group_join_requests SET status = "rejected", updated_at = CURRENT_TIMESTAMP WHERE id = ?', 
+        [requestId], function(err) {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        // Create notification for requesting user
+        db.run(`
+          INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
+          VALUES (?, 'request_rejected', 'Join Request Rejected', ?, ?, ?)
+        `, [
+          request.user_id,
+          `Your request to join group "${group.name}" has been rejected.`,
+          groupId,
+          requestId
+        ], function(err) {
+          if (err) {
+            console.error('Error creating rejection notification:', err);
+          }
+        });
+
+        res.json({ message: 'Join request rejected successfully' });
+      });
+    });
+  });
+});
+
+// Clean up old notifications (older than 1 month)
+setInterval(() => {
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  
+  db.run('DELETE FROM notifications WHERE created_at < ?', [oneMonthAgo.toISOString()], (err) => {
+    if (err) {
+      console.error('[DB] Error cleaning up old notifications:', err);
+    } else {
+      console.log('[DB] Old notifications cleaned up');
+    }
+  });
+}, 24 * 60 * 60 * 1000); // Run daily
 
 // Start server
 app.listen(PORT, () => {

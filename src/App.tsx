@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   createBrowserRouter,
   createRoutesFromElements,
@@ -9,7 +9,9 @@ import {
   Link as RouterLink,
   useLocation
 } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline, Container, AppBar, Toolbar, Typography, Button, CircularProgress, Avatar, Menu, MenuItem, IconButton, Box, Tooltip } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, Container, AppBar, Toolbar, Typography, Button, CircularProgress, Avatar, Menu, MenuItem, IconButton, Box, Tooltip, Badge } from '@mui/material';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsDrawer from './components/NotificationsDrawer';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { useUser } from './context/UserContext';
@@ -79,6 +81,8 @@ const AppLayout = () => {
   const { user, logout, isLoading } = useUser();
   const location = useLocation();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
   const open = Boolean(anchorEl);
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -156,7 +160,21 @@ const AppLayout = () => {
           </Typography>
           {/* LOGIN/PROFILE BUTTON - ABSOLUTE RIGHT */}
           {(user || !user) && (
-            <Box sx={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
+            <Box sx={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', zIndex: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+              {user && (
+                <Tooltip title="Notifications" arrow>
+                  <IconButton
+                    size="large"
+                    color="inherit"
+                    onClick={() => setNotificationsOpen(true)}
+                    sx={{ p: 1 }}
+                  >
+                    <Badge badgeContent={notificationCount} color="error">
+                      <NotificationsIcon />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+              )}
               {user ? (
                 <>
                   <Tooltip title={user.username} arrow>
@@ -212,6 +230,15 @@ const AppLayout = () => {
         <Outlet />
       </Container>
       <Footer />
+      
+      {/* Notifications Drawer */}
+      {user && (
+        <NotificationsDrawer
+          open={notificationsOpen}
+          onClose={() => setNotificationsOpen(false)}
+          onNotificationCountChange={setNotificationCount}
+        />
+      )}
     </div>
   );
 };
