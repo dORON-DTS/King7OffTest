@@ -30,9 +30,12 @@ app.use(cors({
     'https://www.king7offsuit.com',
     'https://king7offsuit.com',
     'http://localhost:3000',
-    'http://localhost:3001'
+    'http://localhost:3001',
+    'https://poker-management.onrender.com'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(morgan('combined'));
@@ -2195,6 +2198,14 @@ app.put('/api/groups/:id/transfer-ownership', authenticate, (req, res) => {
   });
 });
 
+// Handle OPTIONS for join request
+app.options('/api/groups/:id/join-request', (req, res) => {
+  res.header('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.status(200).end();
+});
+
 // Request to join a group
 app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
   const groupId = req.params.id;
@@ -2206,11 +2217,17 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
       return res.status(500).json({ error: 'Database error' });
     }
     if (!group) {
+      res.header('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
+      res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       return res.status(404).json({ error: 'Group not found or inactive' });
     }
 
     // Check if user is not the owner
     if (group.owner_id === userId) {
+      res.header('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
+      res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       return res.status(400).json({ error: 'You cannot request to join your own group' });
     }
 
@@ -2293,6 +2310,9 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
             }
           });
 
+          res.header('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
+          res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+          res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
           res.status(201).json({ 
             message: 'Join request sent successfully',
             requestId: this.lastID
