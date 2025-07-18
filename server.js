@@ -2318,6 +2318,7 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
           }
 
           // Create notification for group owner
+          console.log('[DB] Creating notification with requestId:', this.lastID);
           db.run(`
             INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
             VALUES (?, 'join_request', 'New Join Request', ?, ?, ?)
@@ -2329,6 +2330,8 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
           ], function(err) {
             if (err) {
               console.error('Error creating join request notification:', err);
+            } else {
+              console.log('[DB] Notification created successfully with ID:', this.lastID);
             }
           });
 
@@ -2376,6 +2379,8 @@ app.post('/api/player/payment', authenticate, authorize(['admin', 'editor']), (r
 app.get('/api/notifications', authenticate, (req, res) => {
   const userId = req.user.id;
   
+  console.log('[API] Fetching notifications for user:', userId);
+  
   db.all(`
     SELECT id, type, title, message, group_id, request_id, is_read, created_at
     FROM notifications 
@@ -2384,8 +2389,10 @@ app.get('/api/notifications', authenticate, (req, res) => {
     LIMIT 50
   `, [userId], (err, notifications) => {
     if (err) {
+      console.error('[DB] Error fetching notifications:', err);
       return res.status(500).json({ error: 'Database error' });
     }
+    console.log('[API] Returning notifications:', notifications);
     res.json(notifications);
   });
 });

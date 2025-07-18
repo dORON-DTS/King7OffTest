@@ -23,6 +23,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonIcon from '@mui/icons-material/Person';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 interface Notification {
   id: string;
@@ -179,7 +180,27 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    console.log('Formatting date:', dateString);
+    
+    // Handle different date formats
+    let date: Date;
+    if (dateString.includes('T')) {
+      // ISO format
+      date = new Date(dateString);
+    } else if (dateString.includes('-')) {
+      // SQLite format
+      date = new Date(dateString.replace(' ', 'T'));
+    } else {
+      // Try direct parsing
+      date = new Date(dateString);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date:', dateString);
+      return 'Unknown date';
+    }
+    
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
@@ -232,9 +253,14 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
             Notifications
           </Typography>
-          <IconButton onClick={onClose} sx={{ color: 'white' }}>
-            <CloseIcon />
-          </IconButton>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton onClick={fetchNotifications} sx={{ color: 'white' }}>
+              <RefreshIcon />
+            </IconButton>
+            <IconButton onClick={onClose} sx={{ color: 'white' }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
         </Box>
 
         {/* Close button for mobile */}
@@ -298,7 +324,12 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     {notification.message}
                   </Typography>
 
-                  {notification.type === 'join_request' && notification.groupId && notification.requestId && (
+                  {/* Debug info */}
+                  <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>
+                    Debug: type={notification.type}, groupId={notification.groupId}, requestId={notification.requestId}
+                  </Typography>
+
+                  {notification.type === 'join_request' && notification.groupId && (
                     <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                       <Button
                         size="small"
@@ -326,6 +357,22 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                       </Button>
                     </Box>
                   )}
+                  
+                  {/* Test button for debugging */}
+                  <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => console.log('Test button clicked for notification:', notification)}
+                      sx={{ 
+                        color: '#2196f3',
+                        borderColor: '#2196f3',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Test Button
+                    </Button>
+                  </Box>
                 </StyledListItem>
               ))}
             </List>
