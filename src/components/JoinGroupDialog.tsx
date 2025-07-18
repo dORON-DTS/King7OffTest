@@ -184,6 +184,9 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (response.status === 409) {
+          throw new Error('You already have a pending request to join this group. Please wait for the owner to respond.');
+        }
         throw new Error(errorData.error || 'Failed to send join request');
       }
 

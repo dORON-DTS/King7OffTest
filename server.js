@@ -25,7 +25,15 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://www.king7offsuit.com',
+    'https://king7offsuit.com',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(morgan('combined'));
 
@@ -2218,13 +2226,17 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
       // Check if there's already a pending request
       console.log('[DB] Checking for existing join request:', { groupId, userId });
       
-      db.get('SELECT id FROM group_join_requests WHERE group_id = ? AND user_id = ? AND status = "pending"', [groupId, userId], (err, existingRequest) => {
+      // Convert UUIDs to integers for checking
+      const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
+      const userIdInt = parseInt(userId.replace(/[^0-9]/g, '').substring(0, 9), 10);
+      
+      db.get('SELECT id FROM group_join_requests WHERE group_id = ? AND user_id = ? AND status = "pending"', [groupIdInt, userIdInt], (err, existingRequest) => {
         if (err) {
           console.error('[DB] Error checking existing join request:', err);
           return res.status(500).json({ error: 'Database error: ' + err.message });
         }
         if (existingRequest) {
-          return res.status(409).json({ error: 'You already have a pending request to join this group' });
+          return res.status(409).json({ error: 'You already have a pending request to join this group. Please wait for the owner to respond.' });
         }
 
         // Create join request
