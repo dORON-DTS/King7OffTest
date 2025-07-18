@@ -2786,6 +2786,46 @@ app.post('/api/debug/cleanup-old-notifications', authenticate, (req, res) => {
   });
 });
 
+// Clean up notifications with non-existent requests
+app.post('/api/debug/cleanup-orphaned-notifications', authenticate, (req, res) => {
+  db.all(`
+    SELECT n.* FROM notifications n 
+    LEFT JOIN group_join_requests gjr ON n.request_id = gjr.id
+    WHERE n.type = 'join_request' AND gjr.id IS NULL
+  `, (err, orphanedNotifications) => {
+    if (err) {
+      console.error('[DB] Error finding orphaned notifications:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (orphanedNotifications.length === 0) {
+      return res.json({ message: 'No orphaned notifications found' });
+    }
+    
+    const notificationIds = orphanedNotifications.map(n => n.id);
+    
+    // Update notifications to mark them as cancelled
+    db.run(`
+      UPDATE notifications 
+      SET type = 'request_rejected', 
+          title = 'Join Request Cancelled',
+          message = 'This join request was cancelled because the request no longer exists.',
+          is_read = 1
+      WHERE id IN (` + notificationIds.map(() => '?').join(',') + `)
+    `, notificationIds, function(err) {
+      if (err) {
+        console.error('[DB] Error updating orphaned notifications:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      res.json({ 
+        message: `Updated ${this.changes} orphaned notifications`,
+        updatedNotifications: orphanedNotifications
+      });
+    });
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

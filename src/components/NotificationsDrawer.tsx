@@ -513,6 +513,32 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                       size="small"
                       variant="outlined"
                       onClick={async () => {
+                        try {
+                          const token = localStorage.getItem('token');
+                          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/debug/cleanup-orphaned-notifications`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          const data = await response.json();
+                          console.log('Orphaned notifications cleanup result:', data);
+                          // Refresh notifications after cleanup
+                          fetchNotifications();
+                        } catch (err) {
+                          console.error('Error cleaning up orphaned notifications:', err);
+                        }
+                      }}
+                      sx={{ 
+                        color: '#ff5722',
+                        borderColor: '#ff5722',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Fix Orphans
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={async () => {
                         if (!notification.groupId || !notification.requestId) return;
                         try {
                           const token = localStorage.getItem('token');
