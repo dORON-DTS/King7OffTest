@@ -434,6 +434,30 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     >
                       Debug Requests
                     </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={async () => {
+                        if (!notification.groupId || !notification.requestId) return;
+                        try {
+                          const token = localStorage.getItem('token');
+                          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups/${notification.groupId}/join-request/${notification.requestId}/status`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          const data = await response.json();
+                          console.log('Request status:', data);
+                        } catch (err) {
+                          console.error('Error checking request status:', err);
+                        }
+                      }}
+                      sx={{ 
+                        color: '#9c27b0',
+                        borderColor: '#9c27b0',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Check Status
+                    </Button>
                   </Box>
                 </StyledListItem>
               ))}

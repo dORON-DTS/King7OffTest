@@ -2431,15 +2431,23 @@ app.get('/api/groups/:groupId/join-request/:requestId/status', authenticate, (re
   
   const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
   
-  db.get('SELECT status FROM group_join_requests WHERE id = ? AND group_id = ?', 
+  console.log('[API] Status check:', { groupId, requestId, groupIdInt });
+  
+  db.get('SELECT * FROM group_join_requests WHERE id = ? AND group_id = ?', 
     [requestId, groupIdInt], (err, request) => {
     if (err) {
+      console.error('[DB] Error checking request status:', err);
       return res.status(500).json({ error: 'Database error' });
     }
     if (!request) {
+      console.error('[DB] Request not found for status check:', { requestId, groupIdInt });
       return res.status(404).json({ error: 'Request not found' });
     }
-    res.json({ status: request.status });
+    console.log('[DB] Request found:', request);
+    res.json({ 
+      status: request.status,
+      request: request
+    });
   });
 });
 
@@ -2491,12 +2499,21 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
         return res.status(404).json({ error: 'Join request not found or already processed' });
       }
 
-      // Get requesting user details
-      db.get('SELECT username, email FROM users WHERE id = ?', [request.user_id], (err, requestingUser) => {
+      // Get requesting user details (handle both UUID and integer formats)
+      const userIdToCheck = typeof request.user_id === 'string' && request.user_id.includes('-') 
+        ? request.user_id 
+        : request.user_id.toString();
+        
+      console.log('[DB] Looking for user:', { originalUserId: request.user_id, userIdToCheck });
+      
+      db.get('SELECT username, email FROM users WHERE id = ? OR CAST(id AS TEXT) = ?', 
+        [userIdToCheck, userIdToCheck], (err, requestingUser) => {
         if (err) {
+          console.error('[DB] Error finding user:', err);
           return res.status(500).json({ error: 'Database error' });
         }
         if (!requestingUser) {
+          console.error('[DB] User not found:', { userIdToCheck, originalUserId: request.user_id });
           return res.status(404).json({ error: 'Requesting user not found' });
         }
 
@@ -2591,10 +2608,29 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
         return res.status(500).json({ error: 'Database error' });
       }
       if (!request) {
+        console.error('[DB] Join request not found:', { requestId, groupIdInt });
         return res.status(404).json({ error: 'Join request not found or already processed' });
       }
 
-              // Update request status
+      // Get requesting user details (handle both UUID and integer formats)
+      const userIdToCheck = typeof request.user_id === 'string' && request.user_id.includes('-') 
+        ? request.user_id 
+        : request.user_id.toString();
+        
+      console.log('[DB] Looking for user in reject:', { originalUserId: request.user_id, userIdToCheck });
+      
+      db.get('SELECT username, email FROM users WHERE id = ? OR CAST(id AS TEXT) = ?', 
+        [userIdToCheck, userIdToCheck], (err, requestingUser) => {
+        if (err) {
+          console.error('[DB] Error finding user in reject:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        if (!requestingUser) {
+          console.error('[DB] User not found in reject:', { userIdToCheck, originalUserId: request.user_id });
+          return res.status(404).json({ error: 'Requesting user not found' });
+        }
+
+        // Update request status
         db.run('UPDATE group_join_requests SET status = "rejected", updated_at = CURRENT_TIMESTAMP WHERE id = ?', 
           [requestId], function(err) {
           if (err) {
@@ -2635,6 +2671,7 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
 
           res.json({ message: 'Join request rejected successfully' });
         });
+      });
     });
   });
 });
