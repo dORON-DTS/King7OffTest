@@ -2424,6 +2424,25 @@ app.get('/api/debug/join-requests', authenticate, (req, res) => {
   });
 });
 
+// Get request status
+app.get('/api/groups/:groupId/join-request/:requestId/status', authenticate, (req, res) => {
+  const groupId = req.params.groupId;
+  const requestId = req.params.requestId;
+  
+  const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
+  
+  db.get('SELECT status FROM group_join_requests WHERE id = ? AND group_id = ?', 
+    [requestId, groupIdInt], (err, request) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!request) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+    res.json({ status: request.status });
+  });
+});
+
 // Approve join request
 app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (req, res) => {
   const groupId = req.params.groupId;
@@ -2497,7 +2516,24 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
                 return res.status(500).json({ error: 'Database error' });
               }
 
-              // Create notification for requesting user
+              // Update existing notification to mark it as processed
+              db.run(`
+                UPDATE notifications 
+                SET type = 'request_approved', 
+                    title = 'Join Request Approved',
+                    message = ?,
+                    is_read = 1
+                WHERE request_id = ? AND type = 'join_request'
+              `, [
+                `Your request to join group "${group.name}" has been approved!`,
+                requestId
+              ], function(err) {
+                if (err) {
+                  console.error('Error updating notification:', err);
+                }
+              });
+
+              // Create new notification for requesting user
               db.run(`
                 INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
                 VALUES (?, 'request_approved', 'Join Request Approved', ?, ?, ?)
@@ -2558,30 +2594,47 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
         return res.status(404).json({ error: 'Join request not found or already processed' });
       }
 
-      // Update request status
-      db.run('UPDATE group_join_requests SET status = "rejected", updated_at = CURRENT_TIMESTAMP WHERE id = ?', 
-        [requestId], function(err) {
-        if (err) {
-          return res.status(500).json({ error: 'Database error' });
-        }
-
-        // Create notification for requesting user
-        db.run(`
-          INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
-          VALUES (?, 'request_rejected', 'Join Request Rejected', ?, ?, ?)
-        `, [
-          request.user_id,
-          `Your request to join group "${group.name}" has been rejected.`,
-          groupId,
-          requestId
-        ], function(err) {
+              // Update request status
+        db.run('UPDATE group_join_requests SET status = "rejected", updated_at = CURRENT_TIMESTAMP WHERE id = ?', 
+          [requestId], function(err) {
           if (err) {
-            console.error('Error creating rejection notification:', err);
+            return res.status(500).json({ error: 'Database error' });
           }
-        });
 
-        res.json({ message: 'Join request rejected successfully' });
-      });
+          // Update existing notification to mark it as processed
+          db.run(`
+            UPDATE notifications 
+            SET type = 'request_rejected', 
+                title = 'Join Request Rejected',
+                message = ?,
+                is_read = 1
+            WHERE request_id = ? AND type = 'join_request'
+          `, [
+            `Your request to join group "${group.name}" has been rejected.`,
+            requestId
+          ], function(err) {
+            if (err) {
+              console.error('Error updating notification:', err);
+            }
+          });
+
+          // Create new notification for requesting user
+          db.run(`
+            INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
+            VALUES (?, 'request_rejected', 'Join Request Rejected', ?, ?, ?)
+          `, [
+            request.user_id,
+            `Your request to join group "${group.name}" has been rejected.`,
+            groupId,
+            requestId
+          ], function(err) {
+            if (err) {
+              console.error('Error creating rejection notification:', err);
+            }
+          });
+
+          res.json({ message: 'Join request rejected successfully' });
+        });
     });
   });
 });

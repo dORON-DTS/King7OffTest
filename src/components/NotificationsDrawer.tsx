@@ -383,6 +383,20 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     </Box>
                   )}
                   
+                  {(notification.type === 'request_approved' || notification.type === 'request_rejected') && (
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                      <Chip
+                        label={notification.type === 'request_approved' ? 'Approved' : 'Rejected'}
+                        size="small"
+                        sx={{ 
+                          bgcolor: notification.type === 'request_approved' ? '#4caf50' : '#f44336',
+                          color: 'white',
+                          fontSize: '0.7rem'
+                        }}
+                      />
+                    </Box>
+                  )}
+                  
                   {/* Test button for debugging */}
                   <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                     <Button
