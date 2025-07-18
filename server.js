@@ -26,28 +26,13 @@ app.use(limiter);
 
 // Middleware
 app.use(cors({
-  origin: [
-    'https://www.king7offsuit.com',
-    'https://king7offsuit.com',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://poker-management.onrender.com'
-  ],
+  origin: 'https://www.king7offsuit.com',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(morgan('combined'));
-
-// Add CORS headers to all responses
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  next();
-});
 
 // Database setup
 const DATA_DIR = process.env.RENDER ? '/opt/render/project/src/data' : path.join(__dirname, 'data');
@@ -2207,16 +2192,9 @@ app.put('/api/groups/:id/transfer-ownership', authenticate, (req, res) => {
   });
 });
 
-// Handle OPTIONS for join request
-app.options('/api/groups/:id/join-request', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.status(200).end();
-});
-
 // Request to join a group
 app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
+  console.log('[API] Join request received:', { groupId: req.params.id, userId: req.user.id });
   const groupId = req.params.id;
   const userId = req.user.id;
 
