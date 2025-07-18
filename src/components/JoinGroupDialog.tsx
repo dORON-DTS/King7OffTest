@@ -112,26 +112,49 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock data for now - will be replaced with API call
-  const mockGroups: Group[] = [
-    { id: 1, name: 'Poker Masters', description: 'Professional poker group', owner: { id: 1, username: 'john_doe' } },
-    { id: 2, name: 'Weekend Warriors', description: 'Casual weekend games', owner: { id: 2, username: 'jane_smith' } },
-    { id: 3, name: 'High Stakes Club', description: 'High stakes games only', owner: { id: 3, username: 'mike_wilson' } },
-    { id: 4, name: 'Beginner Friendly', description: 'New players welcome', owner: { id: 4, username: 'sarah_jones' } },
-    { id: 5, name: 'Tournament Pros', description: 'Tournament focused group', owner: { id: 5, username: 'david_brown' } },
-  ];
-
   useEffect(() => {
     if (searchTerm.length >= 3) {
       setLoading(true);
-      // Simulate API call delay
-      setTimeout(() => {
-        const filteredGroups = mockGroups.filter(group =>
-          group.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setGroups(filteredGroups);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication required');
         setLoading(false);
-      }, 300);
+        return;
+      }
+
+      fetch(`${process.env.REACT_APP_API_URL}/api/groups/search?q=${encodeURIComponent(searchTerm)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to search groups');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Transform API response to match our interface
+        const transformedGroups = data.map((group: any) => ({
+          id: group.id,
+          name: group.name,
+          description: group.description,
+          owner: {
+            id: group.owner_id || 'unknown',
+            username: group.owner_username || 'Unknown'
+          }
+        }));
+        setGroups(transformedGroups);
+      })
+      .catch(err => {
+        setError(err.message);
+        setGroups([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
     } else {
       setGroups([]);
     }
@@ -144,13 +167,41 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
   const handleJoinRequest = async () => {
     if (!selectedGroup) return;
     
-    // TODO: Implement API call to request joining the group
-    console.log('Requesting to join group:', selectedGroup.id);
-    
-    // For now, just close the dialog
-    onClose();
-    if (onSuccess) {
-      onSuccess();
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups/${selectedGroup.id}/join-request`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send join request');
+      }
+
+      const result = await response.json();
+      
+      // Show success message
+      alert('Join request sent successfully! The group owner will be notified.');
+      
+      // Close dialog and refresh
+      onClose();
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (err) {
+      console.error('Error sending join request:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send join request');
+    } finally {
+      setLoading(false);
     }
   };
 

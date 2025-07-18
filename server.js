@@ -1736,6 +1736,37 @@ app.get('/api/groups', (req, res) => {
   });
 });
 
+// Search groups for joining (excludes groups user is already member of)
+app.get('/api/groups/search', authenticate, (req, res) => {
+  const { q } = req.query;
+  const userId = req.user.id;
+
+  if (!q || q.length < 3) {
+    return res.json([]);
+  }
+
+  // Get groups that match search term and user is not a member of
+  db.all(`
+    SELECT g.id, g.name, g.description, g.createdAt,
+           u.username as owner_username, u.email as owner_email
+    FROM groups g
+    JOIN users u ON g.owner_id = u.id
+    WHERE g.name LIKE ? 
+    AND g.id NOT IN (
+      SELECT group_id FROM group_members WHERE user_id = ?
+    )
+    AND g.owner_id != ?
+    AND g.isActive = 1
+    ORDER BY g.name
+    LIMIT 20
+  `, [`%${q}%`, userId, userId], (err, groups) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(groups);
+  });
+});
+
 // Get user's groups (groups where user is owner or member, or all groups for admin)
 app.get('/api/my-groups', authenticate, (req, res) => {
   const userId = req.user.id;
@@ -2144,6 +2175,95 @@ app.put('/api/groups/:id/transfer-ownership', authenticate, (req, res) => {
             } else {
               res.json({ message: 'Ownership transferred successfully' });
             }
+          });
+        });
+      });
+    });
+  });
+});
+
+// Request to join a group
+app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
+  const groupId = req.params.id;
+  const userId = req.user.id;
+
+  // Check if group exists and is active
+  db.get('SELECT g.*, u.username as owner_username, u.email as owner_email FROM groups g JOIN users u ON g.owner_id = u.id WHERE g.id = ? AND g.isActive = 1', [groupId], (err, group) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found or inactive' });
+    }
+
+    // Check if user is not the owner
+    if (group.owner_id === userId) {
+      return res.status(400).json({ error: 'You cannot request to join your own group' });
+    }
+
+    // Check if user is already a member
+    db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], (err, member) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (member) {
+        return res.status(409).json({ error: 'You are already a member of this group' });
+      }
+
+      // Check if there's already a pending request
+      db.get('SELECT id FROM group_join_requests WHERE group_id = ? AND user_id = ? AND status = "pending"', [groupId, userId], (err, existingRequest) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+        if (existingRequest) {
+          return res.status(409).json({ error: 'You already have a pending request to join this group' });
+        }
+
+        // Create join request
+        const requestId = uuidv4();
+        db.run('INSERT INTO group_join_requests (id, group_id, user_id, status) VALUES (?, ?, ?, "pending")', 
+          [requestId, groupId, userId], function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Database error' });
+          }
+
+          // Send email to group owner
+          const transporter = nodemailer.createTransporter({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
+            }
+          });
+
+          const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: group.owner_email,
+            subject: `New Join Request for Group: ${group.name}`,
+            html: `
+              <h2>New Join Request</h2>
+              <p>A user has requested to join your group <strong>${group.name}</strong>.</p>
+              <p><strong>Request Details:</strong></p>
+              <ul>
+                <li><strong>Group:</strong> ${group.name}</li>
+                <li><strong>Requesting User:</strong> ${req.user.username}</li>
+                <li><strong>Request Date:</strong> ${new Date().toLocaleString()}</li>
+              </ul>
+              <p>You can approve or reject this request from your group management panel.</p>
+              <p>Best regards,<br>Poker Management System</p>
+            `
+          };
+
+          transporter.sendMail(mailOptions, (emailErr) => {
+            if (emailErr) {
+              console.error('Error sending email:', emailErr);
+              // Don't fail the request if email fails
+            }
+          });
+
+          res.status(201).json({ 
+            message: 'Join request sent successfully',
+            requestId: requestId
           });
         });
       });
