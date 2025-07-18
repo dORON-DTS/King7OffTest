@@ -2465,6 +2465,19 @@ app.get('/api/debug/groups/:groupId/members', authenticate, (req, res) => {
   });
 });
 
+// Debug endpoint to check table structure
+app.get('/api/debug/table-structure/:tableName', authenticate, (req, res) => {
+  const tableName = req.params.tableName;
+  
+  db.all(`PRAGMA table_info(${tableName})`, (err, columns) => {
+    if (err) {
+      console.error('[DB] Error fetching table structure:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(columns);
+  });
+});
+
 // Get request status
 app.get('/api/groups/:groupId/join-request/:requestId/status', authenticate, (req, res) => {
   const groupId = req.params.groupId;
@@ -2575,17 +2588,33 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
               groupName: group.name 
             });
             
-            db.run('INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, "viewer")', 
-              [groupId, request.user_id], function(err) {
+            // Check if user is already a member
+            db.get('SELECT id FROM group_members WHERE group_id = ? AND user_id = ?', 
+              [groupId, request.user_id], (err, existingMember) => {
               if (err) {
-                console.error('[DB] Error adding user to group:', err);
+                console.error('[DB] Error checking existing member:', err);
                 return res.status(500).json({ error: 'Database error' });
               }
-              console.log('[DB] User added to group successfully:', { 
-                groupId, 
-                userId: request.user_id,
-                changes: this.changes 
-              });
+              
+              if (existingMember) {
+                console.log('[DB] User already a member:', { groupId, userId: request.user_id });
+                // Continue with notification update
+              } else {
+                // Add new member
+                db.run('INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, "viewer")', 
+                  [groupId, request.user_id], function(err) {
+                  if (err) {
+                    console.error('[DB] Error adding user to group:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                  }
+                  console.log('[DB] User added to group successfully:', { 
+                    groupId, 
+                    userId: request.user_id,
+                    changes: this.changes,
+                    lastID: this.lastID
+                  });
+                });
+              }
 
               // Update existing notification to mark it as processed
               db.run(`

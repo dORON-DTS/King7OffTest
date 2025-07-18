@@ -487,6 +487,29 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                       onClick={async () => {
                         try {
                           const token = localStorage.getItem('token');
+                          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/debug/table-structure/group_members`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          const data = await response.json();
+                          console.log('group_members table structure:', data);
+                        } catch (err) {
+                          console.error('Error fetching table structure:', err);
+                        }
+                      }}
+                      sx={{ 
+                        color: '#795548',
+                        borderColor: '#795548',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Table Structure
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={async () => {
+                        try {
+                          const token = localStorage.getItem('token');
                           const response = await fetch(`${process.env.REACT_APP_API_URL}/api/debug/cleanup-orphaned-requests`, {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` }
