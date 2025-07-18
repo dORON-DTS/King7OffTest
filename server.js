@@ -2414,31 +2414,61 @@ app.put('/api/notifications/:id/read', authenticate, (req, res) => {
   });
 });
 
+// Debug endpoint to check join requests
+app.get('/api/debug/join-requests', authenticate, (req, res) => {
+  db.all('SELECT * FROM group_join_requests ORDER BY created_at DESC LIMIT 20', (err, requests) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(requests);
+  });
+});
+
 // Approve join request
 app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (req, res) => {
   const groupId = req.params.groupId;
   const requestId = req.params.requestId;
   const userId = req.user.id;
 
+  console.log('[API] Approve request received:', { groupId, requestId, userId });
+
   // Check if user is group owner
   db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
     if (err) {
+      console.error('[DB] Error checking group ownership:', err);
       return res.status(500).json({ error: 'Database error' });
     }
     if (!group) {
+      console.error('[API] Group not found:', groupId);
       return res.status(404).json({ error: 'Group not found' });
     }
     if (group.owner_id !== userId) {
+      console.error('[API] User not group owner:', { userId, ownerId: group.owner_id });
       return res.status(403).json({ error: 'Only group owner can approve requests' });
     }
 
+    // Convert groupId to integer for group_join_requests table
+    const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
+    console.log('[API] Converted groupId:', { original: groupId, converted: groupIdInt });
+
     // Get the join request
+    console.log('[DB] Searching for join request:', { requestId, groupIdInt });
     db.get('SELECT * FROM group_join_requests WHERE id = ? AND group_id = ? AND status = "pending"', 
-      [requestId, parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10)], (err, request) => {
+      [requestId, groupIdInt], (err, request) => {
       if (err) {
+        console.error('[DB] Error finding join request:', err);
         return res.status(500).json({ error: 'Database error' });
       }
       if (!request) {
+        console.error('[DB] Join request not found:', { requestId, groupIdInt });
+        // Let's check what requests exist for this group
+        db.all('SELECT * FROM group_join_requests WHERE group_id = ?', [groupIdInt], (err, allRequests) => {
+          if (err) {
+            console.error('[DB] Error checking all requests:', err);
+          } else {
+            console.log('[DB] All requests for group:', allRequests);
+          }
+        });
         return res.status(404).json({ error: 'Join request not found or already processed' });
       }
 
@@ -2497,21 +2527,30 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
   const requestId = req.params.requestId;
   const userId = req.user.id;
 
+  console.log('[API] Reject request received:', { groupId, requestId, userId });
+
   // Check if user is group owner
   db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
     if (err) {
+      console.error('[DB] Error checking group ownership:', err);
       return res.status(500).json({ error: 'Database error' });
     }
     if (!group) {
+      console.error('[API] Group not found:', groupId);
       return res.status(404).json({ error: 'Group not found' });
     }
     if (group.owner_id !== userId) {
+      console.error('[API] User not group owner:', { userId, ownerId: group.owner_id });
       return res.status(403).json({ error: 'Only group owner can reject requests' });
     }
 
+    // Convert groupId to integer for group_join_requests table
+    const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
+    console.log('[API] Converted groupId:', { original: groupId, converted: groupIdInt });
+
     // Get the join request
     db.get('SELECT * FROM group_join_requests WHERE id = ? AND group_id = ? AND status = "pending"', 
-      [requestId, parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10)], (err, request) => {
+      [requestId, groupIdInt], (err, request) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' });
       }

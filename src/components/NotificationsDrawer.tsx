@@ -397,6 +397,29 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     >
                       Test Button
                     </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={async () => {
+                        try {
+                          const token = localStorage.getItem('token');
+                          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/debug/join-requests`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          const data = await response.json();
+                          console.log('All join requests:', data);
+                        } catch (err) {
+                          console.error('Error fetching join requests:', err);
+                        }
+                      }}
+                      sx={{ 
+                        color: '#ff9800',
+                        borderColor: '#ff9800',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Debug Requests
+                    </Button>
                   </Box>
                 </StyledListItem>
               ))}
