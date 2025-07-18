@@ -2452,6 +2452,19 @@ app.get('/api/debug/users/:userId', authenticate, (req, res) => {
   });
 });
 
+// Debug endpoint to check group members
+app.get('/api/debug/groups/:groupId/members', authenticate, (req, res) => {
+  const groupId = req.params.groupId;
+  
+  db.all('SELECT * FROM group_members WHERE group_id = ?', [groupId], (err, members) => {
+    if (err) {
+      console.error('[DB] Error fetching group members:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(members);
+  });
+});
+
 // Get request status
 app.get('/api/groups/:groupId/join-request/:requestId/status', authenticate, (req, res) => {
   const groupId = req.params.groupId;
@@ -2488,7 +2501,7 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
   console.log('[API] Approve request received:', { groupId, requestId, userId });
 
   // Check if user is group owner
-  db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+  db.get('SELECT owner_id, name FROM groups WHERE id = ?', [groupId], (err, group) => {
     if (err) {
       console.error('[DB] Error checking group ownership:', err);
       return res.status(500).json({ error: 'Database error' });
@@ -2556,11 +2569,23 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
             }
 
             // Add user to group members
+            console.log('[DB] Adding user to group:', { 
+              groupId, 
+              userId: request.user_id, 
+              groupName: group.name 
+            });
+            
             db.run('INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, "viewer")', 
               [groupId, request.user_id], function(err) {
               if (err) {
+                console.error('[DB] Error adding user to group:', err);
                 return res.status(500).json({ error: 'Database error' });
               }
+              console.log('[DB] User added to group successfully:', { 
+                groupId, 
+                userId: request.user_id,
+                changes: this.changes 
+              });
 
               // Update existing notification to mark it as processed
               db.run(`
@@ -2612,7 +2637,7 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
   console.log('[API] Reject request received:', { groupId, requestId, userId });
 
   // Check if user is group owner
-  db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+  db.get('SELECT owner_id, name FROM groups WHERE id = ?', [groupId], (err, group) => {
     if (err) {
       console.error('[DB] Error checking group ownership:', err);
       return res.status(500).json({ error: 'Database error' });

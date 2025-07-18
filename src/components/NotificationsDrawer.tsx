@@ -461,6 +461,30 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                       size="small"
                       variant="outlined"
                       onClick={async () => {
+                        if (!notification.groupId) return;
+                        try {
+                          const token = localStorage.getItem('token');
+                          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/debug/groups/${notification.groupId}/members`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          const data = await response.json();
+                          console.log('Group members:', data);
+                        } catch (err) {
+                          console.error('Error fetching group members:', err);
+                        }
+                      }}
+                      sx={{ 
+                        color: '#00bcd4',
+                        borderColor: '#00bcd4',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Check Members
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={async () => {
                         try {
                           const token = localStorage.getItem('token');
                           const response = await fetch(`${process.env.REACT_APP_API_URL}/api/debug/cleanup-orphaned-requests`, {
