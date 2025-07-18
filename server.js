@@ -40,6 +40,15 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan('combined'));
 
+// Add CORS headers to all responses
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  next();
+});
+
 // Database setup
 const DATA_DIR = process.env.RENDER ? '/opt/render/project/src/data' : path.join(__dirname, 'data');
 const dbPath = path.join(DATA_DIR, 'poker.db');
@@ -2200,9 +2209,9 @@ app.put('/api/groups/:id/transfer-ownership', authenticate, (req, res) => {
 
 // Handle OPTIONS for join request
 app.options('/api/groups/:id/join-request', (req, res) => {
-  res.header('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
-  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.status(200).end();
 });
 
@@ -2217,17 +2226,11 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
       return res.status(500).json({ error: 'Database error' });
     }
     if (!group) {
-      res.header('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
-      res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       return res.status(404).json({ error: 'Group not found or inactive' });
     }
 
     // Check if user is not the owner
     if (group.owner_id === userId) {
-      res.header('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
-      res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       return res.status(400).json({ error: 'You cannot request to join your own group' });
     }
 
@@ -2310,9 +2313,6 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
             }
           });
 
-          res.header('Access-Control-Allow-Origin', 'https://www.king7offsuit.com');
-          res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-          res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
           res.status(201).json({ 
             message: 'Join request sent successfully',
             requestId: this.lastID
