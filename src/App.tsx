@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   createBrowserRouter,
   createRoutesFromElements,
@@ -84,6 +84,34 @@ const AppLayout = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const open = Boolean(anchorEl);
+
+  // Fetch notification count when user is available
+  useEffect(() => {
+    if (user) {
+      fetchNotificationCount();
+    }
+  }, [user]);
+
+  const fetchNotificationCount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const notifications = await response.json();
+        const unreadCount = notifications.filter((n: any) => !n.is_read).length;
+        setNotificationCount(unreadCount);
+      }
+    } catch (err) {
+      console.error('Error fetching notification count:', err);
+    }
+  };
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -161,22 +189,20 @@ const AppLayout = () => {
           {/* LOGIN/PROFILE BUTTON - ABSOLUTE RIGHT */}
           {(user || !user) && (
             <Box sx={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', zIndex: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              {user && (
-                <Tooltip title="Notifications" arrow>
-                  <IconButton
-                    size="large"
-                    color="inherit"
-                    onClick={() => setNotificationsOpen(true)}
-                    sx={{ p: 1 }}
-                  >
-                    <Badge badgeContent={notificationCount} color="error">
-                      <NotificationsIcon />
-                    </Badge>
-                  </IconButton>
-                </Tooltip>
-              )}
               {user ? (
                 <>
+                  <Tooltip title="Notifications" arrow>
+                    <IconButton
+                      size="large"
+                      color="inherit"
+                      onClick={() => setNotificationsOpen(true)}
+                      sx={{ p: 1 }}
+                    >
+                      <Badge badgeContent={notificationCount} color="error">
+                        <NotificationsIcon />
+                      </Badge>
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title={user.username} arrow>
                   <IconButton
                     size="large"

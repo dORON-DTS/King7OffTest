@@ -105,6 +105,7 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
       }
 
       const data = await response.json();
+      console.log('Fetched notifications:', data);
       setNotifications(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch notifications');
@@ -122,15 +123,19 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
         throw new Error('Authentication required');
       }
 
+      console.log('Approving request:', { groupId: notification.groupId, requestId: notification.requestId });
+
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups/${notification.groupId}/join-request/${notification.requestId}/approve`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to approve request');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to approve request');
       }
 
       // Refresh notifications
@@ -150,15 +155,19 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
         throw new Error('Authentication required');
       }
 
+      console.log('Rejecting request:', { groupId: notification.groupId, requestId: notification.requestId });
+
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups/${notification.groupId}/join-request/${notification.requestId}/reject`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to reject request');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reject request');
       }
 
       // Refresh notifications
@@ -211,7 +220,11 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
       anchor="right"
       open={open}
       onClose={onClose}
-      variant={isMobile ? "temporary" : "persistent"}
+      variant="temporary"
+      disableEscapeKeyDown={false}
+      BackdropProps={{
+        onClick: onClose
+      }}
     >
       <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
@@ -222,6 +235,21 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
           <IconButton onClick={onClose} sx={{ color: 'white' }}>
             <CloseIcon />
           </IconButton>
+        </Box>
+
+        {/* Close button for mobile */}
+        <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mb: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            sx={{ 
+              color: 'white', 
+              borderColor: 'white',
+              '&:hover': { borderColor: '#2196f3', color: '#2196f3' }
+            }}
+          >
+            Close
+          </Button>
         </Box>
 
         <Divider sx={{ mb: 2, bgcolor: '#444' }} />
