@@ -128,6 +128,26 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.log('[DB] Email column added to users table');
       }
     });
+
+    // Create group_join_requests table if it doesn't exist
+    db.run(`
+      CREATE TABLE IF NOT EXISTS group_join_requests (
+        id TEXT PRIMARY KEY,
+        group_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `, (err) => {
+      if (err) {
+        console.error('[DB] Error creating group_join_requests table:', err);
+      } else {
+        console.log('[DB] group_join_requests table ready');
+      }
+    });
   }
 });
 
@@ -2211,9 +2231,12 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
       }
 
       // Check if there's already a pending request
+      console.log('[DB] Checking for existing join request:', { groupId, userId });
+      
       db.get('SELECT id FROM group_join_requests WHERE group_id = ? AND user_id = ? AND status = "pending"', [groupId, userId], (err, existingRequest) => {
         if (err) {
-          return res.status(500).json({ error: 'Database error' });
+          console.error('[DB] Error checking existing join request:', err);
+          return res.status(500).json({ error: 'Database error: ' + err.message });
         }
         if (existingRequest) {
           return res.status(409).json({ error: 'You already have a pending request to join this group' });
@@ -2221,10 +2244,13 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
 
         // Create join request
         const requestId = uuidv4();
+        console.log('[DB] Attempting to insert join request:', { requestId, groupId, userId });
+        
         db.run('INSERT INTO group_join_requests (id, group_id, user_id, status) VALUES (?, ?, ?, "pending")', 
           [requestId, groupId, userId], function(err) {
           if (err) {
-            return res.status(500).json({ error: 'Database error' });
+            console.error('[DB] Error inserting join request:', err);
+            return res.status(500).json({ error: 'Database error: ' + err.message });
           }
 
           // Send email to group owner
