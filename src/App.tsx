@@ -12,6 +12,7 @@ import {
 import { ThemeProvider, createTheme, CssBaseline, Container, AppBar, Toolbar, Typography, Button, CircularProgress, Avatar, Menu, MenuItem, IconButton, Box, Tooltip, Badge } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsDrawer from './components/NotificationsDrawer';
+import ErrorBoundary from './components/ErrorBoundary';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { useUser } from './context/UserContext';
@@ -105,8 +106,13 @@ const AppLayout = () => {
 
       if (response.ok) {
         const notifications = await response.json();
-        const unreadCount = notifications.filter((n: any) => !n.is_read).length;
-        setNotificationCount(unreadCount);
+        if (Array.isArray(notifications)) {
+          const unreadCount = notifications.filter((n: any) => !n.is_read && !n.isRead).length;
+          setNotificationCount(unreadCount);
+        } else {
+          console.error('Notifications is not an array:', notifications);
+          setNotificationCount(0);
+        }
       }
     } catch (err) {
       console.error('Error fetching notification count:', err);
@@ -259,11 +265,13 @@ const AppLayout = () => {
       
       {/* Notifications Drawer */}
       {user && (
-        <NotificationsDrawer
-          open={notificationsOpen}
-          onClose={() => setNotificationsOpen(false)}
-          onNotificationCountChange={setNotificationCount}
-        />
+        <ErrorBoundary>
+          <NotificationsDrawer
+            open={notificationsOpen}
+            onClose={() => setNotificationsOpen(false)}
+            onNotificationCountChange={setNotificationCount}
+          />
+        </ErrorBoundary>
       )}
     </div>
   );

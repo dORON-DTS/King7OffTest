@@ -107,7 +107,26 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
 
       const data = await response.json();
       console.log('Fetched notifications:', data);
-      setNotifications(data);
+      
+      // Ensure data is an array and has valid structure
+      if (Array.isArray(data)) {
+        const validNotifications = data.map(notification => ({
+          id: notification.id || 'unknown',
+          type: notification.type || 'unknown',
+          title: notification.title || 'No title',
+          message: notification.message || 'No message',
+          groupName: notification.groupName || '',
+          requestingUser: notification.requestingUser || '',
+          createdAt: notification.created_at || notification.createdAt || new Date().toISOString(),
+          isRead: notification.is_read || notification.isRead || false,
+          groupId: notification.group_id || notification.groupId || '',
+          requestId: notification.request_id || notification.requestId || ''
+        }));
+        setNotifications(validNotifications);
+      } else {
+        console.error('Notifications data is not an array:', data);
+        setNotifications([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch notifications');
     } finally {
@@ -181,6 +200,12 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
 
   const formatDate = (dateString: string) => {
     console.log('Formatting date:', dateString);
+    
+    // Check if dateString is valid
+    if (!dateString || typeof dateString !== 'string') {
+      console.error('Invalid dateString:', dateString);
+      return 'Unknown date';
+    }
     
     // Handle different date formats
     let date: Date;
@@ -326,7 +351,7 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
 
                   {/* Debug info */}
                   <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>
-                    Debug: type={notification.type}, groupId={notification.groupId}, requestId={notification.requestId}
+                    Debug: type={notification.type || 'undefined'}, groupId={notification.groupId || 'undefined'}, requestId={notification.requestId || 'undefined'}
                   </Typography>
 
                   {notification.type === 'join_request' && notification.groupId && (
