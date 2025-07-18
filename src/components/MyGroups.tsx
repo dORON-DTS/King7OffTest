@@ -28,6 +28,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Group } from '../types';
 import GroupMembersDialog from './GroupMembersDialog';
 import CreateGroupDialog from './CreateGroupDialog';
+import JoinGroupDialog from './JoinGroupDialog';
 import { useUser } from '../context/UserContext';
 
 // Styled card with different border colors based on role
@@ -89,6 +90,7 @@ const MyGroups: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
+  const [joinGroupDialogOpen, setJoinGroupDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const theme = useTheme();
@@ -249,13 +251,40 @@ const MyGroups: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Create Group Button */}
-      {canCreateGroups && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          mb: 3 
-        }}>
+      {/* Create Group and Join Group Buttons */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        gap: 2,
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' }
+      }}>
+        {/* Join Group Button - Available to all users */}
+        <Button 
+          variant="contained" 
+          color="primary"
+          onClick={() => setJoinGroupDialogOpen(true)}
+          startIcon={<GroupIcon />}
+          sx={{ 
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            fontSize: '1.1rem',
+            background: '#2196f3',
+            boxShadow: '0 3px 5px 2px rgba(33, 150, 243, .3)',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 5px 8px 2px rgba(33, 150, 243, .4)',
+              background: '#1976d2'
+            }
+          }}
+        >
+          JOIN GROUP
+        </Button>
+
+        {/* Create Group Button - Only for admins and editors */}
+        {canCreateGroups && (
           <Button 
             variant="contained" 
             color="secondary"
@@ -278,8 +307,8 @@ const MyGroups: React.FC = () => {
           >
             CREATE NEW GROUP
           </Button>
-        </Box>
-      )}
+        )}
+      </Box>
 
       <Box sx={{ width: '100%', maxWidth: { xs: 400, sm: '100%' }, mx: { xs: 'auto', sm: 0 } }}>
         {groups.length === 0 ? (
@@ -441,6 +470,16 @@ const MyGroups: React.FC = () => {
         onClose={() => setCreateGroupDialogOpen(false)}
         onSuccess={() => {
           setCreateGroupDialogOpen(false);
+          fetchMyGroups(); // Refresh the groups list
+        }}
+      />
+
+      {/* Join Group Dialog */}
+      <JoinGroupDialog
+        open={joinGroupDialogOpen}
+        onClose={() => setJoinGroupDialogOpen(false)}
+        onSuccess={() => {
+          setJoinGroupDialogOpen(false);
           fetchMyGroups(); // Refresh the groups list
         }}
       />
