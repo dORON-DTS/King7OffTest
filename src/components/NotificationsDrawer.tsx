@@ -438,6 +438,55 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                       size="small"
                       variant="outlined"
                       onClick={async () => {
+                        try {
+                          const token = localStorage.getItem('token');
+                          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/debug/users`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          const data = await response.json();
+                          console.log('All users:', data);
+                        } catch (err) {
+                          console.error('Error fetching users:', err);
+                        }
+                      }}
+                      sx={{ 
+                        color: '#e91e63',
+                        borderColor: '#e91e63',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Debug Users
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={async () => {
+                        try {
+                          const token = localStorage.getItem('token');
+                          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/debug/cleanup-orphaned-requests`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          const data = await response.json();
+                          console.log('Cleanup result:', data);
+                          // Refresh notifications after cleanup
+                          fetchNotifications();
+                        } catch (err) {
+                          console.error('Error cleaning up orphaned requests:', err);
+                        }
+                      }}
+                      sx={{ 
+                        color: '#f44336',
+                        borderColor: '#f44336',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Cleanup Orphans
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={async () => {
                         if (!notification.groupId || !notification.requestId) return;
                         try {
                           const token = localStorage.getItem('token');

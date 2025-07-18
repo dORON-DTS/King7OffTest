@@ -2424,6 +2424,33 @@ app.get('/api/debug/join-requests', authenticate, (req, res) => {
   });
 });
 
+// Debug endpoint to check users
+app.get('/api/debug/users', authenticate, (req, res) => {
+  db.all('SELECT id, username, email FROM users ORDER BY created_at DESC LIMIT 20', (err, users) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(users);
+  });
+});
+
+// Debug endpoint to check specific user
+app.get('/api/debug/users/:userId', authenticate, (req, res) => {
+  const userId = req.params.userId;
+  
+  // Try both formats
+  db.get('SELECT * FROM users WHERE id = ? OR CAST(id AS TEXT) = ?', 
+    [userId, userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
+  });
+});
+
 // Get request status
 app.get('/api/groups/:groupId/join-request/:requestId/status', authenticate, (req, res) => {
   const groupId = req.params.groupId;
@@ -2506,15 +2533,16 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
         
       console.log('[DB] Looking for user:', { originalUserId: request.user_id, userIdToCheck });
       
+      // Try to find user, but don't fail if not found
       db.get('SELECT username, email FROM users WHERE id = ? OR CAST(id AS TEXT) = ?', 
         [userIdToCheck, userIdToCheck], (err, requestingUser) => {
         if (err) {
           console.error('[DB] Error finding user:', err);
-          return res.status(500).json({ error: 'Database error' });
+          // Continue anyway - the user might have been deleted
         }
         if (!requestingUser) {
-          console.error('[DB] User not found:', { userIdToCheck, originalUserId: request.user_id });
-          return res.status(404).json({ error: 'Requesting user not found' });
+          console.warn('[DB] User not found, but continuing:', { userIdToCheck, originalUserId: request.user_id });
+          // Continue with approval even if user not found
         }
 
         // Start transaction
@@ -2619,15 +2647,16 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
         
       console.log('[DB] Looking for user in reject:', { originalUserId: request.user_id, userIdToCheck });
       
+      // Try to find user, but don't fail if not found
       db.get('SELECT username, email FROM users WHERE id = ? OR CAST(id AS TEXT) = ?', 
         [userIdToCheck, userIdToCheck], (err, requestingUser) => {
         if (err) {
           console.error('[DB] Error finding user in reject:', err);
-          return res.status(500).json({ error: 'Database error' });
+          // Continue anyway - the user might have been deleted
         }
         if (!requestingUser) {
-          console.error('[DB] User not found in reject:', { userIdToCheck, originalUserId: request.user_id });
-          return res.status(404).json({ error: 'Requesting user not found' });
+          console.warn('[DB] User not found in reject, but continuing:', { userIdToCheck, originalUserId: request.user_id });
+          // Continue with rejection even if user not found
         }
 
         // Update request status
@@ -2689,6 +2718,35 @@ setInterval(() => {
     }
   });
 }, 24 * 60 * 60 * 1000); // Run daily
+
+// Clean up orphaned join requests (requests with non-existent users)
+app.post('/api/debug/cleanup-orphaned-requests', authenticate, (req, res) => {
+  db.all(`
+    SELECT gjr.* FROM group_join_requests gjr 
+    LEFT JOIN users u ON gjr.user_id = u.id OR CAST(gjr.user_id AS TEXT) = CAST(u.id AS TEXT)
+    WHERE u.id IS NULL AND gjr.status = 'pending'
+  `, (err, orphanedRequests) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (orphanedRequests.length === 0) {
+      return res.json({ message: 'No orphaned requests found' });
+    }
+    
+    const requestIds = orphanedRequests.map(r => r.id);
+    db.run('DELETE FROM group_join_requests WHERE id IN (' + requestIds.map(() => '?').join(',') + ')', 
+      requestIds, function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json({ 
+        message: `Cleaned up ${this.changes} orphaned requests`,
+        cleanedRequests: orphanedRequests
+      });
+    });
+  });
+});
 
 // Start server
 app.listen(PORT, () => {
