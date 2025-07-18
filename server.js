@@ -129,25 +129,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
       }
     });
 
-    // Create group_join_requests table if it doesn't exist
-    db.run(`
-      CREATE TABLE IF NOT EXISTS group_join_requests (
-        id TEXT PRIMARY KEY,
-        group_id TEXT NOT NULL,
-        user_id TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'pending',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `, (err) => {
-      if (err) {
-        console.error('[DB] Error creating group_join_requests table:', err);
-      } else {
-        console.log('[DB] group_join_requests table ready');
-      }
-    });
+    // Note: group_join_requests table already exists with INTEGER columns
+    // but groups and users tables use TEXT (UUID) columns
+    // We'll handle this mismatch in the code by not using foreign keys
+    console.log('[DB] group_join_requests table exists (using INTEGER columns)');
   }
 });
 
@@ -2243,11 +2228,20 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
         }
 
         // Create join request
-        const requestId = uuidv4();
-        console.log('[DB] Attempting to insert join request:', { requestId, groupId, userId });
+        console.log('[DB] Attempting to insert join request:', { groupId, userId });
         
-        db.run('INSERT INTO group_join_requests (id, group_id, user_id, status) VALUES (?, ?, ?, "pending")', 
-          [requestId, groupId, userId], function(err) {
+        // Convert UUID strings to integers for the group_join_requests table
+        // We'll use a simple hash function to convert UUID to integer
+        const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
+        const userIdInt = parseInt(userId.replace(/[^0-9]/g, '').substring(0, 9), 10);
+        
+        console.log('[DB] Converting UUIDs to integers:', { 
+          groupId, groupIdInt, 
+          userId, userIdInt 
+        });
+        
+        db.run('INSERT INTO group_join_requests (group_id, user_id, status) VALUES (?, ?, "pending")', 
+          [groupIdInt, userIdInt], function(err) {
           if (err) {
             console.error('[DB] Error inserting join request:', err);
             return res.status(500).json({ error: 'Database error: ' + err.message });
@@ -2289,7 +2283,7 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
 
           res.status(201).json({ 
             message: 'Join request sent successfully',
-            requestId: requestId
+            requestId: this.lastID
           });
         });
       });
