@@ -2258,38 +2258,45 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
           }
 
           // Send email to group owner
-          const transporter = nodemailer.createTransporter({
-            service: 'gmail',
-            auth: {
-              user: process.env.EMAIL_USER,
-              pass: process.env.EMAIL_PASS
-            }
-          });
+          try {
+            const transporter = nodemailer.createTransport({
+              service: 'gmail',
+              auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+              }
+            });
 
-          const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: group.owner_email,
-            subject: `New Join Request for Group: ${group.name}`,
-            html: `
-              <h2>New Join Request</h2>
-              <p>A user has requested to join your group <strong>${group.name}</strong>.</p>
-              <p><strong>Request Details:</strong></p>
-              <ul>
-                <li><strong>Group:</strong> ${group.name}</li>
-                <li><strong>Requesting User:</strong> ${req.user.username}</li>
-                <li><strong>Request Date:</strong> ${new Date().toLocaleString()}</li>
-              </ul>
-              <p>You can approve or reject this request from your group management panel.</p>
-              <p>Best regards,<br>Poker Management System</p>
-            `
-          };
+            const mailOptions = {
+              from: process.env.EMAIL_USER,
+              to: group.owner_email,
+              subject: `New Join Request for Group: ${group.name}`,
+              html: `
+                <h2>New Join Request</h2>
+                <p>A user has requested to join your group <strong>${group.name}</strong>.</p>
+                <p><strong>Request Details:</strong></p>
+                <ul>
+                  <li><strong>Group:</strong> ${group.name}</li>
+                  <li><strong>Requesting User:</strong> ${req.user.username}</li>
+                  <li><strong>Request Date:</strong> ${new Date().toLocaleString()}</li>
+                </ul>
+                <p>You can approve or reject this request from your group management panel.</p>
+                <p>Best regards,<br>Poker Management System</p>
+              `
+            };
 
-          transporter.sendMail(mailOptions, (emailErr) => {
-            if (emailErr) {
-              console.error('Error sending email:', emailErr);
-              // Don't fail the request if email fails
-            }
-          });
+            transporter.sendMail(mailOptions, (emailErr) => {
+              if (emailErr) {
+                console.error('Error sending email:', emailErr);
+                // Don't fail the request if email fails
+              } else {
+                console.log('Email sent successfully to:', group.owner_email);
+              }
+            });
+          } catch (emailError) {
+            console.error('Error setting up email:', emailError);
+            // Don't fail the request if email setup fails
+          }
 
           res.status(201).json({ 
             message: 'Join request sent successfully',
