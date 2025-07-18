@@ -2426,8 +2426,9 @@ app.get('/api/debug/join-requests', authenticate, (req, res) => {
 
 // Debug endpoint to check users
 app.get('/api/debug/users', authenticate, (req, res) => {
-  db.all('SELECT id, username, email FROM users ORDER BY created_at DESC LIMIT 20', (err, users) => {
+  db.all('SELECT id, username, email FROM users ORDER BY id DESC LIMIT 20', (err, users) => {
     if (err) {
+      console.error('[DB] Error fetching users:', err);
       return res.status(500).json({ error: 'Database error' });
     }
     res.json(users);
@@ -2735,15 +2736,52 @@ app.post('/api/debug/cleanup-orphaned-requests', authenticate, (req, res) => {
     }
     
     const requestIds = orphanedRequests.map(r => r.id);
-    db.run('DELETE FROM group_join_requests WHERE id IN (' + requestIds.map(() => '?').join(',') + ')', 
-      requestIds, function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json({ 
-        message: `Cleaned up ${this.changes} orphaned requests`,
-        cleanedRequests: orphanedRequests
+    
+    // Start transaction
+    db.serialize(() => {
+      // Delete orphaned requests
+      db.run('DELETE FROM group_join_requests WHERE id IN (' + requestIds.map(() => '?').join(',') + ')', 
+        requestIds, function(err) {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        // Update notifications to mark them as processed
+        db.run(`
+          UPDATE notifications 
+          SET type = 'request_rejected', 
+              title = 'Join Request Cancelled',
+              message = 'This join request was cancelled because the requesting user no longer exists.',
+              is_read = 1
+          WHERE request_id IN (` + requestIds.map(() => '?').join(',') + `) AND type = 'join_request'
+        `, requestIds, function(err) {
+          if (err) {
+            console.error('Error updating notifications:', err);
+          }
+          
+          res.json({ 
+            message: `Cleaned up ${this.changes} orphaned requests and updated notifications`,
+            cleanedRequests: orphanedRequests
+          });
+        });
       });
+    });
+  });
+});
+
+// Clean up old notifications manually
+app.post('/api/debug/cleanup-old-notifications', authenticate, (req, res) => {
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  
+  db.run('DELETE FROM notifications WHERE created_at < ?', [oneMonthAgo.toISOString()], function(err) {
+    if (err) {
+      console.error('[DB] Error cleaning up old notifications:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json({ 
+      message: `Cleaned up ${this.changes} old notifications`,
+      cutoffDate: oneMonthAgo.toISOString()
     });
   });
 });

@@ -487,6 +487,32 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                       size="small"
                       variant="outlined"
                       onClick={async () => {
+                        try {
+                          const token = localStorage.getItem('token');
+                          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/debug/cleanup-old-notifications`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          const data = await response.json();
+                          console.log('Old notifications cleanup result:', data);
+                          // Refresh notifications after cleanup
+                          fetchNotifications();
+                        } catch (err) {
+                          console.error('Error cleaning up old notifications:', err);
+                        }
+                      }}
+                      sx={{ 
+                        color: '#673ab7',
+                        borderColor: '#673ab7',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      Cleanup Old
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={async () => {
                         if (!notification.groupId || !notification.requestId) return;
                         try {
                           const token = localStorage.getItem('token');
