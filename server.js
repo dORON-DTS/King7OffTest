@@ -2052,9 +2052,12 @@ app.post('/api/admin/register', authenticate, authorize(['admin']), (req, res) =
   });
 });
 
-// Get shared table by ID (authenticated access only)
+// Get shared table by ID (authenticated access only, must be group member)
 app.get('/api/share/:id', authenticate, (req, res) => {
   const tableId = req.params.id;
+  const userId = req.user.id;
+  const userRole = req.user.role;
+
   db.get('SELECT * FROM tables WHERE id = ?', [tableId], (err, table) => {
     if (err) {
       return res.status(500).json({ error: 'Internal server error' });
@@ -2064,39 +2067,81 @@ app.get('/api/share/:id', authenticate, (req, res) => {
       return res.status(404).json({ error: 'Table not found' });
     }
 
-    db.all('SELECT * FROM players WHERE tableId = ?', [tableId], (err, players) => {
+    // If table is not in a group, allow access to authenticated users
+    if (!table.groupId) {
+      return fetchTableData();
+    }
+
+    // Table is in a group - check if user has access
+    // ADMIN can access any group
+    if (userRole === 'admin') {
+      return fetchTableData();
+    }
+
+    // Check if user is group owner
+    db.get('SELECT owner_id FROM groups WHERE id = ?', [table.groupId], (err, group) => {
       if (err) {
-        return res.status(500).json({ error: 'Error fetching players' });
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
       }
 
-      const playerPromises = players.map(player => {
-        return new Promise((resolve, reject) => {
-          db.all('SELECT * FROM buyins WHERE playerId = ?', [player.id], (err, buyIns) => {
-            if (err) {
-              reject(err);
-              return;
-            }
+      // If user is owner, allow access
+      if (group.owner_id === userId) {
+        return fetchTableData();
+      }
 
-            db.all('SELECT * FROM cashouts WHERE playerId = ?', [player.id], (err, cashOuts) => {
+      // Check if user is member of the group
+      db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [table.groupId, userId], (err, member) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (!member) {
+          return res.status(403).json({ error: 'You do not have access to this table. You must be a member of the group to view shared tables.' });
+        }
+
+        // User is a member, allow access
+        return fetchTableData();
+      });
+    });
+
+    function fetchTableData() {
+      db.all('SELECT * FROM players WHERE tableId = ?', [tableId], (err, players) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error fetching players' });
+        }
+
+        const playerPromises = players.map(player => {
+          return new Promise((resolve, reject) => {
+            db.all('SELECT * FROM buyins WHERE playerId = ?', [player.id], (err, buyIns) => {
               if (err) {
                 reject(err);
                 return;
               }
 
-              resolve({ ...player, buyIns, cashOuts });
+              db.all('SELECT * FROM cashouts WHERE playerId = ?', [player.id], (err, cashOuts) => {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+
+                resolve({ ...player, buyIns, cashOuts });
+              });
             });
           });
         });
-      });
 
-      Promise.all(playerPromises)
-        .then(playersWithTransactions => {
-          res.json({ ...table, players: playersWithTransactions });
-        })
-        .catch(err => {
-          res.status(500).json({ error: 'Error processing player data' });
-        });
-    });
+        Promise.all(playerPromises)
+          .then(playersWithTransactions => {
+            res.json({ ...table, players: playersWithTransactions });
+          })
+          .catch(err => {
+            res.status(500).json({ error: 'Error processing player data' });
+          });
+      });
+    }
   });
 });
 
