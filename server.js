@@ -2672,6 +2672,50 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
                   }
                 });
 
+                // Send email to requesting user
+                db.get('SELECT username, email FROM users WHERE id = ?', [originalUserId.id], (err, requestingUser) => {
+                  if (err) {
+                    console.error('Error fetching requesting user for email:', err);
+                    return;
+                  }
+                  
+                  if (!requestingUser || !requestingUser.email) {
+                    console.warn('No email found for requesting user:', originalUserId.id);
+                    return;
+                  }
+
+                  const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: requestingUser.email,
+                    subject: `Join Request Approved - ${group.name}`,
+                    html: `
+                      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #4caf50;">Join Request Approved!</h2>
+                        <p>Hello ${requestingUser.username},</p>
+                        <p>Great news! Your request to join the group <strong>"${group.name}"</strong> has been approved by the group owner.</p>
+                        <p>You are now a member of this group with <strong>viewer</strong> permissions. You can:</p>
+                        <ul>
+                          <li>View all tables in this group</li>
+                          <li>See group statistics and member information</li>
+                          <li>Access group-specific features</li>
+                        </ul>
+                        <p>You can manage your group membership and view your groups from the "My Groups" section in your dashboard.</p>
+                        <p>If you have any questions, please contact the group owner.</p>
+                        <br>
+                        <p>Best regards,<br>Poker Management System</p>
+                      </div>
+                    `
+                  };
+
+                  transporter.sendMail(mailOptions, (emailErr) => {
+                    if (emailErr) {
+                      console.error('Error sending approval email:', emailErr);
+                    } else {
+                      console.log('Approval email sent successfully to:', requestingUser.email);
+                    }
+                  });
+                });
+
                 res.json({ message: 'Join request approved successfully' });
               });
             });
@@ -2797,6 +2841,50 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
               if (err) {
                 console.error('Error creating rejection notification:', err);
               }
+            });
+
+            // Send email to requesting user
+            db.get('SELECT username, email FROM users WHERE id = ?', [originalUserId.id], (err, requestingUser) => {
+              if (err) {
+                console.error('Error fetching requesting user for rejection email:', err);
+                return;
+              }
+              
+              if (!requestingUser || !requestingUser.email) {
+                console.warn('No email found for requesting user (rejection):', originalUserId.id);
+                return;
+              }
+
+              const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: requestingUser.email,
+                subject: `Join Request Rejected - ${group.name}`,
+                html: `
+                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #f44336;">Join Request Rejected</h2>
+                    <p>Hello ${requestingUser.username},</p>
+                    <p>We regret to inform you that your request to join the group <strong>"${group.name}"</strong> has been rejected by the group owner.</p>
+                    <p>This decision was made by the group owner and may be due to various reasons such as:</p>
+                    <ul>
+                      <li>Group capacity limitations</li>
+                      <li>Specific membership requirements</li>
+                      <li>Group owner's discretion</li>
+                    </ul>
+                    <p>You can still explore other groups or contact the group owner directly if you have any questions about this decision.</p>
+                    <p>Thank you for your interest in joining our community.</p>
+                    <br>
+                    <p>Best regards,<br>Poker Management System</p>
+                  </div>
+                `
+              };
+
+              transporter.sendMail(mailOptions, (emailErr) => {
+                if (emailErr) {
+                  console.error('Error sending rejection email:', emailErr);
+                } else {
+                  console.log('Rejection email sent successfully to:', requestingUser.email);
+                }
+              });
             });
           });
 
