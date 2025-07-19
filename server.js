@@ -2510,7 +2510,7 @@ app.put('/api/groups/:id/members/:userId', authenticate, (req, res) => {
   const { role } = req.body;
   const requestingUserId = req.user.id;
 
-  if (!role || !['editor', 'viewer'].includes(role)) {
+  if (!role || !['editor', 'viewer', 'owner'].includes(role)) {
     return res.status(400).json({ error: 'Valid role is required' });
   }
 
@@ -2523,17 +2523,47 @@ app.put('/api/groups/:id/members/:userId', authenticate, (req, res) => {
       return res.status(403).json({ error: 'Only group owner can update member roles' });
     }
 
-    // Update member role
-    db.run('UPDATE group_members SET role = ? WHERE group_id = ? AND user_id = ?', 
-      [role, groupId, memberUserId], function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Member not found' });
-      }
-      res.json({ message: 'Member role updated successfully' });
-    });
+    // Check if this is an ownership transfer
+    if (role === 'owner') {
+      // Start transaction for ownership transfer
+      db.serialize(() => {
+        // Update group owner
+        db.run('UPDATE groups SET owner_id = ? WHERE id = ?', [memberUserId, groupId], function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          // Remove the new owner from group_members table (since they're now the owner)
+          db.run('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, memberUserId], function(err) {
+            if (err) {
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            // Add the old owner as a manager in group_members
+            db.run('INSERT INTO group_members (group_id, user_id, role, created_at) VALUES (?, ?, ?, ?)', 
+              [groupId, requestingUserId, 'editor', new Date().toISOString()], function(err) {
+              if (err) {
+                return res.status(500).json({ error: 'Database error' });
+              }
+              
+              res.json({ message: 'Ownership transferred successfully' });
+            });
+          });
+        });
+      });
+    } else {
+      // Regular role update
+      db.run('UPDATE group_members SET role = ? WHERE group_id = ? AND user_id = ?', 
+        [role, groupId, memberUserId], function(err) {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Member not found' });
+        }
+        res.json({ message: 'Member role updated successfully' });
+      });
+    }
   });
 });
 
