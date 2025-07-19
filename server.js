@@ -2582,73 +2582,98 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
             }
 
             // Add user to group members
-            console.log('[DB] Adding user to group:', { 
-              groupId, 
-              userId: request.user_id, 
-              groupName: group.name 
-            });
+            // Convert the integer user_id back to UUID format
+            // We need to find the original UUID by matching the integer hash
+            const userIdInt = request.user_id;
+            console.log('[DB] Looking for user with integer ID:', userIdInt);
             
-            // Check if user is already a member
-            db.get('SELECT id FROM group_members WHERE group_id = ? AND user_id = ?', 
-              [groupId, request.user_id], (err, existingMember) => {
+            // Find the original UUID by matching the integer hash
+            db.all('SELECT id FROM users', (err, allUsers) => {
               if (err) {
-                console.error('[DB] Error checking existing member:', err);
+                console.error('[DB] Error fetching all users:', err);
                 return res.status(500).json({ error: 'Database error' });
               }
               
-              if (existingMember) {
-                console.log('[DB] User already a member:', { groupId, userId: request.user_id });
-                // Continue with notification update
-              } else {
-                // Add new member
-                db.run('INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, "viewer")', 
-                  [groupId, request.user_id], function(err) {
-                  if (err) {
-                    console.error('[DB] Error adding user to group:', err);
-                    return res.status(500).json({ error: 'Database error' });
-                  }
-                  console.log('[DB] User added to group successfully:', { 
-                    groupId, 
-                    userId: request.user_id,
-                    changes: this.changes,
-                    lastID: this.lastID
-                  });
-                });
+              // Find the user whose UUID hash matches the integer
+              const originalUserId = allUsers.find(user => {
+                const userHash = parseInt(user.id.replace(/[^0-9]/g, '').substring(0, 9), 10);
+                return userHash === userIdInt;
+              });
+              
+              if (!originalUserId) {
+                console.error('[DB] Could not find original user ID for integer:', userIdInt);
+                return res.status(500).json({ error: 'Could not find original user ID' });
               }
-
-              // Update existing notification to mark it as processed
-              db.run(`
-                UPDATE notifications 
-                SET type = 'request_approved', 
-                    title = 'Join Request Approved',
-                    message = ?,
-                    is_read = 1
-                WHERE request_id = ? AND type = 'join_request'
-              `, [
-                `Your request to join group "${group.name}" has been approved!`,
-                requestId
-              ], function(err) {
-                if (err) {
-                  console.error('Error updating notification:', err);
-                }
+              
+              console.log('[DB] Found original user ID:', { 
+                integerId: userIdInt, 
+                originalUserId: originalUserId.id,
+                groupId, 
+                groupName: group.name 
               });
-
-              // Create new notification for requesting user
-              db.run(`
-                INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
-                VALUES (?, 'request_approved', 'Join Request Approved', ?, ?, ?)
-              `, [
-                request.user_id,
-                `Your request to join group "${group.name}" has been approved!`,
-                groupId,
-                requestId
-              ], function(err) {
+              
+              // Check if user is already a member
+              db.get('SELECT id FROM group_members WHERE group_id = ? AND user_id = ?', 
+                [groupId, originalUserId.id], (err, existingMember) => {
                 if (err) {
-                  console.error('Error creating approval notification:', err);
+                  console.error('[DB] Error checking existing member:', err);
+                  return res.status(500).json({ error: 'Database error' });
                 }
-              });
+                
+                if (existingMember) {
+                  console.log('[DB] User already a member:', { groupId, userId: originalUserId.id });
+                  // Continue with notification update
+                } else {
+                  // Add new member
+                  db.run('INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, "viewer")', 
+                    [groupId, originalUserId.id], function(err) {
+                    if (err) {
+                      console.error('[DB] Error adding user to group:', err);
+                      return res.status(500).json({ error: 'Database error' });
+                    }
+                    console.log('[DB] User added to group successfully:', { 
+                      groupId, 
+                      userId: originalUserId.id,
+                      changes: this.changes,
+                      lastID: this.lastID
+                    });
+                  });
+                }
 
-              res.json({ message: 'Join request approved successfully' });
+                // Update existing notification to mark it as processed
+                db.run(`
+                  UPDATE notifications 
+                  SET type = 'request_approved', 
+                      title = 'Join Request Approved',
+                      message = ?,
+                      is_read = 1
+                  WHERE request_id = ? AND type = 'join_request'
+                `, [
+                  `Your request to join group "${group.name}" has been approved!`,
+                  requestId
+                ], function(err) {
+                  if (err) {
+                    console.error('Error updating notification:', err);
+                  }
+                });
+
+                // Create new notification for requesting user
+                db.run(`
+                  INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
+                  VALUES (?, 'request_approved', 'Join Request Approved', ?, ?, ?)
+                `, [
+                  originalUserId.id,
+                  `Your request to join group "${group.name}" has been approved!`,
+                  groupId,
+                  requestId
+                ], function(err) {
+                  if (err) {
+                    console.error('Error creating approval notification:', err);
+                  }
+                });
+
+                res.json({ message: 'Join request approved successfully' });
+              });
             });
           });
         });
@@ -2739,18 +2764,40 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
           });
 
           // Create new notification for requesting user
-          db.run(`
-            INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
-            VALUES (?, 'request_rejected', 'Join Request Rejected', ?, ?, ?)
-          `, [
-            request.user_id,
-            `Your request to join group "${group.name}" has been rejected.`,
-            groupId,
-            requestId
-          ], function(err) {
+          // Convert the integer user_id back to UUID format
+          const userIdInt = request.user_id;
+          
+          // Find the original UUID by matching the integer hash
+          db.all('SELECT id FROM users', (err, allUsers) => {
             if (err) {
-              console.error('Error creating rejection notification:', err);
+              console.error('[DB] Error fetching all users for rejection:', err);
+              return;
             }
+            
+            // Find the user whose UUID hash matches the integer
+            const originalUserId = allUsers.find(user => {
+              const userHash = parseInt(user.id.replace(/[^0-9]/g, '').substring(0, 9), 10);
+              return userHash === userIdInt;
+            });
+            
+            if (!originalUserId) {
+              console.error('[DB] Could not find original user ID for rejection:', userIdInt);
+              return;
+            }
+            
+            db.run(`
+              INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
+              VALUES (?, 'request_rejected', 'Join Request Rejected', ?, ?, ?)
+            `, [
+              originalUserId.id,
+              `Your request to join group "${group.name}" has been rejected.`,
+              groupId,
+              requestId
+            ], function(err) {
+              if (err) {
+                console.error('Error creating rejection notification:', err);
+              }
+            });
           });
 
           res.json({ message: 'Join request rejected successfully' });
