@@ -198,7 +198,7 @@ const TableList: React.FC = () => {
       smallBlind: '',
       bigBlind: '',
       location: '',
-      groupId: '',
+      groupId: selectedGroupId || '', // Set default to currently selected group
       minimumBuyIn: ''
     });
     setFormErrors({});
