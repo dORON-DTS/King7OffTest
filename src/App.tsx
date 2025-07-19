@@ -127,18 +127,7 @@ const AppLayout = () => {
     }
   }, [location.pathname, user, fetchNotificationCount]);
 
-  // Periodic notification check every 2 minutes for quick updates
-  useEffect(() => {
-    if (!user) return;
-
-    const interval = setInterval(() => {
-      fetchNotificationCount();
-    }, 2 * 60 * 1000); // 2 minutes
-
-    return () => clearInterval(interval);
-  }, [user, fetchNotificationCount]);
-
-  // Periodic notification check every 30 minutes for backup
+  // Periodic notification check every 30 minutes
   useEffect(() => {
     if (!user) return;
 
@@ -168,7 +157,7 @@ const AppLayout = () => {
     if (!user) return;
 
     let lastCheck = Date.now();
-    const minInterval = 5000; // Minimum 5 seconds between checks
+    const minInterval = 30000; // Minimum 30 seconds between checks
 
     const handleUserActivity = () => {
       const now = Date.now();
