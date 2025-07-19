@@ -74,6 +74,10 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
   // Remove member state
   const [removingMember, setRemovingMember] = useState<string | null>(null);
   
+  // Transfer ownership state
+  const [transferOwnershipDialog, setTransferOwnershipDialog] = useState(false);
+  const [transferTargetMember, setTransferTargetMember] = useState<GroupMember | null>(null);
+  
   const { user: currentUser, logout } = useUser();
 
   useEffect(() => {
@@ -178,6 +182,16 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
   };
 
   const handleUpdateMemberRole = async (memberId: string, newRole: string) => {
+    // Check if this is an ownership transfer
+    if (newRole === 'owner') {
+      const targetMember = allMembers.find(member => member.id === memberId);
+      if (targetMember) {
+        setTransferTargetMember(targetMember);
+        setTransferOwnershipDialog(true);
+        return;
+      }
+    }
+
     try {
       setError(null);
       
@@ -210,6 +224,46 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
         return; // User was blocked and logged out
       }
       setError(err instanceof Error ? err.message : 'Failed to update member role');
+    }
+  };
+
+  const handleTransferOwnership = async () => {
+    if (!transferTargetMember) return;
+
+    try {
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/groups/${groupId}/members/${transferTargetMember.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ role: 'owner' })
+      }, logout);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to transfer ownership');
+      }
+
+      setSuccess('Ownership transferred successfully');
+      setEditingMember(null);
+      setTransferOwnershipDialog(false);
+      setTransferTargetMember(null);
+      
+      // Refresh members list
+      await fetchMembers();
+    } catch (err) {
+      if (err instanceof Error && err.message === 'User blocked') {
+        return; // User was blocked and logged out
+      }
+      setError(err instanceof Error ? err.message : 'Failed to transfer ownership');
     }
   };
 
@@ -454,6 +508,9 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
                               >
                                 <MenuItem value="viewer">Member</MenuItem>
                                 <MenuItem value="editor">Manager</MenuItem>
+                                {currentUser?.id === membersData?.owner.id && member.role !== 'owner' && (
+                                  <MenuItem value="owner">Owner</MenuItem>
+                                )}
                               </Select>
                             </FormControl>
                             <Button
@@ -540,6 +597,68 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
             variant="contained"
           >
             Remove
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Transfer Ownership Confirmation Dialog */}
+      <Dialog
+        open={transferOwnershipDialog}
+        onClose={() => {
+          setTransferOwnershipDialog(false);
+          setTransferTargetMember(null);
+          setEditingMember(null);
+        }}
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: '#ff9800', fontWeight: 'bold' }}>
+          ⚠️ Transfer Group Ownership
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2, fontWeight: 'bold' }}>
+            You are about to transfer ownership of the group "{groupName}" to {transferTargetMember?.username}.
+          </Typography>
+          <Typography sx={{ mb: 2, color: '#ff9800' }}>
+            This action will:
+          </Typography>
+          <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+            <Typography component="li" sx={{ mb: 1 }}>
+              Remove your ownership of this group
+            </Typography>
+            <Typography component="li" sx={{ mb: 1 }}>
+              Transfer full control to {transferTargetMember?.username}
+            </Typography>
+            <Typography component="li" sx={{ mb: 1 }}>
+              Change your role to Manager
+            </Typography>
+          </Box>
+          <Typography sx={{ color: '#f44336', fontWeight: 'bold' }}>
+            This action cannot be undone. Are you sure you want to proceed?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              setTransferOwnershipDialog(false);
+              setTransferTargetMember(null);
+              setEditingMember(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleTransferOwnership}
+            color="warning" 
+            variant="contained"
+            sx={{ fontWeight: 'bold' }}
+          >
+            Transfer Ownership
           </Button>
         </DialogActions>
       </Dialog>
