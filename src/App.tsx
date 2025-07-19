@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   createBrowserRouter,
   createRoutesFromElements,
@@ -86,21 +86,59 @@ const AppLayout = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const open = Boolean(anchorEl);
 
+  const fetchNotificationCount = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const notifications = await response.json();
+        if (Array.isArray(notifications)) {
+          const unreadCount = notifications.filter((n: any) => !n.is_read && !n.isRead).length;
+          setNotificationCount(unreadCount);
+          console.log('Updated notification count:', unreadCount);
+        } else {
+          console.error('Notifications is not an array:', notifications);
+          setNotificationCount(0);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching notification count:', err);
+    }
+  }, []);
+
   // Fetch notification count when user is available
   useEffect(() => {
     if (user) {
       fetchNotificationCount();
     }
-  }, [user]);
+  }, [user, fetchNotificationCount]);
 
   // Check notifications when user navigates between pages
   useEffect(() => {
     if (user) {
       fetchNotificationCount();
     }
-  }, [location.pathname, user]);
+  }, [location.pathname, user, fetchNotificationCount]);
 
-  // Periodic notification check every 30 minutes
+  // Periodic notification check every 2 minutes for quick updates
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      fetchNotificationCount();
+    }, 2 * 60 * 1000); // 2 minutes
+
+    return () => clearInterval(interval);
+  }, [user, fetchNotificationCount]);
+
+  // Periodic notification check every 30 minutes for backup
   useEffect(() => {
     if (!user) return;
 
@@ -109,7 +147,7 @@ const AppLayout = () => {
     }, 30 * 60 * 1000); // 30 minutes
 
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, fetchNotificationCount]);
 
   // Check notifications when user returns to tab
   useEffect(() => {
@@ -123,14 +161,14 @@ const AppLayout = () => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [user]);
+  }, [user, fetchNotificationCount]);
 
   // Check notifications on user activity (clicks, key presses)
   useEffect(() => {
     if (!user) return;
 
     let lastCheck = Date.now();
-    const minInterval = 10000; // Minimum 10 seconds between checks
+    const minInterval = 5000; // Minimum 5 seconds between checks
 
     const handleUserActivity = () => {
       const now = Date.now();
@@ -150,33 +188,7 @@ const AppLayout = () => {
       document.removeEventListener('keydown', handleUserActivity);
       document.removeEventListener('scroll', handleUserActivity);
     };
-  }, [user]);
-
-  const fetchNotificationCount = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const notifications = await response.json();
-        if (Array.isArray(notifications)) {
-          const unreadCount = notifications.filter((n: any) => !n.is_read && !n.isRead).length;
-          setNotificationCount(unreadCount);
-        } else {
-          console.error('Notifications is not an array:', notifications);
-          setNotificationCount(0);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching notification count:', err);
-    }
-  };
+  }, [user, fetchNotificationCount]);
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
