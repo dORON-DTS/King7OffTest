@@ -2414,6 +2414,26 @@ app.put('/api/notifications/:id/read', authenticate, (req, res) => {
   });
 });
 
+// Mark all notifications as read for a user
+app.put('/api/notifications/mark-all-read', authenticate, (req, res) => {
+  const userId = req.user.id;
+  
+  console.log('[API] Marking all notifications as read for user:', userId);
+  
+  db.run('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0', 
+    [userId], function(err) {
+    if (err) {
+      console.error('[DB] Error marking notifications as read:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    console.log('[API] Marked', this.changes, 'notifications as read');
+    res.json({ 
+      message: 'All notifications marked as read',
+      updatedCount: this.changes
+    });
+  });
+});
+
 // Debug endpoint to check join requests
 app.get('/api/debug/join-requests', authenticate, (req, res) => {
   db.all('SELECT * FROM group_join_requests ORDER BY created_at DESC LIMIT 20', (err, requests) => {

@@ -79,6 +79,7 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
   useEffect(() => {
     if (open) {
       fetchNotifications();
+      markAllAsRead();
     }
   }, [open]);
 
@@ -131,6 +132,39 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
       setError(err instanceof Error ? err.message : 'Failed to fetch notifications');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications/mark-all-read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark notifications as read');
+      }
+
+      const result = await response.json();
+      console.log('Marked notifications as read:', result);
+      
+      // Update local notifications to mark them as read
+      setNotifications(prev => prev.map(notification => ({
+        ...notification,
+        isRead: true
+      })));
+    } catch (err) {
+      console.error('Error marking notifications as read:', err);
+      // Don't show error to user, just log it
     }
   };
 
