@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import GroupIcon from '@mui/icons-material/Group';
 
 // Card sliding animation
 const slideCard = keyframes`
@@ -303,30 +304,54 @@ const LandingPage: React.FC = () => {
             mt: { xs: 2, sm: 4 },
           }}
         >
-          <Button
-            variant="contained"
-            size="large"
-            onClick={() => navigate('/statistics')}
-            startIcon={<BarChartIcon />}
-            sx={{
-              bgcolor: '#43a047',
-              color: '#fff',
-              fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
-              padding: { xs: '12px 24px', sm: '12px 24px', md: '16px 32px' },
-              '&:hover': {
-                bgcolor: '#388e3c',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 8px rgba(0,0,0,0.3)'
-              },
-              boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
-              borderRadius: 2,
-              width: { xs: '100%', sm: 'auto' },
-              marginBottom: { xs: 2, sm: 0 },
-              transition: 'all 0.3s ease'
-            }}
-          >
-            Statistics
-          </Button>
+                  <Button
+          variant="contained"
+          size="large"
+          onClick={() => navigate('/statistics')}
+          startIcon={<BarChartIcon />}
+          sx={{
+            bgcolor: '#43a047',
+            color: '#fff',
+            fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
+            padding: { xs: '12px 24px', sm: '12px 24px', md: '16px 32px' },
+            '&:hover': {
+              bgcolor: '#388e3c',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 8px rgba(0,0,0,0.3)'
+            },
+            boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+            borderRadius: 2,
+            width: { xs: '100%', sm: 'auto' },
+            marginBottom: { xs: 2, sm: 0 },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          Statistics
+        </Button>
+        <Button
+          variant="contained"
+          size="large"
+          onClick={() => navigate('/my-groups')}
+          startIcon={<GroupIcon />}
+          sx={{
+            bgcolor: '#9c27b0',
+            color: '#fff',
+            fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
+            padding: { xs: '12px 24px', sm: '12px 24px', md: '16px 32px' },
+            '&:hover': {
+              bgcolor: '#7b1fa2',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 8px rgba(0,0,0,0.3)'
+            },
+            boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+            borderRadius: 2,
+            width: { xs: '100%', sm: 'auto' },
+            marginBottom: { xs: 2, sm: 0 },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          My Groups
+        </Button>
         <Button
           variant="contained"
           size="large"
@@ -348,7 +373,7 @@ const LandingPage: React.FC = () => {
             transition: 'all 0.3s ease'
           }}
         >
-          Tables List
+          My Tables
         </Button>
         </Box>
       </Box>
