@@ -14,6 +14,7 @@ import {
   Box,
   CircularProgress,
   Alert,
+  Snackbar,
   useTheme,
   useMediaQuery
 } from '@mui/material';
@@ -111,6 +112,7 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
 
   useEffect(() => {
     if (searchTerm.length >= 3) {
@@ -193,7 +195,7 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
       const result = await response.json();
       
       // Show success message
-      alert('Join request sent successfully! The group owner will be notified.');
+      setShowSuccessSnackbar(true);
       
       // Close dialog and refresh
       onClose();
@@ -217,13 +219,14 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
   };
 
   return (
-    <StyledDialog 
-      open={open} 
-      onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
-      fullScreen={isMobile}
-    >
+    <>
+      <StyledDialog 
+        open={open} 
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={isMobile}
+      >
       <DialogTitle sx={{ 
         textAlign: 'center',
         background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
@@ -337,6 +340,38 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
         </Button>
       </DialogActions>
     </StyledDialog>
+
+    {/* Success Snackbar */}
+    <Snackbar
+      open={showSuccessSnackbar}
+      autoHideDuration={6000}
+      onClose={() => setShowSuccessSnackbar(false)}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+    >
+      <Alert
+        onClose={() => setShowSuccessSnackbar(false)}
+        severity="success"
+        sx={{
+          width: '100%',
+          backgroundColor: '#4caf50',
+          color: 'white',
+          '& .MuiAlert-icon': {
+            color: 'white',
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <GroupIcon sx={{ fontSize: 20 }} />
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            Join request sent successfully!
+          </Typography>
+        </Box>
+        <Typography variant="body2" sx={{ mt: 0.5 }}>
+          The group owner will be notified and will respond to your request.
+        </Typography>
+      </Alert>
+    </Snackbar>
+    </>
   );
 };
 
