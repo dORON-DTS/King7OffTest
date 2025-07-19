@@ -156,7 +156,9 @@ const MyGroups: React.FC = () => {
   const formatDate = (date: Date | string) => {
     if (!date) return 'Unknown';
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('he-IL');
+    return dateObj.toLocaleDateString('he-IL', {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
   };
 
   // Check if user can create groups (admin or editor)

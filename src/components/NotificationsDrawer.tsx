@@ -266,7 +266,9 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('he-IL', {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
   };
 
   const getNotificationIcon = (type: string) => {

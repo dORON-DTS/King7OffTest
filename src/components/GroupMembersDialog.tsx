@@ -328,7 +328,9 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('he-IL');
+    return new Date(date).toLocaleDateString('he-IL', {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
   };
 
   // Sort members by role priority and join date

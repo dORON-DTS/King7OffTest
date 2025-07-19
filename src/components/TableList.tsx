@@ -343,7 +343,9 @@ const TableList: React.FC = () => {
     if (!(date instanceof Date)) {
       date = new Date(date);
     }
-    return date.toLocaleDateString('he-IL');
+    return date.toLocaleDateString('he-IL', {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
   };
 
   // Filter tables by group

@@ -510,7 +510,9 @@ const UserManagement: React.FC = () => {
                             <Box sx={{ fontSize: '0.75rem', color: user.isVerified ? 'success.main' : 'error.main', fontWeight: user.isVerified ? 'bold' : 'normal', mt: 0.5 }}>
                               Verified: {user.isVerified ? 'Yes' : 'No'}
                             </Box>
-                            <Box>Created: {new Date(user.createdAt).toLocaleDateString()}</Box>
+                            <Box>Created: {new Date(user.createdAt).toLocaleDateString('he-IL', {
+                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                })}</Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                               <span>Status:</span>
                               <Switch
@@ -601,7 +603,9 @@ const UserManagement: React.FC = () => {
                         </Box>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                        {new Date(user.createdAt).toLocaleDateString()}
+                                                    {new Date(user.createdAt).toLocaleDateString('he-IL', {
+                              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                            })}
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
