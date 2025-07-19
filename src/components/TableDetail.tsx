@@ -29,6 +29,7 @@ import {
   Toolbar,
   TableCell
 } from '@mui/material';
+import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -1330,13 +1331,14 @@ const TableDetail: React.FC = () => {
             sx={{ mb: 2 }}
             InputProps={{ startAdornment: '$' }}
           />
-          <TextField
+          <GooglePlacesAutocomplete
             label="Location"
             value={editForm.location}
-            onChange={handleEditInputChange('location')}
-            fullWidth
+            onChange={(value) => {
+              setEditForm(prev => ({ ...prev, location: value }));
+            }}
+            placeholder="Start typing to search for a location..."
             sx={{ mb: 2 }}
-            placeholder="Optional"
           />
           <TextField
             select

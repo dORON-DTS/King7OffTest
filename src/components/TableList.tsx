@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Table, CreateTableFormData, Group } from '../types';
 import { useUser } from '../context/UserContext';
 import CreateGroupDialog from './CreateGroupDialog';
+import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 import { 
   Box, 
   Typography, 
@@ -772,12 +773,13 @@ const TableList: React.FC = () => {
                 startAdornment: '$'
               }}
             />
-            <TextField
+            <GooglePlacesAutocomplete
               label="Location"
               value={formData.location}
-              onChange={handleInputChange('location')}
-              fullWidth
-              placeholder="Optional"
+              onChange={(value) => {
+                setFormData(prev => ({ ...prev, location: value }));
+              }}
+              placeholder="Start typing to search for a location..."
             />
             <TextField
               select
