@@ -2052,8 +2052,8 @@ app.post('/api/admin/register', authenticate, authorize(['admin']), (req, res) =
   });
 });
 
-// Get shared table by ID (public access)
-app.get('/api/share/:id', (req, res) => {
+// Get shared table by ID (authenticated access only)
+app.get('/api/share/:id', authenticate, (req, res) => {
   const tableId = req.params.id;
   db.get('SELECT * FROM tables WHERE id = ?', [tableId], (err, table) => {
     if (err) {
@@ -2100,8 +2100,8 @@ app.get('/api/share/:id', (req, res) => {
   });
 });
 
-// Get unique player names from statistics
-app.get('/api/statistics/players', (req, res) => {
+// Get unique player names from statistics (authenticated access only)
+app.get('/api/statistics/players', authenticate, (req, res) => {
   const query = `
     SELECT DISTINCT p.name 
     FROM players p

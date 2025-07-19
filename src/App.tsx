@@ -137,10 +137,8 @@ const AppLayout = () => {
     );
   }
 
-  // Allow unauthenticated access to /statistics, /share/:id, landing page, login, register, and password reset pages
+  // Allow unauthenticated access to landing page, login, register, and password reset pages
   const isPublicRoute =
-    location.pathname.startsWith('/share/') ||
-    location.pathname === '/statistics' ||
     location.pathname === '/' ||
     location.pathname === '/login' ||
     location.pathname === '/register' ||
@@ -323,8 +321,16 @@ const router = createBrowserRouter(
           <TableDetail />
         </ProtectedRoute>
       } />
-      <Route path="share/:id" element={<SharedTableView />} />
-      <Route path="statistics" element={<StatisticsView />} />
+      <Route path="share/:id" element={
+        <ProtectedRoute>
+          <SharedTableView />
+        </ProtectedRoute>
+      } />
+      <Route path="statistics" element={
+        <ProtectedRoute>
+          <StatisticsView />
+        </ProtectedRoute>
+      } />
       <Route path="users" element={
         <ProtectedRoute requiredRole="admin">
           <UserManagement />
