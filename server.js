@@ -2394,6 +2394,7 @@ app.get('/api/groups/:id', authenticate, (req, res) => {
 app.get('/api/groups/:id/members', authenticate, (req, res) => {
   const groupId = req.params.id;
   const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
 
   // Check if user has access to this group
   db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
@@ -2402,6 +2403,11 @@ app.get('/api/groups/:id/members', authenticate, (req, res) => {
     }
     if (!group) {
       return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // ADMIN can access any group
+    if (isAdmin) {
+      return fetchGroupMembers();
     }
 
     // Check if user is owner or member
