@@ -477,7 +477,11 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
                       xs: editingMember === member.id ? 4 : 1,
                       sm: 1
                     },
-                    bgcolor: 'rgba(255, 255, 255, 0.02)'
+                    bgcolor: 'rgba(255, 255, 255, 0.02)',
+                    minHeight: editingMember === member.id ? { xs: 'auto', sm: 'auto' } : 'auto',
+                    pb: editingMember === member.id ? { xs: 2, sm: 0 } : 0,
+                    flexDirection: editingMember === member.id ? { xs: 'column', sm: 'row' } : 'row',
+                    alignItems: editingMember === member.id ? { xs: 'flex-start', sm: 'center' } : 'center'
                   }}
                 >
                   <ListItemText
@@ -514,11 +518,18 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
                     }
                   />
                   
-                  <ListItemSecondaryAction>
+                  <ListItemSecondaryAction sx={{ 
+                    position: editingMember === member.id ? { xs: 'static', sm: 'absolute' } : 'absolute',
+                    right: editingMember === member.id ? { xs: 'auto', sm: 16 } : 16,
+                    top: editingMember === member.id ? { xs: 'auto', sm: '50%' } : '50%',
+                    transform: editingMember === member.id ? { xs: 'none', sm: 'translateY(-50%)' } : 'translateY(-50%)',
+                    mt: editingMember === member.id ? { xs: 2, sm: 0 } : 0,
+                    width: editingMember === member.id ? { xs: '100%', sm: 'auto' } : 'auto'
+                  }}>
                     {member.role !== 'owner' && (
-                      <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: editingMember === member.id ? { xs: 'flex-start', sm: 'flex-end' } : 'flex-end' }}>
                         {editingMember === member.id ? (
-                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
                             <FormControl size="small">
                               <Select
                                 value={editingRole}
