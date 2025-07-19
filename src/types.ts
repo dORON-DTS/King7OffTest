@@ -36,6 +36,7 @@ export interface Group {
   isActive: boolean;
   owner_id?: string;
   userRole?: string; // 'owner', 'editor', 'viewer' - for groups where user is a member
+  tableCount?: number; // number of tables in this group
 }
 
 export interface Table {

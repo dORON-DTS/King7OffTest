@@ -2243,18 +2243,33 @@ app.get('/api/my-groups', authenticate, (req, res) => {
   const isAdmin = req.user.role === 'admin';
 
   if (isAdmin) {
-    // Admin gets all groups with their actual roles
+    // Admin gets all groups with their actual roles and table counts
     db.all(`
       SELECT g.*, 
         CASE 
           WHEN g.owner_id = ? THEN 'owner'
           WHEN gm.role IS NOT NULL THEN gm.role
           ELSE 'none'
-        END as userRole
+        END as userRole,
+        COALESCE(table_counts.table_count, 0) as tableCount
       FROM groups g
       LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = ?
-      ORDER BY g.name
-    `, [userId, userId], (err, allGroups) => {
+      LEFT JOIN (
+        SELECT groupId, COUNT(*) as table_count 
+        FROM tables 
+        WHERE groupId IS NOT NULL 
+        GROUP BY groupId
+      ) table_counts ON g.id = table_counts.groupId
+      ORDER BY 
+        CASE 
+          WHEN g.owner_id = ? THEN 1
+          WHEN gm.role = 'editor' THEN 2
+          WHEN gm.role = 'viewer' THEN 3
+          ELSE 4
+        END,
+        COALESCE(table_counts.table_count, 0) DESC,
+        g.name
+    `, [userId, userId, userId], (err, allGroups) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' });
       }
@@ -2262,22 +2277,49 @@ app.get('/api/my-groups', authenticate, (req, res) => {
     });
   } else {
     // Non-admin gets only groups where they are owner or member
-    db.all('SELECT *, "owner" as userRole FROM groups WHERE owner_id = ?', [userId], (err, ownedGroups) => {
+    db.all(`
+      SELECT g.*, "owner" as userRole,
+        COALESCE(table_counts.table_count, 0) as tableCount
+      FROM groups g
+      LEFT JOIN (
+        SELECT groupId, COUNT(*) as table_count 
+        FROM tables 
+        WHERE groupId IS NOT NULL 
+        GROUP BY groupId
+      ) table_counts ON g.id = table_counts.groupId
+      WHERE g.owner_id = ?
+      ORDER BY COALESCE(table_counts.table_count, 0) DESC, g.name
+    `, [userId], (err, ownedGroups) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' });
       }
 
       db.all(`
-        SELECT g.*, gm.role as userRole 
+        SELECT g.*, gm.role as userRole,
+          COALESCE(table_counts.table_count, 0) as tableCount
         FROM groups g 
         JOIN group_members gm ON g.id = gm.group_id 
+        LEFT JOIN (
+          SELECT groupId, COUNT(*) as table_count 
+          FROM tables 
+          WHERE groupId IS NOT NULL 
+          GROUP BY groupId
+        ) table_counts ON g.id = table_counts.groupId
         WHERE gm.user_id = ?
+        ORDER BY 
+          CASE 
+            WHEN gm.role = 'editor' THEN 1
+            WHEN gm.role = 'viewer' THEN 2
+            ELSE 3
+          END,
+          COALESCE(table_counts.table_count, 0) DESC,
+          g.name
       `, [userId], (err, memberGroups) => {
         if (err) {
           return res.status(500).json({ error: 'Database error' });
         }
 
-        const allGroups = [...ownedGroups, ...memberGroups].sort((a, b) => a.name.localeCompare(b.name));
+        const allGroups = [...ownedGroups, ...memberGroups];
         res.json(allGroups);
       });
     });

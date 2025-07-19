@@ -25,6 +25,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import TableChartIcon from '@mui/icons-material/TableChart';
 import { Group } from '../types';
 import GroupMembersDialog from './GroupMembersDialog';
 import CreateGroupDialog from './CreateGroupDialog';
@@ -442,6 +443,12 @@ const MyGroups: React.FC = () => {
                         <CalendarTodayIcon sx={{ color: '#2196f3' }} />
                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
                           Created: {formatDate(group.createdAt)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TableChartIcon sx={{ color: '#4caf50' }} />
+                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
+                          Tables: {group.tableCount || 0}
                         </Typography>
                       </Box>
                     </Box>
