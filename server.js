@@ -659,83 +659,211 @@ app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res)
 });
 
 // Delete table
-app.delete('/api/tables/:id', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('delete'), (req, res) => {
+app.delete('/api/tables/:id', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const tableId = req.params.id;
+  const userId = req.user.id;
+  const userRole = req.user.role;
 
-  db.run('DELETE FROM tables WHERE id = ?', [tableId], function(err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json({ message: 'Table deleted' });
-  });
-});
-
-// Add player to table
-app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
-  const { name, nickname, chips, active = true, showMe = true } = req.body;
-  const tableId = req.params.tableId;
-  checkTableActive(tableId, (err) => {
-    if (err) {
-      return res.status(403).json({ error: err.message });
-    }
-    const playerId = uuidv4();
-    const initialBuyInId = uuidv4();
-    const timestamp = new Date().toISOString();
-    
-    db.get('SELECT minimumBuyIn FROM tables WHERE id = ?', [tableId], (err, table) => {
+  const deleteTableFromDB = () => {
+    db.run('DELETE FROM tables WHERE id = ?', [tableId], function(err) {
       if (err) {
-        return res.status(500).json({ error: 'Failed to get table information' });
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Table deleted' });
+    });
+  };
+
+  // ADMIN can do everything
+  if (userRole === 'admin') {
+    return deleteTableFromDB();
+  }
+
+  // Get table details to check permissions
+  db.get('SELECT creatorId, groupId FROM tables WHERE id = ?', [tableId], (err, table) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!table) {
+      return res.status(404).json({ error: 'Table not found' });
+    }
+
+    // If table is not in a group, use regular permissions
+    if (!table.groupId) {
+      if (userRole === 'editor') {
+        // Check if editor created the table
+        if (table.creatorId !== userId) {
+          return res.status(403).json({ error: 'You do not have permission to delete this table' });
+        }
+      }
+      return deleteTableFromDB();
+    }
+
+    // Table is in a group - check group permissions
+    db.get('SELECT owner_id FROM groups WHERE id = ?', [table.groupId], (err, group) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
       }
 
-      const initialBuyInAmount = Number(chips) || table.minimumBuyIn || 0;
+      // GROUP OWNER can do everything
+      if (group.owner_id === userId) {
+        return deleteTableFromDB();
+      }
 
-      db.serialize(() => {
-        db.run(
-          'INSERT INTO players (id, tableId, name, nickname, chips, totalBuyIn, active, showMe) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [playerId, tableId, name, nickname, initialBuyInAmount, initialBuyInAmount, active, showMe],
-          function(err) {
-            if (err) {
-              return res.status(500).json({ error: 'Failed to add player' });
-            }
+      // Check if user is member with required role
+      db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [table.groupId, userId], (err, member) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
 
-            db.run(
-              'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
-              [initialBuyInId, playerId, initialBuyInAmount, timestamp],
-              function(buyinErr) {
-                if (buyinErr) {
-                }
-                
-                const newPlayerResponse = {
-                  id: playerId,
-                  tableId: tableId,
-                  name: name,
-                  nickname: nickname,
-                  chips: initialBuyInAmount,
-                  totalBuyIn: initialBuyInAmount,
-                  active: active,
-                  showMe: showMe,
-                  buyIns: [
-                    {
-                      id: initialBuyInId,
-                      playerId: playerId,
-                      amount: initialBuyInAmount,
-                      timestamp: timestamp
-                    }
-                  ],
-                  cashOuts: []
-                };
-                res.status(201).json(newPlayerResponse);
-              }
-            );
+        if (!member) {
+          return res.status(403).json({ error: 'You do not have access to this group' });
+        }
+
+        // GROUP MANAGER (editor) can delete tables they created
+        if (member.role === 'editor') {
+          if (table.creatorId !== userId) {
+            return res.status(403).json({ error: 'You can only delete tables you created' });
           }
-        );
+          return deleteTableFromDB();
+        }
+
+        // GROUP MEMBER (viewer) cannot delete tables
+        return res.status(403).json({ error: 'Members can only view tables. Contact a manager or owner for modifications.' });
       });
     });
   });
 });
 
+// Add player to table
+app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'editor']), (req, res) => {
+  const { name, nickname, chips, active = true, showMe = true } = req.body;
+  const tableId = req.params.tableId;
+  const userId = req.user.id;
+  const userRole = req.user.role;
+
+  // Check permissions first
+  db.get('SELECT creatorId, groupId FROM tables WHERE id = ?', [tableId], (err, table) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!table) {
+      return res.status(404).json({ error: 'Table not found' });
+    }
+
+    // ADMIN can do everything
+    if (userRole === 'admin') {
+      return addPlayerToTable();
+    }
+
+    // If table is not in a group, use regular permissions
+    if (!table.groupId) {
+      return addPlayerToTable();
+    }
+
+    // Table is in a group - check group permissions
+    db.get('SELECT owner_id FROM groups WHERE id = ?', [table.groupId], (err, group) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
+      }
+
+      // GROUP OWNER can do everything
+      if (group.owner_id === userId) {
+        return addPlayerToTable();
+      }
+
+      // Check if user is member with required role
+      db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [table.groupId, userId], (err, member) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (!member) {
+          return res.status(403).json({ error: 'You do not have access to this group' });
+        }
+
+        // GROUP MANAGER (editor) can add players
+        if (member.role === 'editor') {
+          return addPlayerToTable();
+        }
+
+        // GROUP MEMBER (viewer) cannot add players
+        return res.status(403).json({ error: 'Members can only view tables. Contact a manager or owner for modifications.' });
+      });
+    });
+  });
+
+  function addPlayerToTable() {
+    checkTableActive(tableId, (err) => {
+      if (err) {
+        return res.status(403).json({ error: err.message });
+      }
+      
+      const playerId = uuidv4();
+      const initialBuyInId = uuidv4();
+      const timestamp = new Date().toISOString();
+      
+      db.get('SELECT minimumBuyIn FROM tables WHERE id = ?', [tableId], (err, table) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to get table information' });
+        }
+
+        const initialBuyInAmount = Number(chips) || table.minimumBuyIn || 0;
+
+        db.serialize(() => {
+          db.run(
+            'INSERT INTO players (id, tableId, name, nickname, chips, totalBuyIn, active, showMe) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [playerId, tableId, name, nickname, initialBuyInAmount, initialBuyInAmount, active, showMe],
+            function(err) {
+              if (err) {
+                return res.status(500).json({ error: 'Failed to add player' });
+              }
+
+              db.run(
+                'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
+                [initialBuyInId, playerId, initialBuyInAmount, timestamp],
+                function(buyinErr) {
+                  if (buyinErr) {
+                    // Continue even if buy-in recording fails
+                  }
+                  
+                  const newPlayerResponse = {
+                    id: playerId,
+                    tableId: tableId,
+                    name: name,
+                    nickname: nickname,
+                    chips: initialBuyInAmount,
+                    totalBuyIn: initialBuyInAmount,
+                    active: active,
+                    showMe: showMe,
+                    buyIns: [
+                      {
+                        id: initialBuyInId,
+                        playerId: playerId,
+                        amount: initialBuyInAmount,
+                        timestamp: timestamp
+                      }
+                    ],
+                    cashOuts: []
+                  };
+                  res.status(201).json(newPlayerResponse);
+                }
+              );
+            }
+          );
+        });
+      });
+    });
+  }
+});
+
 // Remove player from table
-app.delete('/api/tables/:tableId/players/:playerId', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
+app.delete('/api/tables/:tableId/players/:playerId', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const tableId = req.params.tableId;
   checkTableActive(tableId, (err) => {
     if (err) {
@@ -752,7 +880,7 @@ app.delete('/api/tables/:tableId/players/:playerId', authenticate, authorize(['a
 });
 
 // Update player chips
-app.put('/api/tables/:tableId/players/:playerId/chips', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
+app.put('/api/tables/:tableId/players/:playerId/chips', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const { chips } = req.body;
   db.run(
     'UPDATE players SET chips = ? WHERE id = ? AND tableId = ?',
@@ -768,7 +896,7 @@ app.put('/api/tables/:tableId/players/:playerId/chips', authenticate, authorize(
 });
 
 // Add buy-in for player
-app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
+app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const tableId = req.params.tableId;
   checkTableActive(tableId, (err) => {
     if (err) {
@@ -810,7 +938,7 @@ app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authoriz
 });
 
 // Delete buy-in for player
-app.delete('/api/tables/:tableId/buyins/:buyinId', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
+app.delete('/api/tables/:tableId/buyins/:buyinId', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const tableId = req.params.tableId;
   const buyinId = req.params.buyinId;
   
@@ -894,7 +1022,7 @@ app.delete('/api/tables/:tableId/buyins/:buyinId', authenticate, authorize(['adm
 });
 
 // Add cash-out for player
-app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
+app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const tableId = req.params.tableId;
   checkTableActive(tableId, (err) => {
     if (err) {
@@ -941,7 +1069,7 @@ app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, author
 });
 
 // Update table status
-app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), async (req, res) => {
+app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor']), async (req, res) => {
   const { isActive } = req.body;
   const userId = req.user.id;
   const userRole = req.user.role;
@@ -982,7 +1110,7 @@ app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor
 });
 
 // Reactivate player
-app.put('/api/tables/:tableId/players/:playerId/reactivate', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
+app.put('/api/tables/:tableId/players/:playerId/reactivate', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const tableId = req.params.tableId;
   const playerId = req.params.playerId;
   
@@ -1403,11 +1531,79 @@ app.get('/api/tables/:id', authenticate, (req, res) => {
 });
 
 // Update table
-app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), async (req, res) => {
+app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (req, res) => {
   const tableId = req.params.id;
   const { name, smallBlind, bigBlind, location, food, groupId, minimumBuyIn, createdAt } = req.body;
+  const userId = req.user.id;
+  const userRole = req.user.role;
 
   try {
+    // Check permissions first
+    const tableRow = await new Promise((resolve, reject) => {
+      db.get('SELECT creatorId, groupId, isActive FROM tables WHERE id = ?', [tableId], (err, row) => {
+        if (err) return reject(err);
+        resolve(row);
+      });
+    });
+
+    if (!tableRow) {
+      return res.status(404).json({ error: 'Table not found' });
+    }
+
+    // ADMIN can do everything
+    if (userRole === 'admin') {
+      // Continue with update
+    } else {
+      // If table is not in a group, use regular permissions
+      if (!tableRow.groupId) {
+        if (userRole === 'editor') {
+          // Check if editor created the table
+          if (!tableRow.isActive && tableRow.creatorId !== userId) {
+            return res.status(403).json({ error: 'You do not have permission to edit this table' });
+          }
+        }
+      } else {
+        // Table is in a group - check group permissions
+        const group = await new Promise((resolve, reject) => {
+          db.get('SELECT owner_id FROM groups WHERE id = ?', [tableRow.groupId], (err, row) => {
+            if (err) return reject(err);
+            resolve(row);
+          });
+        });
+
+        if (!group) {
+          return res.status(404).json({ error: 'Group not found' });
+        }
+
+        // GROUP OWNER can do everything
+        if (group.owner_id === userId) {
+          // Continue with update
+        } else {
+          // Check if user is member with required role
+          const member = await new Promise((resolve, reject) => {
+            db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [tableRow.groupId, userId], (err, row) => {
+              if (err) return reject(err);
+              resolve(row);
+            });
+          });
+
+          if (!member) {
+            return res.status(403).json({ error: 'You do not have access to this group' });
+          }
+
+          // GROUP MANAGER (editor) can edit tables
+          if (member.role === 'editor') {
+            if (!tableRow.isActive && tableRow.creatorId !== userId) {
+              return res.status(403).json({ error: 'You can only edit inactive tables you created' });
+            }
+          } else {
+            // GROUP MEMBER (viewer) cannot edit tables
+            return res.status(403).json({ error: 'Members can only view tables. Contact a manager or owner for modifications.' });
+          }
+        }
+      }
+    }
+
     // Validate required fields
     if (!name || !smallBlind || !bigBlind) {
       return res.status(400).json({ error: 'Name, small blind, and big blind are required' });
