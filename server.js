@@ -584,29 +584,78 @@ app.get('/api/public/tables', (req, res) => {
 });
 
 // Create new table
-app.post('/api/tables', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), (req, res) => {
+app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res) => {
   const { name, smallBlind, bigBlind, location, groupId, minimumBuyIn } = req.body;
   
   if (!groupId) {
     return res.status(400).json({ error: 'Group ID is required' });
   }
 
-  const id = uuidv4();
-  const createdAt = new Date().toISOString();
-  const creatorId = req.user.id;
-  const isActive = true;
+  // Check group permissions
+  const userId = req.user.id;
+  const userRole = req.user.role;
 
-  db.run(
-    'INSERT INTO tables (id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
+  const createTableInDB = () => {
+    const id = uuidv4();
+    const createdAt = new Date().toISOString();
+    const creatorId = req.user.id;
+    const isActive = true;
+
+    db.run(
+      'INSERT INTO tables (id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn],
+      function(err) {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+        res.json({ ...req.body, id, players: [] });
       }
-      res.json({ ...req.body, id, players: [] });
+    );
+  };
+
+  // ADMIN can do everything
+  if (userRole === 'admin') {
+    return createTableInDB();
+  }
+
+  // Check if user is group owner
+  db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
     }
-  );
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // If user is owner, they have all permissions
+    if (group.owner_id === userId) {
+      return createTableInDB();
+    }
+
+    // Check if user is member with editor role
+    db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], (err, member) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      if (!member) {
+        return res.status(403).json({ error: 'Access denied to this group' });
+      }
+
+      // Check role hierarchy: owner > editor > viewer
+      const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
+      const userRoleLevel = roleHierarchy[member.role] || 0;
+      const requiredRoleLevel = roleHierarchy['editor'] || 0;
+
+      if (userRoleLevel < requiredRoleLevel) {
+        return res.status(403).json({ error: 'Insufficient permissions for this group' });
+      }
+
+      // Continue with table creation
+      return createTableInDB();
+    });
+  });
 });
 
 // Delete table
