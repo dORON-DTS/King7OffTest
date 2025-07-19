@@ -2546,7 +2546,83 @@ app.put('/api/groups/:id/members/:userId', authenticate, (req, res) => {
                 return res.status(500).json({ error: 'Database error' });
               }
               
-              res.json({ message: 'Ownership transferred successfully' });
+              // Get group name and new owner email for notifications
+              db.get('SELECT name FROM groups WHERE id = ?', [groupId], (err, group) => {
+                if (err) {
+                  console.error('Error fetching group name:', err);
+                }
+                
+                db.get('SELECT email, username FROM users WHERE id = ?', [memberUserId], (err, newOwner) => {
+                  if (err) {
+                    console.error('Error fetching new owner details:', err);
+                  }
+                  
+                  // Send email to new owner
+                  if (newOwner && newOwner.email) {
+                    try {
+                      const transporter = nodemailer.createTransport({
+                        service: 'gmail',
+                        auth: {
+                          user: process.env.EMAIL_USER,
+                          pass: process.env.EMAIL_PASS
+                        }
+                      });
+
+                      const mailOptions = {
+                        from: process.env.EMAIL_USER,
+                        to: newOwner.email,
+                        subject: `You are now the owner of: ${group ? group.name : 'Group'}`,
+                        html: `
+                          <h2>Congratulations! You are now the group owner</h2>
+                          <p>You have been transferred ownership of the group <strong>${group ? group.name : 'Group'}</strong>.</p>
+                          <p><strong>What this means:</strong></p>
+                          <ul>
+                            <li>You now have full control over this group</li>
+                            <li>You can manage all members and their roles</li>
+                            <li>You can create and manage tables within this group</li>
+                            <li>You can transfer ownership to another member if needed</li>
+                          </ul>
+                          <p><strong>Group Details:</strong></p>
+                          <ul>
+                            <li><strong>Group Name:</strong> ${group ? group.name : 'Group'}</li>
+                            <li><strong>Transfer Date:</strong> ${new Date().toLocaleString()}</li>
+                          </ul>
+                          <p>You can access your group management panel from the main menu.</p>
+                          <p>Best regards,<br>Poker Management System</p>
+                        `
+                      };
+
+                      transporter.sendMail(mailOptions, (emailErr) => {
+                        if (emailErr) {
+                          console.error('Error sending ownership transfer email:', emailErr);
+                        } else {
+                          console.log('Ownership transfer email sent successfully to:', newOwner.email);
+                        }
+                      });
+                    } catch (emailError) {
+                      console.error('Error setting up ownership transfer email:', emailError);
+                    }
+                  }
+                  
+                  // Create notification for new owner
+                  db.run(`
+                    INSERT INTO notifications (user_id, type, title, message, group_id)
+                    VALUES (?, 'ownership_transfer', 'New Group Ownership', ?, ?)
+                  `, [
+                    memberUserId,
+                    `You are now the owner of "${group ? group.name : 'Group'}"`,
+                    groupId
+                  ], function(err) {
+                    if (err) {
+                      console.error('Error creating ownership transfer notification:', err);
+                    } else {
+                      console.log('Ownership transfer notification created successfully with ID:', this.lastID);
+                    }
+                  });
+                  
+                  res.json({ message: 'Ownership transferred successfully' });
+                });
+              });
             });
           });
         });
