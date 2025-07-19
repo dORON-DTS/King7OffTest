@@ -2299,7 +2299,7 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
                   <li><strong>Requesting User:</strong> ${req.user.username}</li>
                   <li><strong>Request Date:</strong> ${new Date().toLocaleString()}</li>
                 </ul>
-                <p>You can approve or reject this request from your group management panel.</p>
+                <p>You can approve or reject this request from your notifications panel (click the bell icon in the top right).</p>
                 <p>Best regards,<br>Poker Management System</p>
               `
             };
