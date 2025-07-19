@@ -2637,6 +2637,87 @@ app.put('/api/groups/:id/members/:userId', authenticate, (req, res) => {
         if (this.changes === 0) {
           return res.status(404).json({ error: 'Member not found' });
         }
+        
+        // Check if this is a promotion to manager (editor role)
+        if (role === 'editor') {
+          // Get group name and member details for notifications
+          db.get('SELECT name FROM groups WHERE id = ?', [groupId], (err, group) => {
+            if (err) {
+              console.error('Error fetching group name:', err);
+            }
+            
+            db.get('SELECT email, username FROM users WHERE id = ?', [memberUserId], (err, newManager) => {
+              if (err) {
+                console.error('Error fetching new manager details:', err);
+              }
+              
+              // Send email to new manager
+              if (newManager && newManager.email) {
+                try {
+                  const transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                      user: process.env.EMAIL_USER,
+                      pass: process.env.EMAIL_PASS
+                    }
+                  });
+
+                  const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: newManager.email,
+                    subject: `You are now a Manager in: ${group ? group.name : 'Group'}`,
+                    html: `
+                      <h2>Congratulations! You are now a Manager</h2>
+                      <p>Your role has been upgraded to <strong>Manager</strong> in the group <strong>${group ? group.name : 'Group'}</strong>.</p>
+                      <p><strong>What this means:</strong></p>
+                      <ul>
+                        <li>You can create and manage poker tables within this group</li>
+                        <li>You can add and remove players from tables</li>
+                        <li>You can manage buy-ins and cash-outs for players</li>
+                        <li>You can edit table settings and player information</li>
+                        <li>You have enhanced permissions to help manage this group's activities</li>
+                      </ul>
+                      <p><strong>Group Details:</strong></p>
+                      <ul>
+                        <li><strong>Group Name:</strong> ${group ? group.name : 'Group'}</li>
+                        <li><strong>Promotion Date:</strong> ${new Date().toLocaleString()}</li>
+                      </ul>
+                      <p>You can access your enhanced group features from the main menu.</p>
+                      <p>Best regards,<br>Poker Management System</p>
+                    `
+                  };
+
+                  transporter.sendMail(mailOptions, (emailErr) => {
+                    if (emailErr) {
+                      console.error('Error sending manager promotion email:', emailErr);
+                    } else {
+                      console.log('Manager promotion email sent successfully to:', newManager.email);
+                    }
+                  });
+                } catch (emailError) {
+                  console.error('Error setting up manager promotion email:', emailError);
+                }
+              }
+              
+              // Create notification for new manager
+              db.run(`
+                INSERT INTO notifications (user_id, type, title, message, group_id)
+                VALUES (?, 'role_promotion', 'Role Promotion', ?, ?)
+              `, [
+                memberUserId,
+                `You are now a Manager in "${group ? group.name : 'Group'}"`,
+                groupId
+              ], function(err) {
+                if (err) {
+                  console.error('Error creating manager promotion notification:', err);
+                } else {
+                  console.log('Manager promotion notification created successfully with ID:', this.lastID);
+                }
+              });
+            });
+          });
+        }
+        
         res.json({ message: 'Member role updated successfully' });
       });
     }
