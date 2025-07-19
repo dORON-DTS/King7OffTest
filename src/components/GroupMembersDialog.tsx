@@ -331,7 +331,36 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
     return new Date(date).toLocaleDateString('he-IL');
   };
 
-  const allMembers = membersData ? [membersData.owner, ...membersData.members] : [];
+  // Sort members by role priority and join date
+  const allMembers = membersData ? (() => {
+    const members = [membersData.owner, ...membersData.members];
+    
+    // Define role priority (lower number = higher priority)
+    const getRolePriority = (role: string) => {
+      switch (role) {
+        case 'owner': return 1;
+        case 'editor': return 2;
+        case 'viewer': return 3;
+        default: return 4;
+      }
+    };
+    
+    // Sort by role priority first, then by join date (oldest first)
+    return members.sort((a, b) => {
+      const rolePriorityA = getRolePriority(a.role);
+      const rolePriorityB = getRolePriority(b.role);
+      
+      // If roles are different, sort by role priority
+      if (rolePriorityA !== rolePriorityB) {
+        return rolePriorityA - rolePriorityB;
+      }
+      
+      // If roles are the same, sort by join date (oldest first)
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateA - dateB;
+    });
+  })() : [];
 
   return (
     <Dialog 
