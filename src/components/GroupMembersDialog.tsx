@@ -265,9 +265,9 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
       case 'owner':
         return 'Owner';
       case 'editor':
-        return 'Editor';
+        return 'Manager';
       case 'viewer':
-        return 'Viewer';
+        return 'Member';
       default:
         return 'Member';
     }
@@ -360,8 +360,8 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
                         onChange={(e) => setNewMemberRole(e.target.value)}
                         sx={{ color: 'white' }}
                       >
-                        <MenuItem value="viewer">Viewer</MenuItem>
-                        <MenuItem value="editor">Editor</MenuItem>
+                        <MenuItem value="viewer">Member</MenuItem>
+                        <MenuItem value="editor">Manager</MenuItem>
                       </Select>
                     </FormControl>
                     <Button
@@ -439,8 +439,8 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
                                 onChange={(e) => setEditingRole(e.target.value)}
                                 sx={{ color: 'white', minWidth: 100 }}
                               >
-                                <MenuItem value="viewer">Viewer</MenuItem>
-                                <MenuItem value="editor">Editor</MenuItem>
+                                <MenuItem value="viewer">Member</MenuItem>
+                                <MenuItem value="editor">Manager</MenuItem>
                               </Select>
                             </FormControl>
                             <Button

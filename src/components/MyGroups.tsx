@@ -145,9 +145,9 @@ const MyGroups: React.FC = () => {
       case 'owner':
         return 'Owner';
       case 'editor':
-        return 'Editor';
+        return 'Manager';
       case 'viewer':
-        return 'Viewer';
+        return 'Member';
       default:
         return 'Member';
     }

@@ -454,8 +454,8 @@ const UserManagement: React.FC = () => {
                                   }
                                 }}
                               >
-                                <MenuItem value="viewer">Viewer</MenuItem>
-                                <MenuItem value="editor">Editor</MenuItem>
+                                <MenuItem value="viewer">Member</MenuItem>
+                                <MenuItem value="editor">Manager</MenuItem>
                                 <MenuItem value="admin">Admin</MenuItem>
                               </Select>
                             </Box>
@@ -534,8 +534,8 @@ const UserManagement: React.FC = () => {
                           disabled={user.id === currentUserId}
                           sx={{ minWidth: 120 }}
                         >
-                          <MenuItem value="viewer">Viewer</MenuItem>
-                          <MenuItem value="editor">Editor</MenuItem>
+                          <MenuItem value="viewer">Member</MenuItem>
+                          <MenuItem value="editor">Manager</MenuItem>
                           <MenuItem value="admin">Admin</MenuItem>
                         </Select>
                       </TableCell>
@@ -715,8 +715,8 @@ const UserManagement: React.FC = () => {
                 },
               }}
             >
-              <MenuItem value="viewer">Viewer</MenuItem>
-              <MenuItem value="editor">Editor</MenuItem>
+              <MenuItem value="viewer">Member</MenuItem>
+              <MenuItem value="editor">Manager</MenuItem>
               <MenuItem value="admin">Admin</MenuItem>
             </Select>
           </Box>
