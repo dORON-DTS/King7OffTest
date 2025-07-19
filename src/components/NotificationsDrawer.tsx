@@ -233,30 +233,26 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    console.log('Formatting date:', dateString);
-    
     // Check if dateString is valid
     if (!dateString || typeof dateString !== 'string') {
-      console.error('Invalid dateString:', dateString);
       return 'Unknown date';
     }
     
-    // Handle different date formats and convert to local time
+    // Force UTC parsing - assume the date from DB is in UTC
     let date: Date;
     if (dateString.includes('T')) {
-      // ISO format - parse as UTC and convert to local
-      date = new Date(dateString);
+      // ISO format - force UTC parsing
+      date = new Date(dateString + 'Z'); // Add Z to force UTC
     } else if (dateString.includes('-')) {
-      // SQLite format - parse as UTC and convert to local
-      date = new Date(dateString.replace(' ', 'T'));
+      // SQLite format - force UTC parsing
+      date = new Date(dateString.replace(' ', 'T') + 'Z'); // Add Z to force UTC
     } else {
-      // Try direct parsing
-      date = new Date(dateString);
+      // Try direct parsing with UTC
+      date = new Date(dateString + 'Z');
     }
     
     // Check if date is valid
     if (isNaN(date.getTime())) {
-      console.error('Invalid date:', dateString);
       return 'Unknown date';
     }
     
