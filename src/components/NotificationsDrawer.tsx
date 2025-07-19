@@ -241,13 +241,13 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
       return 'Unknown date';
     }
     
-    // Handle different date formats
+    // Handle different date formats and convert to local time
     let date: Date;
     if (dateString.includes('T')) {
-      // ISO format
+      // ISO format - parse as UTC and convert to local
       date = new Date(dateString);
     } else if (dateString.includes('-')) {
-      // SQLite format
+      // SQLite format - parse as UTC and convert to local
       date = new Date(dateString.replace(' ', 'T'));
     } else {
       // Try direct parsing
@@ -260,12 +260,22 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
       return 'Unknown date';
     }
     
+    // Get current time in local timezone
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
-    if (diffInHours < 1) return 'Just now';
+    // Calculate difference in milliseconds between local times
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    // Return relative time based on local time difference
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    
+    // For older dates, show the actual date in local timezone
     return date.toLocaleDateString('he-IL', {
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
     });
