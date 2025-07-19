@@ -174,10 +174,24 @@ const SharedTableView: React.FC = () => {
     try {
       const url = `${process.env.REACT_APP_API_URL}/api/share/${id}`;
       
-      const response = await fetch(url);
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in.');
+      }
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
       if (!response.ok) {
-        if (response.status === 404) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        } else if (response.status === 403) {
+          throw new Error('You do not have access to this table. You must be a member of the group to view shared tables.');
+        } else if (response.status === 404) {
           throw new Error('Table not found.');
         } else {
           throw new Error(`Failed to fetch table: ${response.statusText}`);
