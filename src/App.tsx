@@ -93,6 +93,65 @@ const AppLayout = () => {
     }
   }, [user]);
 
+  // Check notifications when user navigates between pages
+  useEffect(() => {
+    if (user) {
+      fetchNotificationCount();
+    }
+  }, [location.pathname, user]);
+
+  // Periodic notification check every 30 minutes
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      fetchNotificationCount();
+    }, 30 * 60 * 1000); // 30 minutes
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Check notifications when user returns to tab
+  useEffect(() => {
+    if (!user) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchNotificationCount();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
+
+  // Check notifications on user activity (clicks, key presses)
+  useEffect(() => {
+    if (!user) return;
+
+    let lastCheck = Date.now();
+    const minInterval = 10000; // Minimum 10 seconds between checks
+
+    const handleUserActivity = () => {
+      const now = Date.now();
+      if (now - lastCheck > minInterval) {
+        fetchNotificationCount();
+        lastCheck = now;
+      }
+    };
+
+    // Listen for user interactions
+    document.addEventListener('click', handleUserActivity);
+    document.addEventListener('keydown', handleUserActivity);
+    document.addEventListener('scroll', handleUserActivity);
+
+    return () => {
+      document.removeEventListener('click', handleUserActivity);
+      document.removeEventListener('keydown', handleUserActivity);
+      document.removeEventListener('scroll', handleUserActivity);
+    };
+  }, [user]);
+
   const fetchNotificationCount = async () => {
     try {
       const token = localStorage.getItem('token');
