@@ -390,7 +390,10 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
                   sx={{
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: 1,
-                    mb: editingMember === member.id ? 4 : 1,
+                    mb: { 
+                      xs: editingMember === member.id ? 4 : 1,
+                      sm: 1
+                    },
                     bgcolor: 'rgba(255, 255, 255, 0.02)'
                   }}
                 >

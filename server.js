@@ -258,9 +258,16 @@ const authorizeGroupAccess = (requiredRole) => {
   return (req, res, next) => {
     const groupId = req.params.id || req.params.groupId;
     const userId = req.user.id;
+    const userRole = req.user.role;
 
     if (!groupId) {
       return res.status(400).json({ error: 'Group ID is required' });
+    }
+
+    // ADMIN can do everything always
+    if (userRole === 'admin') {
+      req.groupMember = { role: 'admin' };
+      return next();
     }
 
     // Check if user is group owner
@@ -288,17 +295,28 @@ const authorizeGroupAccess = (requiredRole) => {
           return res.status(403).json({ error: 'Access denied to this group' });
         }
 
-        // Check role hierarchy: owner > editor > viewer
-        const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
-        const userRoleLevel = roleHierarchy[member.role] || 0;
-        const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
+        // For EDITOR users, check their group role
+        if (userRole === 'editor') {
+          // Check role hierarchy: owner > editor > viewer
+          const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
+          const userRoleLevel = roleHierarchy[member.role] || 0;
+          const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
 
-        if (userRoleLevel < requiredRoleLevel) {
-          return res.status(403).json({ error: 'Insufficient permissions for this group' });
+          if (userRoleLevel < requiredRoleLevel) {
+            return res.status(403).json({ error: 'Insufficient permissions for this group' });
+          }
+
+          req.groupMember = member;
+          return next();
         }
 
-        req.groupMember = member;
-        next();
+        // For other users (viewer, user), they can only view
+        if (requiredRole === 'viewer') {
+          req.groupMember = member;
+          return next();
+        }
+
+        return res.status(403).json({ error: 'Insufficient permissions for this group' });
       });
     });
   };
@@ -313,6 +331,73 @@ function checkTableActive(tableId, cb) {
     cb(null);
   });
 }
+
+// Check table permissions within group context
+const checkTablePermissions = (action) => {
+  return (req, res, next) => {
+    const tableId = req.params.id || req.params.tableId;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const groupMember = req.groupMember;
+
+    if (!tableId) {
+      return res.status(400).json({ error: 'Table ID is required' });
+    }
+
+    // ADMIN can do everything
+    if (userRole === 'admin') {
+      return next();
+    }
+
+    // Get table details
+    db.get('SELECT creatorId, groupId FROM tables WHERE id = ?', [tableId], (err, table) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!table) {
+        return res.status(404).json({ error: 'Table not found' });
+      }
+
+      // If table is not in a group, use regular permissions
+      if (!table.groupId) {
+        if (userRole === 'editor') {
+          // Check if editor created the table
+          if (action === 'delete' && table.creatorId !== userId) {
+            return res.status(403).json({ error: 'You do not have permission to delete this table' });
+          }
+          if (action === 'edit' && !table.isActive && table.creatorId !== userId) {
+            return res.status(403).json({ error: 'You do not have permission to edit this table' });
+          }
+        }
+        return next();
+      }
+
+      // Table is in a group - check group permissions
+      if (!groupMember) {
+        return res.status(403).json({ error: 'You do not have access to this group' });
+      }
+
+      // GROUP OWNER can do everything
+      if (groupMember.role === 'owner') {
+        return next();
+      }
+
+      // GROUP MANAGER (editor) can do table operations
+      if (groupMember.role === 'editor') {
+        if (action === 'delete' && table.creatorId !== userId) {
+          return res.status(403).json({ error: 'You can only delete tables you created' });
+        }
+        if (action === 'edit' && !table.isActive && table.creatorId !== userId) {
+          return res.status(403).json({ error: 'You can only edit inactive tables you created' });
+        }
+        return next();
+      }
+
+      // GROUP MEMBER (viewer) cannot perform table operations
+      return res.status(403).json({ error: 'Members can only view tables. Contact a manager or owner for modifications.' });
+    });
+  };
+};
 
 // Nodemailer transporter
 const transporter = nodemailer.createTransport({
@@ -499,7 +584,7 @@ app.get('/api/public/tables', (req, res) => {
 });
 
 // Create new table
-app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.post('/api/tables', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), (req, res) => {
   const { name, smallBlind, bigBlind, location, groupId, minimumBuyIn } = req.body;
   
   if (!groupId) {
@@ -525,44 +610,19 @@ app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res)
 });
 
 // Delete table
-app.delete('/api/tables/:id', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.delete('/api/tables/:id', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('delete'), (req, res) => {
   const tableId = req.params.id;
-  const userId = req.user.id;
-  const userRole = req.user.role;
 
-  // אם המשתמש הוא editor, נבדוק שהוא יצר את השולחן
-  if (userRole === 'editor') {
-    db.get('SELECT creatorId FROM tables WHERE id = ?', [tableId], (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      if (!row) {
-        return res.status(404).json({ error: 'Table not found' });
-      }
-      if (row.creatorId !== userId) {
-        return res.status(403).json({ error: 'You do not have permission to delete this table' });
-      }
-      // אם עובר, מוחקים
-      db.run('DELETE FROM tables WHERE id = ?', [tableId], function(err) {
-        if (err) {
-          return res.status(500).json({ error: err.message });
-        }
-        res.json({ message: 'Table deleted' });
-      });
-    });
-  } else {
-    // admin מוחק הכל
-    db.run('DELETE FROM tables WHERE id = ?', [tableId], function(err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ message: 'Table deleted' });
-    });
-  }
+  db.run('DELETE FROM tables WHERE id = ?', [tableId], function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ message: 'Table deleted' });
+  });
 });
 
 // Add player to table
-app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
   const { name, nickname, chips, active = true, showMe = true } = req.body;
   const tableId = req.params.tableId;
   checkTableActive(tableId, (err) => {
@@ -626,7 +686,7 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
 });
 
 // Remove player from table
-app.delete('/api/tables/:tableId/players/:playerId', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.delete('/api/tables/:tableId/players/:playerId', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
   const tableId = req.params.tableId;
   checkTableActive(tableId, (err) => {
     if (err) {
@@ -643,7 +703,7 @@ app.delete('/api/tables/:tableId/players/:playerId', authenticate, authorize(['a
 });
 
 // Update player chips
-app.put('/api/tables/:tableId/players/:playerId/chips', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.put('/api/tables/:tableId/players/:playerId/chips', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
   const { chips } = req.body;
   db.run(
     'UPDATE players SET chips = ? WHERE id = ? AND tableId = ?',
@@ -659,7 +719,7 @@ app.put('/api/tables/:tableId/players/:playerId/chips', authenticate, authorize(
 });
 
 // Add buy-in for player
-app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
   const tableId = req.params.tableId;
   checkTableActive(tableId, (err) => {
     if (err) {
@@ -701,7 +761,7 @@ app.post('/api/tables/:tableId/players/:playerId/buyins', authenticate, authoriz
 });
 
 // Delete buy-in for player
-app.delete('/api/tables/:tableId/buyins/:buyinId', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.delete('/api/tables/:tableId/buyins/:buyinId', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
   const tableId = req.params.tableId;
   const buyinId = req.params.buyinId;
   
@@ -785,7 +845,7 @@ app.delete('/api/tables/:tableId/buyins/:buyinId', authenticate, authorize(['adm
 });
 
 // Add cash-out for player
-app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
   const tableId = req.params.tableId;
   checkTableActive(tableId, (err) => {
     if (err) {
@@ -832,7 +892,7 @@ app.post('/api/tables/:tableId/players/:playerId/cashouts', authenticate, author
 });
 
 // Update table status
-app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor']), async (req, res) => {
+app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), async (req, res) => {
   const { isActive } = req.body;
   const userId = req.user.id;
   const userRole = req.user.role;
@@ -873,7 +933,7 @@ app.put('/api/tables/:tableId/status', authenticate, authorize(['admin', 'editor
 });
 
 // Reactivate player
-app.put('/api/tables/:tableId/players/:playerId/reactivate', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.put('/api/tables/:tableId/players/:playerId/reactivate', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
   const tableId = req.params.tableId;
   const playerId = req.params.playerId;
   
@@ -941,7 +1001,7 @@ app.put('/api/tables/:tableId/players/:playerId/reactivate', authenticate, autho
 });
 
 // Update player showMe status
-app.put('/api/tables/:tableId/players/:playerId/showme', authenticate, authorize(['admin', 'editor']), (req, res) => {
+app.put('/api/tables/:tableId/players/:playerId/showme', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), (req, res) => {
   const tableId = req.params.tableId;
   checkTableActive(tableId, (err) => {
     if (err) {
@@ -1294,30 +1354,11 @@ app.get('/api/tables/:id', authenticate, (req, res) => {
 });
 
 // Update table
-app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (req, res) => {
+app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), authorizeGroupAccess('editor'), checkTablePermissions('edit'), async (req, res) => {
   const tableId = req.params.id;
   const { name, smallBlind, bigBlind, location, food, groupId, minimumBuyIn, createdAt } = req.body;
-  const userId = req.user.id;
-  const userRole = req.user.role;
 
   try {
-    if (userRole === 'editor') {
-      const tableRow = await new Promise((resolve, reject) => {
-        db.get('SELECT creatorId, isActive FROM tables WHERE id = ?', [tableId], (err, row) => {
-          if (err) return reject(err);
-          resolve(row);
-        });
-      });
-      if (!tableRow) {
-        return res.status(404).json({ error: 'Table not found' });
-      }
-      // אם השולחן לא אקטיבי, רק היוצר יכול לערוך
-      if (!tableRow.isActive && tableRow.creatorId !== userId) {
-        return res.status(403).json({ error: 'You do not have permission to edit this table' });
-      }
-      // אם השולחן אקטיבי, כל עורך יכול לערוך
-    }
-
     // Validate required fields
     if (!name || !smallBlind || !bigBlind) {
       return res.status(400).json({ error: 'Name, small blind, and big blind are required' });
