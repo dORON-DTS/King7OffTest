@@ -473,9 +473,33 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-// Get all tables
+// Get all tables (filtered by user permissions)
 app.get('/api/tables', authenticate, (req, res) => {
-  db.all('SELECT * FROM tables ORDER BY createdAt DESC', [], (err, tables) => {
+  const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
+  let query, params;
+
+  if (isAdmin) {
+    // Admin gets all tables
+    query = 'SELECT * FROM tables ORDER BY createdAt DESC';
+    params = [];
+  } else {
+    // Non-admin gets only tables from groups they have access to
+    query = `
+      SELECT DISTINCT t.* 
+      FROM tables t
+      WHERE t.groupId IN (
+        SELECT g.id FROM groups g WHERE g.owner_id = ?
+        UNION
+        SELECT gm.group_id FROM group_members gm WHERE gm.user_id = ?
+      )
+      ORDER BY t.createdAt DESC
+    `;
+    params = [userId, userId];
+  }
+
+  db.all(query, params, (err, tables) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
@@ -1479,9 +1503,12 @@ app.get('/api/debug/db', (req, res) => {
   });
 });
 
-// Get table by ID
+// Get table by ID (with access control)
 app.get('/api/tables/:id', authenticate, (req, res) => {
   const tableId = req.params.id;
+  const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
   db.get('SELECT * FROM tables WHERE id = ?', [tableId], (err, table) => {
     if (err) {
       return res.status(500).json({ error: 'Internal server error' });
@@ -1491,42 +1518,96 @@ app.get('/api/tables/:id', authenticate, (req, res) => {
       return res.status(404).json({ error: 'Table not found' });
     }
 
-    // Get players for the table
-    db.all('SELECT * FROM players WHERE tableId = ?', [tableId], (err, players) => {
-      if (err) {
-        return res.status(500).json({ error: 'Internal server error' });
+    // Check access permissions
+    const checkAccess = () => {
+      if (isAdmin) {
+        return true; // Admin can access any table
       }
 
-      const playerPromises = players.map(player => {
-        return new Promise((resolve, reject) => {
-          // Get buy-ins
-          db.all('SELECT * FROM buyins WHERE playerId = ?', [player.id], (err, buyIns) => {
-            if (err) {
-              reject(err);
-              return;
-            }
+      // If table is not in a group, check if user created it
+      if (!table.groupId) {
+        return table.creatorId === userId;
+      }
 
-            // Get cash-outs
-            db.all('SELECT * FROM cashouts WHERE playerId = ?', [player.id], (err, cashOuts) => {
+      // For grouped tables, we'll check in the next step
+      return null; // Need to check group membership
+    };
+
+    const accessResult = checkAccess();
+    if (accessResult === false) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    if (accessResult === null) {
+      // Need to check group membership
+      db.get('SELECT owner_id FROM groups WHERE id = ?', [table.groupId], (err, group) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+        if (!group) {
+          return res.status(404).json({ error: 'Group not found' });
+        }
+
+        if (group.owner_id === userId) {
+          // Group owner can access - continue to get players
+          getPlayers();
+        } else {
+          // Check if user is member
+          db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [table.groupId, userId], (err, member) => {
+            if (err) {
+              return res.status(500).json({ error: 'Database error' });
+            }
+            if (!member) {
+              return res.status(403).json({ error: 'Access denied' });
+            }
+            // Member can access - continue to get players
+            getPlayers();
+          });
+        }
+      });
+    } else {
+      // Direct access granted - get players
+      getPlayers();
+    }
+
+    function getPlayers() {
+      // Get players for the table
+      db.all('SELECT * FROM players WHERE tableId = ?', [tableId], (err, players) => {
+        if (err) {
+          return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        const playerPromises = players.map(player => {
+          return new Promise((resolve, reject) => {
+            // Get buy-ins
+            db.all('SELECT * FROM buyins WHERE playerId = ?', [player.id], (err, buyIns) => {
               if (err) {
                 reject(err);
                 return;
               }
 
-              resolve({ ...player, buyIns, cashOuts });
+              // Get cash-outs
+              db.all('SELECT * FROM cashouts WHERE playerId = ?', [player.id], (err, cashOuts) => {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+
+                resolve({ ...player, buyIns, cashOuts });
+              });
             });
           });
         });
-      });
 
-      Promise.all(playerPromises)
-        .then(playersWithTransactions => {
-          res.json({ ...table, players: playersWithTransactions });
-        })
-        .catch(err => {
-          res.status(500).json({ error: 'Internal server error' });
-        });
-    });
+        Promise.all(playerPromises)
+          .then(playersWithTransactions => {
+            res.json({ ...table, players: playersWithTransactions });
+          })
+          .catch(err => {
+            res.status(500).json({ error: 'Internal server error' });
+          });
+      });
+    }
   });
 });
 
@@ -2040,15 +2121,44 @@ app.get('/api/statistics/players', (req, res) => {
   });
 });
 
-// Get all groups
-app.get('/api/groups', (req, res) => {
-  db.all('SELECT * FROM groups ORDER BY name', [], (err, groups) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json(groups);
-  });
+// Get all groups (admin only) - or user's groups for non-admin
+app.get('/api/groups', authenticate, (req, res) => {
+  const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
+  if (isAdmin) {
+    // Admin gets all groups
+    db.all('SELECT * FROM groups ORDER BY name', [], (err, groups) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(groups);
+    });
+  } else {
+    // Non-admin gets only groups where they are owner or member
+    db.all('SELECT *, "owner" as userRole FROM groups WHERE owner_id = ?', [userId], (err, ownedGroups) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+
+      db.all(`
+        SELECT g.*, gm.role as userRole 
+        FROM groups g 
+        JOIN group_members gm ON g.id = gm.group_id 
+        WHERE gm.user_id = ?
+      `, [userId], (err, memberGroups) => {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+
+        const allGroups = [...ownedGroups, ...memberGroups].sort((a, b) => a.name.localeCompare(b.name));
+        res.json(allGroups);
+      });
+    });
+  }
 });
 
 // Search groups for joining (excludes groups user is already member of)
@@ -2241,6 +2351,44 @@ const getGroupMemberRole = (groupId, userId, callback) => {
     callback(null, member ? member.role : null);
   });
 };
+
+// Get specific group details (with access control)
+app.get('/api/groups/:id', authenticate, (req, res) => {
+  const groupId = req.params.id;
+  const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
+  // Check if group exists
+  db.get('SELECT * FROM groups WHERE id = ?', [groupId], (err, group) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // Admin can access any group
+    if (isAdmin) {
+      return res.json(group);
+    }
+
+    // Check if user is owner
+    if (group.owner_id === userId) {
+      return res.json({ ...group, userRole: 'owner' });
+    }
+
+    // Check if user is member
+    db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], (err, member) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!member) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      res.json({ ...group, userRole: member.role });
+    });
+  });
+});
 
 // Get group members
 app.get('/api/groups/:id/members', authenticate, (req, res) => {
