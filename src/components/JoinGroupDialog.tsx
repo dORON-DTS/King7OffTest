@@ -14,13 +14,25 @@ import {
   Box,
   CircularProgress,
   Alert,
-  Snackbar,
   useTheme,
   useMediaQuery
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { keyframes } from '@mui/system';
 import PersonIcon from '@mui/icons-material/Person';
 import GroupIcon from '@mui/icons-material/Group';
+
+// Define animations
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
 
 interface Group {
   id: number;
@@ -112,7 +124,7 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (searchTerm.length >= 3) {
@@ -195,13 +207,15 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
       const result = await response.json();
       
       // Show success message
-      setShowSuccessSnackbar(true);
+      setSuccess('Join request sent successfully! The group owner will be notified.');
       
       // Close dialog and refresh
-      onClose();
-      if (onSuccess) {
-        onSuccess();
-      }
+      setTimeout(() => {
+        onClose();
+        if (onSuccess) {
+          onSuccess();
+        }
+      }, 2000);
     } catch (err) {
       console.error('Error sending join request:', err);
       setError(err instanceof Error ? err.message : 'Failed to send join request');
@@ -260,6 +274,18 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
+          </Alert>
+        )}
+
+        {success && (
+          <Alert 
+            severity="success" 
+            sx={{ 
+              mb: 2,
+              animation: `${fadeIn} 0.3s ease-out`,
+            }}
+          >
+            {success}
           </Alert>
         )}
 
@@ -340,37 +366,6 @@ const JoinGroupDialog: React.FC<JoinGroupDialogProps> = ({
         </Button>
       </DialogActions>
     </StyledDialog>
-
-    {/* Success Snackbar */}
-    <Snackbar
-      open={showSuccessSnackbar}
-      autoHideDuration={6000}
-      onClose={() => setShowSuccessSnackbar(false)}
-      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-    >
-      <Alert
-        onClose={() => setShowSuccessSnackbar(false)}
-        severity="success"
-        sx={{
-          width: '100%',
-          backgroundColor: '#4caf50',
-          color: 'white',
-          '& .MuiAlert-icon': {
-            color: 'white',
-          },
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <GroupIcon sx={{ fontSize: 20 }} />
-          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-            Join request sent successfully!
-          </Typography>
-        </Box>
-        <Typography variant="body2" sx={{ mt: 0.5 }}>
-          The group owner will be notified and will respond to your request.
-        </Typography>
-      </Alert>
-    </Snackbar>
     </>
   );
 };
