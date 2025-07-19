@@ -391,7 +391,10 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: 1,
                     mb: 1,
-                    bgcolor: 'rgba(255, 255, 255, 0.02)'
+                    bgcolor: 'rgba(255, 255, 255, 0.02)',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    p: { xs: 2, sm: 1 }
                   }}
                 >
                   <ListItemText
@@ -428,35 +431,75 @@ const GroupMembersDialog: React.FC<GroupMembersDialogProps> = ({
                     }
                   />
                   
-                  <ListItemSecondaryAction>
+                  <ListItemSecondaryAction sx={{ 
+                    position: { xs: 'static', sm: 'absolute' },
+                    right: { xs: 'auto', sm: 16 },
+                    top: { xs: 'auto', sm: '50%' },
+                    transform: { xs: 'none', sm: 'translateY(-50%)' },
+                    mt: { xs: 2, sm: 0 }
+                  }}>
                     {member.role !== 'owner' && (
-                      <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        gap: 1,
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        width: { xs: '100%', sm: 'auto' }
+                      }}>
                         {editingMember === member.id ? (
-                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                            <FormControl size="small">
+                          <Box sx={{ 
+                            display: 'flex', 
+                            gap: 1, 
+                            alignItems: 'center',
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            width: { xs: '100%', sm: 'auto' }
+                          }}>
+                            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 100 } }}>
                               <Select
                                 value={editingRole}
                                 onChange={(e) => setEditingRole(e.target.value)}
-                                sx={{ color: 'white', minWidth: 100 }}
+                                sx={{ 
+                                  color: 'white',
+                                  '& .MuiSelect-select': {
+                                    py: 1
+                                  }
+                                }}
+                                MenuProps={{
+                                  PaperProps: {
+                                    sx: {
+                                      bgcolor: '#1e1e1e',
+                                      color: 'white',
+                                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                                      zIndex: 9999
+                                    }
+                                  }
+                                }}
                               >
                                 <MenuItem value="viewer">Member</MenuItem>
                                 <MenuItem value="editor">Manager</MenuItem>
                               </Select>
                             </FormControl>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              onClick={() => handleUpdateMemberRole(member.id, editingRole)}
-                            >
-                              Save
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => setEditingMember(null)}
-                            >
-                              Cancel
-                            </Button>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              gap: 1,
+                              width: { xs: '100%', sm: 'auto' }
+                            }}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                onClick={() => handleUpdateMemberRole(member.id, editingRole)}
+                                sx={{ flex: { xs: 1, sm: 'none' } }}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => setEditingMember(null)}
+                                sx={{ flex: { xs: 1, sm: 'none' } }}
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
                           </Box>
                         ) : (
                           <>
