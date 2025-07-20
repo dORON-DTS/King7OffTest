@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { TextField, TextFieldProps } from '@mui/material';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { TextField, TextFieldProps, Box, Paper, List, ListItem, ListItemText } from '@mui/material';
+import { createPortal } from 'react-dom';
 
 interface GooglePlacesAutocompleteProps extends Omit<TextFieldProps, 'onChange'> {
   value: string;
@@ -8,6 +9,15 @@ interface GooglePlacesAutocompleteProps extends Omit<TextFieldProps, 'onChange'>
   label?: string;
   error?: boolean;
   helperText?: string;
+}
+
+interface PlaceSuggestion {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
 }
 
 declare global {
@@ -26,11 +36,16 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   ...textFieldProps
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
+  const autocompleteServiceRef = useRef<any>(null);
+  const placesServiceRef = useRef<any>(null);
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [inputRect, setInputRect] = useState<DOMRect | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Load Google Maps API
   useEffect(() => {
-    // Load Google Maps API dynamically
     const loadGoogleMapsAPI = () => {
       const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
       if (!apiKey) {
@@ -38,15 +53,13 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         return;
       }
 
-      // Check if already loaded
       if (window.google && window.google.maps && window.google.maps.places) {
         console.log('Google API already loaded');
         setIsGoogleLoaded(true);
-        setTimeout(() => initializeAutocomplete(), 100);
+        initializeServices();
         return;
       }
 
-      // Load the script
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
       script.async = true;
@@ -57,7 +70,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
           if (window.google && window.google.maps && window.google.maps.places) {
             console.log('Google API fully initialized');
             setIsGoogleLoaded(true);
-            initializeAutocomplete();
+            initializeServices();
           } else {
             console.error('Google API failed to initialize');
             setIsGoogleLoaded(false);
@@ -74,102 +87,202 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     loadGoogleMapsAPI();
   }, []);
 
-  // Re-initialize autocomplete when inputRef changes
-  useEffect(() => {
-    if (isGoogleLoaded && inputRef.current && !autocompleteRef.current) {
-      initializeAutocomplete();
-    }
-  }, [isGoogleLoaded]);
-
-  const initializeAutocomplete = () => {
-    console.log('Initializing Google Places Autocomplete...', { 
-      hasInputRef: !!inputRef.current, 
-      hasGoogle: !!window.google,
-      hasMaps: !!(window.google && window.google.maps),
-      hasPlaces: !!(window.google && window.google.maps && window.google.maps.places),
-    });
-
-    if (!inputRef.current || !window.google) {
-      console.log('Missing inputRef or Google API');
-      return;
-    }
-
-    if (!window.google.maps) {
-      console.log('Google Maps not loaded yet');
-      return;
-    }
-
-    if (!window.google.maps.places) {
-      console.log('Google Places API not loaded yet');
+  const initializeServices = useCallback(() => {
+    if (!window.google || !window.google.maps || !window.google.maps.places) {
       return;
     }
 
     try {
-      // Use the classic Autocomplete API (still works for existing customers)
-      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ['establishment', 'geocode'],
-        componentRestrictions: { country: 'IL' },
-        fields: ['formatted_address', 'name', 'geometry', 'place_id'],
-      });
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      placesServiceRef.current = new window.google.maps.places.PlacesService(document.createElement('div'));
+      console.log('Google Places services initialized');
+    } catch (error) {
+      console.error('Error initializing Google Places services:', error);
+    }
+  }, []);
 
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        console.log('Place selected:', place);
-        
-        if (place.formatted_address) {
-          onChange(place.formatted_address);
-        } else if (place.name) {
-          onChange(place.name);
+  // Update input position for dropdown positioning
+  const updateInputPosition = useCallback(() => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setInputRect(rect);
+    }
+  }, []);
+
+  // Search for places
+  const searchPlaces = useCallback(async (query: string) => {
+    if (!query || query.length < 2 || !autocompleteServiceRef.current) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const request = {
+        input: query,
+        componentRestrictions: { country: 'IL' },
+        types: ['establishment', 'geocode']
+      };
+
+      autocompleteServiceRef.current.getPlacePredictions(request, (predictions: PlaceSuggestion[], status: string) => {
+        setIsLoading(false);
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+          console.log('Found predictions:', predictions);
+          setSuggestions(predictions);
+          setShowSuggestions(true);
+        } else {
+          console.log('No predictions found, status:', status);
+          setSuggestions([]);
+          setShowSuggestions(false);
         }
       });
-
-      autocompleteRef.current = autocomplete;
-      console.log('Google Places Autocomplete initialized successfully');
     } catch (error) {
-      console.error('Error initializing Google Places Autocomplete:', error);
-      setIsGoogleLoaded(false);
+      console.error('Error searching places:', error);
+      setIsLoading(false);
+      setSuggestions([]);
+      setShowSuggestions(false);
     }
-  };
+  }, []);
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(event.target.value);
+  // Handle input change
+  const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = event.target.value;
+    onChange(newValue);
+    updateInputPosition();
+    searchPlaces(newValue);
+  }, [onChange, updateInputPosition, searchPlaces]);
+
+  // Handle suggestion selection
+  const handleSuggestionClick = useCallback((suggestion: PlaceSuggestion) => {
+    onChange(suggestion.description);
+    setShowSuggestions(false);
+    setSuggestions([]);
+  }, [onChange]);
+
+  // Handle input focus/blur
+  const handleInputFocus = useCallback(() => {
+    updateInputPosition();
+    if (suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  }, [suggestions.length, updateInputPosition]);
+
+  const handleInputBlur = useCallback(() => {
+    // Delay hiding to allow clicking on suggestions
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 200);
+  }, []);
+
+  // Update position on scroll/resize
+  useEffect(() => {
+    const handleScroll = () => updateInputPosition();
+    const handleResize = () => updateInputPosition();
+
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [updateInputPosition]);
+
+  // Render dropdown portal
+  const renderDropdown = () => {
+    if (!showSuggestions || !inputRect || suggestions.length === 0) {
+      return null;
+    }
+
+    const dropdownStyle: React.CSSProperties = {
+      position: 'fixed',
+      top: inputRect.bottom + window.scrollY,
+      left: inputRect.left + window.scrollX,
+      width: inputRect.width,
+      zIndex: 999999999,
+      maxHeight: '200px',
+      overflowY: 'auto',
+      backgroundColor: '#2d2d2d',
+      border: '1px solid #555',
+      borderRadius: '4px',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+    };
+
+    return createPortal(
+      <Paper sx={dropdownStyle}>
+        <List dense>
+          {suggestions.map((suggestion) => (
+            <ListItem
+              key={suggestion.place_id}
+              button
+              onClick={() => handleSuggestionClick(suggestion)}
+              sx={{
+                '&:hover': {
+                  backgroundColor: '#3d3d3d',
+                },
+                color: 'white',
+                py: 1,
+              }}
+            >
+              <ListItemText
+                primary={suggestion.structured_formatting?.main_text || suggestion.description}
+                secondary={suggestion.structured_formatting?.secondary_text}
+                primaryTypographyProps={{
+                  fontSize: '0.9rem',
+                  color: 'white',
+                  fontWeight: 'bold',
+                }}
+                secondaryTypographyProps={{
+                  fontSize: '0.8rem',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                }}
+              />
+            </ListItem>
+          ))}
+        </List>
+      </Paper>,
+      document.body
+    );
   };
 
   return (
-    <TextField
-      {...textFieldProps}
-      inputRef={inputRef}
-      label={label}
-      placeholder={placeholder}
-      value={value}
-      onChange={handleInputChange}
-      error={error}
-      helperText={helperText || (!isGoogleLoaded ? "Location services not available" : "")}
-      fullWidth
-      variant="outlined"
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          '& fieldset': {
-            borderColor: 'grey.700',
+    <Box sx={{ position: 'relative' }}>
+      <TextField
+        {...textFieldProps}
+        inputRef={inputRef}
+        label={label}
+        placeholder={placeholder}
+        value={value}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+        error={error}
+        helperText={helperText || (!isGoogleLoaded ? "Location services not available" : isLoading ? "Searching..." : "")}
+        fullWidth
+        variant="outlined"
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            '& fieldset': {
+              borderColor: 'grey.700',
+            },
+            '&:hover fieldset': {
+              borderColor: 'grey.500',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: 'primary.main',
+            },
           },
-          '&:hover fieldset': {
-            borderColor: 'grey.500',
+          '& .MuiInputLabel-root': {
+            color: 'grey.400',
           },
-          '&.Mui-focused fieldset': {
-            borderColor: 'primary.main',
+          '& .MuiInputBase-input': {
+            color: 'white',
           },
-        },
-        '& .MuiInputLabel-root': {
-          color: 'grey.400',
-        },
-        '& .MuiInputBase-input': {
-          color: 'white',
-        },
-        // Ensure the input field itself doesn't block the dropdown
-        position: 'relative',
-        zIndex: 1,
-      }}
-    />
+        }}
+      />
+      {renderDropdown()}
+    </Box>
   );
 };
 
