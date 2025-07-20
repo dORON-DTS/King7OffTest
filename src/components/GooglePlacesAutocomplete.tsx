@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { TextField, TextFieldProps } from '@mui/material';
+import React, { useRef, useState } from 'react';
+import { TextField, TextFieldProps, List, ListItem, ListItemText, Paper, Box } from '@mui/material';
 
 interface GooglePlacesAutocompleteProps extends Omit<TextFieldProps, 'onChange'> {
   value: string;
@@ -10,10 +10,10 @@ interface GooglePlacesAutocompleteProps extends Omit<TextFieldProps, 'onChange'>
   helperText?: string;
 }
 
-declare global {
-  interface Window {
-    google: any;
-  }
+interface LocationSuggestion {
+  display_name: string;
+  lat: string;
+  lon: string;
 }
 
 const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
@@ -26,156 +26,137 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   ...textFieldProps
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Load Google Maps API dynamically
-    const loadGoogleMapsAPI = () => {
-      const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
-      if (!apiKey) {
-        console.error('Google Places API key not found in environment variables');
-        return;
-      }
-
-      // Check if already loaded
-      if (window.google && window.google.maps && window.google.maps.places) {
-        console.log('Google API already loaded');
-        setIsGoogleLoaded(true);
-        setTimeout(() => initializeAutocomplete(), 100);
-        return;
-      }
-
-      // Load the script with the new API
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=beta&loading=async`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        console.log('Google API script loaded');
-        setTimeout(() => {
-          if (window.google && window.google.maps && window.google.maps.places) {
-            console.log('Google API fully initialized');
-            setIsGoogleLoaded(true);
-            initializeAutocomplete();
-          } else {
-            console.error('Google API failed to initialize');
-            setIsGoogleLoaded(false);
-          }
-        }, 500);
-      };
-      script.onerror = () => {
-        console.error('Failed to load Google Maps API');
-        setIsGoogleLoaded(false);
-      };
-      document.head.appendChild(script);
-    };
-
-    loadGoogleMapsAPI();
-  }, []);
-
-  // Re-initialize autocomplete when inputRef changes
-  useEffect(() => {
-    if (isGoogleLoaded && inputRef.current) {
-      initializeAutocomplete();
-    }
-  }, [isGoogleLoaded]);
-
-  const initializeAutocomplete = () => {
-    console.log('Initializing new PlaceAutocompleteElement...', { 
-      hasInputRef: !!inputRef.current, 
-      hasGoogle: !!window.google,
-      hasMaps: !!(window.google && window.google.maps),
-      hasPlaces: !!(window.google && window.google.maps && window.google.maps.places),
-    });
-
-    if (!inputRef.current || !window.google) {
-      console.log('Missing inputRef or Google API');
+  const searchLocations = async (query: string) => {
+    if (!query || query.length < 3) {
+      setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
-    if (!window.google.maps) {
-      console.log('Google Maps not loaded yet');
-      return;
-    }
-
-    if (!window.google.maps.places) {
-      console.log('Google Places API not loaded yet');
-      return;
-    }
-
+    setIsLoading(true);
     try {
-      // Use the new PlaceAutocompleteElement API
-      const autocomplete = new window.google.maps.places.PlaceAutocompleteElement({
-        inputElement: inputRef.current,
-        types: ['establishment', 'geocode'],
-        componentRestrictions: { country: 'IL' },
-      });
-
-      // Listen for place selection using addEventListener
-      autocomplete.addEventListener('gmp-placeselect', (event: any) => {
-        const place = event.detail.place;
-        console.log('Place selected:', place);
-        
-        if (place.formatted_address) {
-          onChange(place.formatted_address);
-        } else if (place.name) {
-          onChange(place.name);
-        }
-      });
-
-      console.log('PlaceAutocompleteElement initialized successfully');
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=il&limit=5`
+      );
+      const data = await response.json();
+      setSuggestions(data);
+      setShowSuggestions(data.length > 0);
     } catch (error) {
-      console.error('Error initializing PlaceAutocompleteElement:', error);
-      // Fallback to regular text input
-      setIsGoogleLoaded(false);
+      console.error('Error fetching location suggestions:', error);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(event.target.value);
+    const newValue = event.target.value;
+    onChange(newValue);
+    searchLocations(newValue);
+  };
+
+  const handleSuggestionClick = (suggestion: LocationSuggestion) => {
+    onChange(suggestion.display_name);
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding suggestions to allow clicking on them
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 200);
+  };
+
+  const handleInputFocus = () => {
+    if (suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
   };
 
   return (
-    <TextField
-      {...textFieldProps}
-      inputRef={inputRef}
-      label={label}
-      placeholder={placeholder}
-      value={value}
-      onChange={handleInputChange}
-      error={error}
-      helperText={helperText || (!isGoogleLoaded ? "Location services not available" : "")}
-      fullWidth
-      variant="outlined"
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          '& fieldset': {
-            borderColor: 'grey.700',
+    <Box sx={{ position: 'relative' }}>
+      <TextField
+        {...textFieldProps}
+        inputRef={inputRef}
+        label={label}
+        placeholder={placeholder}
+        value={value}
+        onChange={handleInputChange}
+        onBlur={handleInputBlur}
+        onFocus={handleInputFocus}
+        error={error}
+        helperText={helperText || (isLoading ? "Searching..." : "")}
+        fullWidth
+        variant="outlined"
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            '& fieldset': {
+              borderColor: 'grey.700',
+            },
+            '&:hover fieldset': {
+              borderColor: 'grey.500',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: 'primary.main',
+            },
           },
-          '&:hover fieldset': {
-            borderColor: 'grey.500',
+          '& .MuiInputLabel-root': {
+            color: 'grey.400',
           },
-          '&.Mui-focused fieldset': {
-            borderColor: 'primary.main',
+          '& .MuiInputBase-input': {
+            color: 'white',
           },
-        },
-        '& .MuiInputLabel-root': {
-          color: 'grey.400',
-        },
-        '& .MuiInputBase-input': {
-          color: 'white',
-        },
-        // Fix z-index for Google Autocomplete dropdown
-        '& .pac-container': {
-          zIndex: 999999999,
-          position: 'fixed !important',
-          pointerEvents: 'auto !important',
-        },
-        // Ensure the input field itself doesn't block the dropdown
-        position: 'relative',
-        zIndex: 1,
-      }}
-    />
+        }}
+      />
+      
+      {showSuggestions && suggestions.length > 0 && (
+        <Paper
+          sx={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            maxHeight: 200,
+            overflow: 'auto',
+            bgcolor: '#2d2d2d',
+            border: '1px solid #555',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+            mt: 1,
+          }}
+        >
+          <List dense>
+            {suggestions.map((suggestion, index) => (
+              <ListItem
+                key={index}
+                button
+                onClick={() => handleSuggestionClick(suggestion)}
+                sx={{
+                  '&:hover': {
+                    bgcolor: '#3d3d3d',
+                  },
+                  color: 'white',
+                }}
+              >
+                <ListItemText
+                  primary={suggestion.display_name}
+                  primaryTypographyProps={{
+                    fontSize: '0.9rem',
+                    color: 'white',
+                  }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      )}
+    </Box>
   );
 };
 
