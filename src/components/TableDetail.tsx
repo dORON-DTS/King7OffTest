@@ -821,7 +821,7 @@ const TableDetail: React.FC = () => {
                 variant="outlined"
                 onClick={handleTableStatusChange}
               >
-                {table.isActive ? 'Deactivate' : 'Activate'}
+                {table.isActive ? 'Close Table' : 'Reopen Table'}
               </Button>
             </Box>
             {table.food && (
@@ -1207,11 +1207,11 @@ const TableDetail: React.FC = () => {
 
       {/* Deactivate Table Confirmation Dialog */}
       <Dialog open={deactivateDialogOpen} onClose={() => setDeactivateDialogOpen(false)}>
-        <DialogTitle>Deactivate Table</DialogTitle>
+        <DialogTitle>Close Table</DialogTitle>
         <DialogContent>
           <Typography sx={{ mb: 2 }}>
-            Are you sure you want to deactivate this table? 
-            This will prevent any new actions until the table is activated again.
+            Are you sure you want to close this table? 
+            This will prevent any new actions until the table is reopened.
           </Typography>
           {(() => {
             const validation = validateTableDeactivation();
@@ -1250,14 +1250,14 @@ const TableDetail: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeactivateDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleDeactivateConfirm} 
-            variant="contained" 
-            color="error"
-            disabled={!validateTableDeactivation().allPlayersInactive || !validateTableDeactivation().isBalanceMatching}
-          >
-            Deactivate
-          </Button>
+                      <Button 
+              onClick={handleDeactivateConfirm} 
+              variant="contained" 
+              color="error"
+              disabled={!validateTableDeactivation().allPlayersInactive || !validateTableDeactivation().isBalanceMatching}
+            >
+              Close Table
+            </Button>
         </DialogActions>
       </Dialog>
 
