@@ -100,7 +100,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   return (
     <TextField
       {...textFieldProps}
-      ref={inputRef}
+      inputRef={inputRef}
       label={label}
       placeholder={placeholder}
       value={value}
