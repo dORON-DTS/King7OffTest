@@ -721,6 +721,14 @@ const TableList: React.FC = () => {
         onClose={handleCreateDialogClose}
         maxWidth="sm"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            overflow: 'visible',
+          },
+          '& .MuiDialogContent-root': {
+            overflow: 'visible',
+          },
+        }}
       >
         <DialogTitle>Create New Table</DialogTitle>
         <DialogContent>

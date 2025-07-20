@@ -32,11 +32,31 @@ code {
 
 /* Google Places Autocomplete z-index fix */
 .pac-container {
-  z-index: 9999 !important;
+  z-index: 999999 !important;
   position: fixed !important;
+  pointer-events: auto !important;
 }
 
 /* Ensure Google Autocomplete dropdown appears above Material-UI dialogs */
 .MuiDialog-root .pac-container {
-  z-index: 99999 !important;
+  z-index: 9999999 !important;
+}
+
+/* Force Google Autocomplete to be above everything */
+body .pac-container {
+  z-index: 99999999 !important;
+}
+
+/* Additional fix for Material-UI Dialog backdrop */
+.MuiBackdrop-root {
+  z-index: 1300 !important;
+}
+
+.MuiDialog-root {
+  z-index: 1300 !important;
+}
+
+/* Ensure Google Autocomplete is above all Material-UI components */
+.pac-container {
+  z-index: 999999999 !important;
 }

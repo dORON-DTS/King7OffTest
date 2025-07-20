@@ -140,8 +140,13 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         },
         // Fix z-index for Google Autocomplete dropdown
         '& .pac-container': {
-          zIndex: 9999,
+          zIndex: 999999999,
+          position: 'fixed !important',
+          pointerEvents: 'auto !important',
         },
+        // Ensure the input field itself doesn't block the dropdown
+        position: 'relative',
+        zIndex: 1,
       }}
     />
   );
