@@ -42,7 +42,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PlayerStatsDialog from './PlayerStatsDialog';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PetsIcon from '@mui/icons-material/Pets';
@@ -312,6 +312,7 @@ const StatisticsView: React.FC = () => {
   const { tables: contextTables, isLoading: contextLoading, error: contextError, fetchTables } = usePoker();
   const { user } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const [minGamesFilter, setMinGamesFilter] = useState<string>('0');
   const [staticTables, setStaticTables] = useState<Table[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false);
@@ -324,6 +325,15 @@ const StatisticsView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+
+  // Check for group parameter in URL and set initial filter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const groupParam = searchParams.get('group');
+    if (groupParam) {
+      setSelectedGroupId(groupParam);
+    }
+  }, [location.search]);
 
   // Add state to track single game win/loss
   const [singleGameStats, setSingleGameStats] = useState<{ 
@@ -423,12 +433,12 @@ const StatisticsView: React.FC = () => {
     });
   }, [groupTableCounts]);
 
-  // Set default selected group to the first in sortedGroups
+  // Set default selected group to the first in sortedGroups (only if no group from URL)
   useEffect(() => {
-    if (sortedGroups.length > 0) {
+    if (sortedGroups.length > 0 && !selectedGroupId) {
       setSelectedGroupId(sortedGroups[0].id);
     }
-  }, [JSON.stringify(sortedGroups)]);
+  }, [JSON.stringify(sortedGroups), selectedGroupId]);
 
   // Fetch groups on component mount
   useEffect(() => {

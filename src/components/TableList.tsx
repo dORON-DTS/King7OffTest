@@ -487,7 +487,7 @@ const TableList: React.FC = () => {
             <Button 
               variant="outlined" 
               color="secondary"
-              onClick={() => navigate('/statistics')} 
+              onClick={() => navigate(`/statistics${selectedGroupId ? `?group=${selectedGroupId}` : ''}`)} 
               startIcon={<BarChartIcon />}
               sx={{ 
                 borderRadius: 2,
@@ -578,7 +578,7 @@ const TableList: React.FC = () => {
             <Button 
               variant="outlined" 
               color="secondary"
-              onClick={() => navigate('/statistics')} 
+              onClick={() => navigate(`/statistics${selectedGroupId ? `?group=${selectedGroupId}` : ''}`)} 
               startIcon={<BarChartIcon />}
               sx={{ 
                 borderRadius: 2,
