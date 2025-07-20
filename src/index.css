@@ -137,18 +137,73 @@ body .pac-container {
   pointer-events: none !important;
 }
 
-/* Debug: Add border to see if dropdown is rendered */
+/* Google Places Autocomplete Dropdown - Fixed for Material UI Dialog */
 .pac-container {
-  border: 3px solid red !important;
+  z-index: 999999999 !important;
+  position: fixed !important;
+  pointer-events: auto !important;
   background: #2d2d2d !important;
-  color: white !important;
+  border: 1px solid #555 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  max-height: 200px !important;
+  overflow-y: auto !important;
+  border-radius: 4px !important;
+  /* Force visibility */
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  /* Ensure it's above everything */
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  /* Remove debug border */
+  border: 1px solid #555 !important;
 }
 
 .pac-item {
   color: white !important;
   background: #2d2d2d !important;
+  border: none !important;
+  padding: 8px 12px !important;
+  cursor: pointer !important;
 }
 
 .pac-item:hover {
   background: #3d3d3d !important;
+}
+
+.pac-item-selected {
+  background: #1976d2 !important;
+}
+
+.pac-item-query {
+  color: white !important;
+  font-weight: bold !important;
+}
+
+.pac-matched {
+  color: #4caf50 !important;
+  font-weight: bold !important;
+}
+
+/* Force Google dropdown to be visible and not hidden */
+.pac-container:not(:empty) {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Additional fixes for Material UI Dialog */
+.MuiDialog-root .MuiDialog-paper {
+  overflow: visible !important;
+}
+
+.MuiDialog-root .MuiDialogContent-root {
+  overflow: visible !important;
+}
+
+.MuiDialog-root .MuiBackdrop-root {
+  pointer-events: none !important;
 }
