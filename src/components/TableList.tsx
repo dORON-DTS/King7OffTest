@@ -126,7 +126,8 @@ const TableList: React.FC = () => {
     bigBlind: '',
     location: '',
     groupId: '',
-    minimumBuyIn: ''
+    minimumBuyIn: '',
+    gameDate: new Date().toISOString().slice(0, 16)
   });
   const [formErrors, setFormErrors] = useState<Partial<CreateTableFormData>>({});
   const [error, setError] = useState<string | null>(null);
@@ -200,7 +201,8 @@ const TableList: React.FC = () => {
       bigBlind: '',
       location: '',
       groupId: selectedGroupId || '', // Set default to currently selected group
-      minimumBuyIn: ''
+      minimumBuyIn: '',
+      gameDate: new Date().toISOString().slice(0, 16)
     });
     setFormErrors({});
   };
@@ -252,7 +254,7 @@ const TableList: React.FC = () => {
   };
 
   const handleCreateTable = async () => {
-    if (!formData.name || !formData.smallBlind || !formData.bigBlind || !formData.groupId || !formData.minimumBuyIn) {
+    if (!formData.name || !formData.smallBlind || !formData.bigBlind || !formData.groupId || !formData.minimumBuyIn || !formData.gameDate) {
       setError('Please fill in all required fields');
       return;
     }
@@ -264,7 +266,8 @@ const TableList: React.FC = () => {
         Number(formData.bigBlind),
         formData.groupId,
         formData.location,
-        Number(formData.minimumBuyIn)
+        Number(formData.minimumBuyIn),
+        new Date(formData.gameDate)
       );
       handleCreateDialogClose();
     } catch (error: any) {
@@ -681,7 +684,7 @@ const TableList: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <CalendarTodayIcon sx={{ color: '#2196f3' }} />
                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
-                          {formatDate(table.createdAt)}
+                          {formatDate(table.gameDate || table.createdAt)}
                         </Typography>
                       </Box>
                     </Box>
@@ -792,6 +795,17 @@ const TableList: React.FC = () => {
                 setFormData(prev => ({ ...prev, location: value }));
               }}
               placeholder="Start typing to search for a location..."
+            />
+            <TextField
+              label="Game Date"
+              type="datetime-local"
+              required
+              value={formData.gameDate}
+              onChange={handleInputChange('gameDate')}
+              error={!!formErrors.gameDate}
+              helperText={formErrors.gameDate}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
             />
             <TextField
               select

@@ -156,7 +156,7 @@ const TableDetail: React.FC = () => {
     smallBlind: '',
     bigBlind: '',
     location: '',
-    date: new Date(),
+    gameDate: new Date(),
     food: '',
     groupId: '',
     minimumBuyIn: ''
@@ -183,7 +183,7 @@ const TableDetail: React.FC = () => {
         smallBlind: table.smallBlind?.toString() || '',
         bigBlind: table.bigBlind?.toString() || '',
         location: table.location || '',
-        date: new Date(table.createdAt),
+        gameDate: new Date(table.gameDate || table.createdAt),
         food: table.food || '',
         groupId: table.groupId || '',
         minimumBuyIn: table.minimumBuyIn?.toString() || ''
@@ -563,7 +563,7 @@ const TableDetail: React.FC = () => {
       food: editForm.food,
       groupId: editForm.groupId,
       minimumBuyIn: Number(editForm.minimumBuyIn),
-      createdAt: editForm.date
+      gameDate: editForm.gameDate
     };
 
     updateTable(id, updatedTable)
@@ -1405,10 +1405,10 @@ const TableDetail: React.FC = () => {
             )}
           />
           <TextField
-            label="Date"
+            label="Game Date"
             type="datetime-local"
-            value={editForm.date.toISOString().slice(0, 16)}
-            onChange={(e) => setEditForm(prev => ({ ...prev, date: new Date(e.target.value) }))}
+            value={editForm.gameDate.toISOString().slice(0, 16)}
+            onChange={(e) => setEditForm(prev => ({ ...prev, gameDate: new Date(e.target.value) }))}
             fullWidth
             sx={{ mb: 2 }}
             InputLabelProps={{ shrink: true }}

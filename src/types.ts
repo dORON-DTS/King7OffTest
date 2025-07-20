@@ -46,6 +46,7 @@ export interface Table {
   smallBlind: number;
   bigBlind: number;
   createdAt: Date;
+  gameDate: Date;
   isActive: boolean;
   creatorId: string;
   location?: string;
@@ -79,7 +80,7 @@ export interface EditForm {
   smallBlind: string;
   bigBlind: string;
   location: string;
-  date: Date;
+  gameDate: Date;
   food: string;
   groupId: string;
   minimumBuyIn: string;
@@ -91,7 +92,7 @@ export interface EditFormErrors {
   smallBlind?: string;
   bigBlind?: string;
   location?: string;
-  date?: string;
+  gameDate?: string;
   food?: string;
   groupId?: string;
   minimumBuyIn?: string;
@@ -104,6 +105,7 @@ export interface CreateTableFormData {
   location: string;
   groupId: string;
   minimumBuyIn: string;
+  gameDate: string;
 }
 
 export interface CreateTableFunction {
