@@ -109,7 +109,6 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         inputElement: inputRef.current,
         types: ['establishment', 'geocode'],
         componentRestrictions: { country: 'IL' },
-        fields: ['formatted_address', 'name', 'geometry', 'place_id'],
       });
 
       // Listen for place selection
