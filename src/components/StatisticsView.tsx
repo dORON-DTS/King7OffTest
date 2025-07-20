@@ -182,7 +182,7 @@ interface HeadCell {
 // Add helper to calculate potential games for each player
 const getPlayerPotentialGames = (playerName: string, tables: Table[]): number => {
   // Sort tables by date ascending
-  const sortedTables = [...tables].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const sortedTables = [...tables].sort((a, b) => new Date(a.gameDate || a.createdAt).getTime() - new Date(b.gameDate || b.createdAt).getTime());
   const appearances: number[] = [];
   sortedTables.forEach((table, idx) => {
     if (table.players.some(p => p.name.toLowerCase() === playerName.toLowerCase())) {
@@ -513,14 +513,14 @@ const StatisticsView: React.FC = () => {
     let overallMinLossPlayer = '-';
     let overallMinLossTableIdx = -1;
 
-    // Sort tables by creation date ascending to process in order
+    // Sort tables by game date ascending to process in order
     const sortedTables = [...filteredTables]
       .sort((a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        new Date(a.gameDate || a.createdAt).getTime() - new Date(b.gameDate || b.createdAt).getTime()
       );
 
     sortedTables.forEach((table, tableIdx) => {
-      const tableTimestampMs = new Date(table.createdAt).getTime();
+      const tableTimestampMs = new Date(table.gameDate || table.createdAt).getTime();
       if (table.isActive) return;
       table.players.forEach(player => {
         const playerIdentifier = player.name.toLowerCase();
@@ -866,7 +866,7 @@ const StatisticsView: React.FC = () => {
     // For each player, calculate their current win streak
     const playerStreaks = new Map<string, number>();
     const sortedTables = [...filteredTables].sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      new Date(b.gameDate || b.createdAt).getTime() - new Date(a.gameDate || a.createdAt).getTime()
     );
 
     playerStats.forEach(player => {
@@ -919,7 +919,7 @@ const StatisticsView: React.FC = () => {
 
     // Sort tables by date descending to get most recent first
     const sortedTables = [...filteredTables].sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      new Date(b.gameDate || b.createdAt).getTime() - new Date(a.gameDate || a.createdAt).getTime()
     );
 
     sortedTables.forEach(table => {
@@ -932,16 +932,16 @@ const StatisticsView: React.FC = () => {
           // Add to history (up to 20 entries)
           if (foodHistory.length < 20) {
             foodHistory.push({
-              date: new Date(table.createdAt).toLocaleString('he-IL', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              }),
-              player: foodOrderer.name,
-              tableCreatedAt: table.createdAt ? String(table.createdAt) : undefined // keep the raw date for sorting
+                          date: new Date(table.gameDate || table.createdAt).toLocaleString('he-IL', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            }),
+            player: foodOrderer.name,
+            tableCreatedAt: table.gameDate || table.createdAt ? String(table.gameDate || table.createdAt) : undefined // keep the raw date for sorting
             });
           }
         }
@@ -1043,7 +1043,7 @@ const StatisticsView: React.FC = () => {
             player: player.name,
             amount: net,
             tableName: table.name,
-            date: table.createdAt ? new Date(table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined
+            date: table.gameDate || table.createdAt ? new Date(table.gameDate || table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined
           });
         }
       });
@@ -1065,7 +1065,7 @@ const StatisticsView: React.FC = () => {
           const cashOut = p?.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
           const chips = p?.active ? (p?.chips || 0) : 0;
           const net = cashOut + chips - buyIn;
-          return { netResult: net, date: new Date(table.createdAt) };
+          return { netResult: net, date: new Date(table.gameDate || table.createdAt) };
         });
       // Sort games by date ascending
       games.sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -1111,8 +1111,8 @@ const StatisticsView: React.FC = () => {
             player: player.name,
             amount: buyIn,
             tableName: table.name,
-            date: table.createdAt ? new Date(table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined,
-            createdAt: table.createdAt ? String(table.createdAt) : undefined // keep the raw date for sorting
+            date: table.gameDate || table.createdAt ? new Date(table.gameDate || table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined,
+            createdAt: table.gameDate || table.createdAt ? String(table.gameDate || table.createdAt) : undefined // keep the raw date for sorting
           });
         }
       });
@@ -1161,7 +1161,7 @@ const StatisticsView: React.FC = () => {
     const streaks: { player: string; streak: number }[] = [];
     playerStats.forEach(player => {
       let currentStreak = 0;
-      const sortedTables = [...filteredTables].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const sortedTables = [...filteredTables].sort((a, b) => new Date(b.gameDate || b.createdAt).getTime() - new Date(a.gameDate || a.createdAt).getTime());
       for (const table of sortedTables) {
         const playerInTable = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
         if (!playerInTable) continue;
@@ -2032,7 +2032,7 @@ const StatisticsView: React.FC = () => {
                 <Grid item xs={12} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>Date:</Typography>
                   <Typography variant="body1" sx={{ color: 'white' }}>
-                    {new Date(craziestTable.table.createdAt).toLocaleDateString('he-IL')}
+                    {new Date(craziestTable.table.gameDate || craziestTable.table.createdAt).toLocaleDateString('he-IL')}
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
@@ -2092,7 +2092,7 @@ const StatisticsView: React.FC = () => {
                 <Grid item xs={12} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>Date:</Typography>
                   <Typography variant="body1" sx={{ color: 'white' }}>
-                    {new Date(calmestTable.table.createdAt).toLocaleDateString('he-IL')}
+                    {new Date(calmestTable.table.gameDate || calmestTable.table.createdAt).toLocaleDateString('he-IL')}
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>

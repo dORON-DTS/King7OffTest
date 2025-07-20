@@ -125,7 +125,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
     let cumulativeResult = 0;
 
     // Sort tables by date for timeline
-    const sortedTables = [...allTablesData].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const sortedTables = [...allTablesData].sort((a, b) => new Date(a.gameDate || a.createdAt).getTime() - new Date(b.gameDate || b.createdAt).getTime());
 
     sortedTables.forEach(table => {
         const playerInstance = table.players.find(p => 
@@ -143,7 +143,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
             // Add to timeline
             cumulativeResult += gameNetResult;
             timelineData.push({
-                gameDate: new Date(table.createdAt).toLocaleDateString('he-IL'), // Format date as needed
+                gameDate: new Date(table.gameDate || table.createdAt).toLocaleDateString('he-IL'), // Format date as needed
                 netResult: gameNetResult,
                 cumulativeResult: cumulativeResult
             });
@@ -179,7 +179,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
         const net = cashOut + chips - buyIn;
         return {
           table,
-          date: new Date(table.createdAt),
+          date: new Date(table.gameDate || table.createdAt),
           netResult: net,
           opponents: table.players.filter(p => p.name.toLowerCase() !== playerData.name.toLowerCase()),
         };
