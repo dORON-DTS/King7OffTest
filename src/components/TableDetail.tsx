@@ -130,7 +130,7 @@ const TableDetail: React.FC = () => {
 
   // Cash Out dialog
   const [cashOutDialogOpen, setCashOutDialogOpen] = useState(false);
-  const [cashOutAmount, setCashOutAmount] = useState(0);
+  const [cashOutAmount, setCashOutAmount] = useState<string>('');
 
   // Add new state for confirmation dialog
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
@@ -343,22 +343,25 @@ const TableDetail: React.FC = () => {
     setSelectedPlayerId(playerId);
     const player = table.players.find(p => p.id === playerId);
     if (player) {
-      setCashOutAmount(player.chips ?? 0);
+      setCashOutAmount('');
       setCashOutDialogOpen(true);
     }
   };
 
   const confirmCashOut = async () => {
-    if (selectedPlayerId && cashOutAmount >= 0) {
-      try {
-        await cashOut(id, selectedPlayerId, cashOutAmount);
-        setCashOutDialogOpen(false);
-        setCashOutAmount(0);
-      } catch (error: any) {
-        if (error.message?.includes('403') || error.message?.includes('permission')) {
-          showTransientError('You do not have permission to perform this action');
-        } else {
-          showTransientError('Failed to cash out');
+    if (selectedPlayerId) {
+      const amount = cashOutAmount === '' ? 0 : Number(cashOutAmount);
+      if (amount >= 0) {
+        try {
+          await cashOut(id, selectedPlayerId, amount);
+          setCashOutDialogOpen(false);
+          setCashOutAmount('');
+        } catch (error: any) {
+          if (error.message?.includes('403') || error.message?.includes('permission')) {
+            showTransientError('You do not have permission to perform this action');
+          } else {
+            showTransientError('Failed to cash out');
+          }
         }
       }
     }
@@ -1179,13 +1182,13 @@ const TableDetail: React.FC = () => {
               type="number"
               fullWidth
               value={cashOutAmount}
-              onChange={(e) => setCashOutAmount(parseInt(e.target.value) || 0)}
+              onChange={(e) => setCashOutAmount(e.target.value)}
               InputProps={{ 
                 inputProps: { 
                   min: 0
                 } 
               }}
-              helperText="Enter the amount you want to cash out"
+              helperText="Enter the amount you want to cash out (leave empty for 0)"
             />
           </Box>
         </DialogContent>
@@ -1195,7 +1198,7 @@ const TableDetail: React.FC = () => {
             onClick={confirmCashOut} 
             variant="contained" 
             color="primary"
-            disabled={cashOutAmount < 0 || !selectedPlayerId}
+            disabled={!selectedPlayerId}
           >
             Confirm Cash Out
           </Button>
