@@ -68,10 +68,10 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
   // Re-initialize autocomplete when inputRef changes
   useEffect(() => {
-    if (isGoogleLoaded && inputRef.current) {
+    if (isGoogleLoaded && inputRef.current && !autocompleteRef.current) {
       initializeAutocomplete();
     }
-  }, [isGoogleLoaded, inputRef.current]);
+  }, [isGoogleLoaded]);
 
   const initializeAutocomplete = () => {
     console.log('Initializing autocomplete...', { 
