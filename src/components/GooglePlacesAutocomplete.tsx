@@ -121,7 +121,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     try {
              const request = {
          input: query,
-         types: ['establishment', 'geocode']
+         types: ['establishment', 'geocode'],
+         language: 'en' // Force English language
        };
 
       autocompleteServiceRef.current.getPlacePredictions(request, (predictions: PlaceSuggestion[], status: string) => {
