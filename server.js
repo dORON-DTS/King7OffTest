@@ -1267,6 +1267,45 @@ app.get('/api/users', authenticate, authorize(['admin']), (req, res) => {
   });
 });
 
+// Get user's group memberships
+app.get('/api/users/:userId/groups', authenticate, authorize(['admin']), (req, res) => {
+  const userId = req.params.userId;
+
+  // First check if user exists
+  db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get all groups where user is a member
+    const query = `
+      SELECT 
+        g.id as groupId,
+        g.name as groupName,
+        gm.role,
+        gm.joinedAt,
+        (SELECT COUNT(*) FROM tables t WHERE t.groupId = g.id) as tableCount
+      FROM groups g
+      INNER JOIN group_members gm ON g.id = gm.groupId
+      WHERE gm.userId = ?
+      ORDER BY gm.role DESC, gm.joinedAt ASC
+    `;
+
+    db.all(query, [userId], (err, groupMemberships) => {
+      if (err) {
+        console.error('Error fetching user group memberships:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+
+      res.json({ groupMemberships });
+    });
+  });
+});
+
 // Delete user
 app.delete('/api/users/:id', authenticate, authorize(['admin']), (req, res) => {
   const userId = req.params.id;
