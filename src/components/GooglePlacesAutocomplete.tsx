@@ -30,32 +30,53 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
 
   useEffect(() => {
-    // Check if Google Maps API is loaded
-    const checkGoogleLoaded = () => {
+    // Load Google Maps API dynamically
+    const loadGoogleMapsAPI = () => {
+      const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
+      if (!apiKey) {
+        console.error('Google Places API key not found in environment variables');
+        return;
+      }
+
+      // Check if already loaded
       if (window.google && window.google.maps && window.google.maps.places) {
         setIsGoogleLoaded(true);
         initializeAutocomplete();
-      } else {
-        // Retry after a short delay
-        setTimeout(checkGoogleLoaded, 100);
+        return;
       }
+
+      // Load the script
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        setIsGoogleLoaded(true);
+        initializeAutocomplete();
+      };
+      script.onerror = () => {
+        console.error('Failed to load Google Maps API');
+        setIsGoogleLoaded(false);
+      };
+      document.head.appendChild(script);
     };
 
-    checkGoogleLoaded();
+    loadGoogleMapsAPI();
   }, []);
 
   const initializeAutocomplete = () => {
     if (!inputRef.current || !window.google) return;
 
     try {
-      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+      // Use the new PlaceAutocompleteElement approach
+      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
         types: ['establishment', 'geocode'], // Allow both businesses and addresses
         componentRestrictions: { country: 'IL' }, // Restrict to Israel
         fields: ['formatted_address', 'name', 'geometry', 'place_id'],
       });
 
-      autocompleteRef.current.addListener('place_changed', () => {
-        const place = autocompleteRef.current.getPlace();
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
         
         if (place.formatted_address) {
           onChange(place.formatted_address);
@@ -63,8 +84,12 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
           onChange(place.name);
         }
       });
+
+      autocompleteRef.current = autocomplete;
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
+      // Fallback to regular text input
+      setIsGoogleLoaded(false);
     }
   };
 
@@ -81,7 +106,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       value={value}
       onChange={handleInputChange}
       error={error}
-      helperText={helperText || (!isGoogleLoaded ? "Loading location services..." : "")}
+      helperText={helperText || (!isGoogleLoaded ? "Location services not available" : "")}
       fullWidth
       variant="outlined"
       sx={{
