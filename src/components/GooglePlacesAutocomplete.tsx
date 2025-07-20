@@ -119,11 +119,10 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
     setIsLoading(true);
     try {
-      const request = {
-        input: query,
-        componentRestrictions: { country: 'IL' },
-        types: ['establishment', 'geocode']
-      };
+             const request = {
+         input: query,
+         types: ['establishment', 'geocode']
+       };
 
       autocompleteServiceRef.current.getPlacePredictions(request, (predictions: PlaceSuggestion[], status: string) => {
         setIsLoading(false);
