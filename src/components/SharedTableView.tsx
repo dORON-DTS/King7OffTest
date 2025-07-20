@@ -74,8 +74,13 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string, iconSi
 
   useEffect(() => {
     const apiKey = process.env.REACT_APP_WEATHER_API_KEY;
-    // תמיד Tel Aviv
-    const city = 'Tel Aviv';
+    
+    // אם אין מיקום - לא מציג מזג אוויר
+    if (!location || location.trim() === '') {
+      setWeather(null);
+      setError(null);
+      return;
+    }
     
     // Check if date is valid
     if (!date) {
@@ -93,7 +98,10 @@ const WeatherCardInfo: React.FC<{ date: string | Date, location?: string, iconSi
     const mm = String(dt.getMonth() + 1).padStart(2, '0');
     const dd = String(dt.getDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
-    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(city)}&dt=${dateStr}&lang=he`;
+    
+    // משתמש במיקום האמיתי במקום "תל אביב" הארד קודד
+    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(location)}&dt=${dateStr}&lang=he`;
+    
     fetch(url)
       .then(res => res.json())
       .then(data => {
