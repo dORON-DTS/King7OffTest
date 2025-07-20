@@ -41,7 +41,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       // Check if already loaded
       if (window.google && window.google.maps && window.google.maps.places) {
         setIsGoogleLoaded(true);
-        initializeAutocomplete();
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => initializeAutocomplete(), 100);
         return;
       }
 
@@ -52,7 +53,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       script.defer = true;
       script.onload = () => {
         setIsGoogleLoaded(true);
-        initializeAutocomplete();
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => initializeAutocomplete(), 100);
       };
       script.onerror = () => {
         console.error('Failed to load Google Maps API');
@@ -64,8 +66,27 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     loadGoogleMapsAPI();
   }, []);
 
+  // Re-initialize autocomplete when inputRef changes
+  useEffect(() => {
+    if (isGoogleLoaded && inputRef.current) {
+      initializeAutocomplete();
+    }
+  }, [isGoogleLoaded, inputRef.current]);
+
   const initializeAutocomplete = () => {
-    if (!inputRef.current || !window.google) return;
+    console.log('Initializing autocomplete...', { 
+      hasInputRef: !!inputRef.current, 
+      hasGoogle: !!window.google,
+      inputElement: inputRef.current 
+    });
+
+    if (!inputRef.current || !window.google) {
+      console.log('Missing requirements:', { 
+        hasInputRef: !!inputRef.current, 
+        hasGoogle: !!window.google 
+      });
+      return;
+    }
 
     try {
       // Use the new PlaceAutocompleteElement approach
@@ -77,6 +98,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
+        console.log('Place selected:', place);
         
         if (place.formatted_address) {
           onChange(place.formatted_address);
@@ -86,6 +108,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       });
 
       autocompleteRef.current = autocomplete;
+      console.log('Autocomplete initialized successfully');
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
       // Fallback to regular text input
