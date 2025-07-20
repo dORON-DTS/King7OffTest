@@ -154,7 +154,14 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
   // Handle suggestion selection
   const handleSuggestionClick = useCallback((suggestion: PlaceSuggestion) => {
-    onChange(suggestion.description);
+    // Use structured formatting for cleaner display
+    const mainText = suggestion.structured_formatting?.main_text || '';
+    const secondaryText = suggestion.structured_formatting?.secondary_text || '';
+    
+    // Combine main and secondary text for a clean address
+    const cleanAddress = secondaryText ? `${mainText}, ${secondaryText}` : mainText;
+    
+    onChange(cleanAddress);
     setShowSuggestions(false);
     setSuggestions([]);
   }, [onChange]);
