@@ -115,3 +115,40 @@ body .pac-container {
 .pac-item-selected {
   background-color: #e3f2fd !important;
 }
+
+/* Force Google dropdown to be visible and not hidden */
+.pac-container:not(:empty) {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Additional fixes for Material UI Dialog */
+.MuiDialog-root .MuiDialog-paper {
+  overflow: visible !important;
+}
+
+.MuiDialog-root .MuiDialogContent-root {
+  overflow: visible !important;
+}
+
+.MuiDialog-root .MuiBackdrop-root {
+  pointer-events: none !important;
+}
+
+/* Debug: Add border to see if dropdown is rendered */
+.pac-container {
+  border: 3px solid red !important;
+  background: #2d2d2d !important;
+  color: white !important;
+}
+
+.pac-item {
+  color: white !important;
+  background: #2d2d2d !important;
+}
+
+.pac-item:hover {
+  background: #3d3d3d !important;
+}
