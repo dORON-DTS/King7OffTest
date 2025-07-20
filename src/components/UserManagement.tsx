@@ -163,24 +163,14 @@ const UserManagement: React.FC = () => {
       setLoadingUserDetails(true);
       const token = localStorage.getItem('token');
       
-      // Fetch user's group memberships
-      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/groups`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }, logout);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch user details');
-      }
-      
-      const data = await response.json();
+      // For now, show basic user info without group memberships
+      // since the server endpoint is not working yet
       const user = users.find(u => u.id === userId);
       
       if (user) {
         setSelectedUserDetails({
           user,
-          groupMemberships: data.groupMemberships || []
+          groupMemberships: [] // Empty for now - we'll add this when server is updated
         });
         setUserDetailsDialogOpen(true);
       }
