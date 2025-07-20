@@ -27,7 +27,12 @@ import {
   FormControl,
   InputLabel,
   Grid,
-  Chip
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Avatar
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
@@ -37,6 +42,10 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearIcon from '@mui/icons-material/Clear';
+import PersonIcon from '@mui/icons-material/Person';
+import GroupIcon from '@mui/icons-material/Group';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import BlockIcon from '@mui/icons-material/Block';
 import { useUser } from '../context/UserContext';
 import { apiFetch } from '../utils/apiInterceptor';
 
@@ -48,6 +57,19 @@ interface User {
   isVerified?: boolean;
   isBlocked?: boolean | number;
   createdAt: string;
+}
+
+interface GroupMembership {
+  groupId: string;
+  groupName: string;
+  role: string;
+  joinedAt: string;
+  tableCount: number;
+}
+
+interface UserDetails {
+  user: User;
+  groupMemberships: GroupMembership[];
 }
 
 interface SearchFilters {
@@ -78,6 +100,11 @@ const UserManagement: React.FC = () => {
   const [emailError, setEmailError] = useState('');
   const [emailSuccess, setEmailSuccess] = useState('');
   const [blockError, setBlockError] = useState('');
+
+  // User details popup state
+  const [userDetailsDialogOpen, setUserDetailsDialogOpen] = useState(false);
+  const [selectedUserDetails, setSelectedUserDetails] = useState<UserDetails | null>(null);
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -129,6 +156,43 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // Fetch user details with group memberships
+  const fetchUserDetails = async (userId: string) => {
+    try {
+      setLoadingUserDetails(true);
+      const token = localStorage.getItem('token');
+      
+      // Fetch user's group memberships
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/groups`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }, logout);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch user details');
+      }
+      
+      const data = await response.json();
+      const user = users.find(u => u.id === userId);
+      
+      if (user) {
+        setSelectedUserDetails({
+          user,
+          groupMemberships: data.groupMemberships || []
+        });
+        setUserDetailsDialogOpen(true);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return;
+      }
+      setError('Error loading user details');
+    } finally {
+      setLoadingUserDetails(false);
+    }
+  };
 
   // Apply filters function
   const applyFilters = () => {
@@ -722,7 +786,22 @@ const UserManagement: React.FC = () => {
                     <TableRow key={user.id} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
                       <TableCell>
                         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                          {user.username}
+                          <Button
+                            variant="text"
+                            onClick={() => fetchUserDetails(user.id)}
+                            sx={{ 
+                              p: 0, 
+                              minWidth: 'auto', 
+                              textTransform: 'none',
+                              color: 'primary.main',
+                              fontWeight: 'bold',
+                              '&:hover': {
+                                textDecoration: 'underline'
+                              }
+                            }}
+                          >
+                            {user.username}
+                          </Button>
                           <Box sx={{ 
                             display: { xs: 'flex', sm: 'none' },
                             flexDirection: 'column',
@@ -1152,6 +1231,185 @@ const UserManagement: React.FC = () => {
       </Dialog>
 
       {blockError && <Alert severity="error">{blockError}</Alert>}
+
+      {/* User Details Dialog */}
+      <Dialog
+        open={userDetailsDialogOpen}
+        onClose={() => setUserDetailsDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ 
+          borderBottom: 1, 
+          borderColor: 'divider',
+          bgcolor: 'primary.main',
+          color: 'white',
+          py: 2
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ bgcolor: 'white', color: 'primary.main' }}>
+              <PersonIcon />
+            </Avatar>
+            <Typography variant="h6">
+              {selectedUserDetails?.user.username} - User Details
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {loadingUserDetails ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <Typography>Loading user details...</Typography>
+            </Box>
+          ) : selectedUserDetails ? (
+            <Grid container spacing={3}>
+              {/* Basic Information */}
+              <Grid item xs={12}>
+                <Card sx={{ mb: 2 }}>
+                  <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PersonIcon color="primary" />
+                      Basic Information
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">Username</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                          {selectedUserDetails.user.username}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">Email</Typography>
+                        <Typography variant="body1">
+                          {selectedUserDetails.user.email || 'Not provided'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">Role</Typography>
+                        <Chip 
+                          label={selectedUserDetails.user.role.toUpperCase()} 
+                          color={selectedUserDetails.user.role === 'admin' ? 'error' : selectedUserDetails.user.role === 'editor' ? 'warning' : 'default'}
+                          size="small"
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">Account Created</Typography>
+                        <Typography variant="body1">
+                          {new Date(selectedUserDetails.user.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                          })}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">Verification Status</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {selectedUserDetails.user.isVerified ? (
+                            <>
+                              <VerifiedIcon color="success" fontSize="small" />
+                              <Typography variant="body1" color="success.main">Verified</Typography>
+                            </>
+                          ) : (
+                            <>
+                              <BlockIcon color="error" fontSize="small" />
+                              <Typography variant="body1" color="error.main">Not Verified</Typography>
+                            </>
+                          )}
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">Account Status</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {selectedUserDetails.user.isBlocked ? (
+                            <>
+                              <BlockIcon color="error" fontSize="small" />
+                              <Typography variant="body1" color="error.main">Blocked</Typography>
+                            </>
+                          ) : (
+                            <>
+                              <VerifiedIcon color="success" fontSize="small" />
+                              <Typography variant="body1" color="success.main">Active</Typography>
+                            </>
+                          )}
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Group Memberships */}
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <GroupIcon color="primary" />
+                      Group Memberships ({selectedUserDetails.groupMemberships.length} groups)
+                    </Typography>
+                    {selectedUserDetails.groupMemberships.length > 0 ? (
+                      <List>
+                        {selectedUserDetails.groupMemberships.map((membership, index) => (
+                          <React.Fragment key={membership.groupId}>
+                            <ListItem sx={{ px: 0 }}>
+                              <ListItemText
+                                primary={
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                      {membership.groupName}
+                                    </Typography>
+                                    <Chip 
+                                      label={membership.role.toUpperCase()} 
+                                      color={membership.role === 'owner' ? 'error' : membership.role === 'editor' ? 'warning' : 'default'}
+                                      size="small"
+                                    />
+                                  </Box>
+                                }
+                                secondary={
+                                  <Box sx={{ mt: 1 }}>
+                                    <Typography variant="body2" color="text.secondary">
+                                      Joined: {new Date(membership.joinedAt).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                      })}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                      Tables in group: {membership.tableCount}
+                                    </Typography>
+                                  </Box>
+                                }
+                              />
+                            </ListItem>
+                            {index < selectedUserDetails.groupMemberships.length - 1 && (
+                              <Divider />
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </List>
+                    ) : (
+                      <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        User is not a member of any groups.
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          ) : (
+            <Typography>No user details available.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Button onClick={() => setUserDetailsDialogOpen(false)} variant="contained">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
