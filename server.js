@@ -609,7 +609,7 @@ app.get('/api/public/tables', (req, res) => {
 
 // Create new table
 app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res) => {
-  const { name, smallBlind, bigBlind, location, groupId, minimumBuyIn } = req.body;
+  const { name, smallBlind, bigBlind, location, groupId, minimumBuyIn, gameDate } = req.body;
   
   if (!groupId) {
     return res.status(400).json({ error: 'Group ID is required' });
@@ -624,10 +624,11 @@ app.post('/api/tables', authenticate, authorize(['admin', 'editor']), (req, res)
     const createdAt = new Date().toISOString();
     const creatorId = req.user.id;
     const isActive = true;
+    const gameDateStr = gameDate ? new Date(gameDate).toISOString() : createdAt;
 
     db.run(
-      'INSERT INTO tables (id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn],
+      'INSERT INTO tables (id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn, gameDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, name, smallBlind, bigBlind, location, isActive, createdAt, creatorId, groupId, minimumBuyIn, gameDateStr],
       function(err) {
         if (err) {
           res.status(500).json({ error: err.message });
@@ -1614,7 +1615,7 @@ app.get('/api/tables/:id', authenticate, (req, res) => {
 // Update table
 app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (req, res) => {
   const tableId = req.params.id;
-  const { name, smallBlind, bigBlind, location, food, groupId, minimumBuyIn, createdAt } = req.body;
+  const { name, smallBlind, bigBlind, location, food, groupId, minimumBuyIn, createdAt, gameDate } = req.body;
   const userId = req.user.id;
   const userRole = req.user.role;
 
@@ -1705,15 +1706,15 @@ app.put('/api/tables/:id', authenticate, authorize(['admin', 'editor']), async (
       return res.status(404).json({ error: 'Table not found' });
     }
 
-    // Update table - add food and createdAt to SQL
+    // Update table - add gameDate to SQL
     await new Promise((resolve, reject) => {
       const updateQuery = `
         UPDATE tables 
-        SET name = ?, smallBlind = ?, bigBlind = ?, location = ?, food = ?, groupId = ?, minimumBuyIn = ?, createdAt = ?
+        SET name = ?, smallBlind = ?, bigBlind = ?, location = ?, food = ?, groupId = ?, minimumBuyIn = ?, gameDate = ?
         WHERE id = ?
       `;
-      const createdAtStr = createdAt instanceof Date ? createdAt.toISOString() : new Date(createdAt).toISOString();
-      db.run(updateQuery, [name, smallBlind, bigBlind, location, food, groupId, minimumBuyIn, createdAtStr, tableId], function(err) {
+      const gameDateStr = gameDate instanceof Date ? gameDate.toISOString() : new Date(gameDate).toISOString();
+      db.run(updateQuery, [name, smallBlind, bigBlind, location, food, groupId, minimumBuyIn, gameDateStr, tableId], function(err) {
         if (err) {
           reject(err);
           return;

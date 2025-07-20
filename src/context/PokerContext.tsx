@@ -665,7 +665,7 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         },
         body: JSON.stringify({
           ...tableData,
-          createdAt: tableData.createdAt ? new Date(tableData.createdAt).toISOString() : undefined
+          gameDate: tableData.gameDate ? new Date(tableData.gameDate).toISOString() : undefined
         }),
       });
       if (!response.ok) {
@@ -678,11 +678,11 @@ export const PokerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           table.id === tableId ? { 
             ...table, 
             ...updatedTable,
-            createdAt: new Date(updatedTable.createdAt) 
+            gameDate: new Date(updatedTable.gameDate || updatedTable.createdAt) 
           } : table
         )
       );
-      return { ...updatedTable, createdAt: new Date(updatedTable.createdAt) };
+      return { ...updatedTable, gameDate: new Date(updatedTable.gameDate || updatedTable.createdAt) };
     } catch (error) {
       // אפשר להשאיר alert או setError אם צריך, אבל לא לוגים
     }
