@@ -116,7 +116,7 @@ const TableDetail: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState<string | null>(null);
   const [newPlayerNickname, setNewPlayerNickname] = useState('');
-  const [newPlayerChips, setNewPlayerChips] = useState(50);
+  const [newPlayerChips, setNewPlayerChips] = useState<number | ''>('');
   const [showShareAlert, setShowShareAlert] = useState(false);
   
   // Buy In dialog
@@ -286,7 +286,7 @@ const TableDetail: React.FC = () => {
   };
 
   const handleOpenAddPlayerDialog = () => {
-    setNewPlayerChips(table.minimumBuyIn || 50);
+    setNewPlayerChips('');
     setOpenDialog(true);
   };
 
@@ -306,13 +306,13 @@ const TableDetail: React.FC = () => {
         await addPlayer(
           id,
           newPlayerName.trim(),
-          newPlayerChips,
+          newPlayerChips || 0,
           newPlayerNickname.trim()
         );
         setOpenDialog(false);
         setNewPlayerName(null);
         setNewPlayerNickname('');
-        setNewPlayerChips(50);
+        setNewPlayerChips('');
       } catch (error: any) {
         if (error.message?.includes('403') || error.message?.includes('permission')) {
           showTransientError('You do not have permission to perform this action');
@@ -1029,17 +1029,17 @@ const TableDetail: React.FC = () => {
           />
           <TextField
             margin="dense"
-            label="Initial Chips"
+            label="Initial Chips (Optional)"
             type="number"
             fullWidth
             value={newPlayerChips}
-            onChange={(e) => setNewPlayerChips(Number(e.target.value) || 0)}
-            required
+            onChange={(e) => setNewPlayerChips(e.target.value === '' ? '' : Number(e.target.value) || 0)}
             InputLabelProps={{ sx: { color: 'grey.400' } }}
             InputProps={{
               sx: { color: 'white', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'grey.700' } },
               inputProps: { min: 0 }
             }}
+            helperText="Leave empty to add player without buy-in"
           />
         </DialogContent>
         <DialogActions sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.12)', p: '16px' }}>
