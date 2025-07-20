@@ -41,6 +41,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
       // Check if already loaded
       if (window.google && window.google.maps && window.google.maps.places) {
+        console.log('Google API already loaded');
         setIsGoogleLoaded(true);
         // Use setTimeout to ensure DOM is ready
         setTimeout(() => initializeAutocomplete(), 100);
@@ -53,9 +54,27 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        setIsGoogleLoaded(true);
-        // Use setTimeout to ensure DOM is ready
-        setTimeout(() => initializeAutocomplete(), 100);
+        console.log('Google API script loaded');
+        // Wait a bit more for the API to be fully initialized
+        setTimeout(() => {
+          if (window.google && window.google.maps && window.google.maps.places) {
+            console.log('Google API fully initialized');
+            setIsGoogleLoaded(true);
+            initializeAutocomplete();
+          } else {
+            console.log('Google API not fully initialized yet, retrying...');
+            setTimeout(() => {
+              if (window.google && window.google.maps && window.google.maps.places) {
+                console.log('Google API initialized on retry');
+                setIsGoogleLoaded(true);
+                initializeAutocomplete();
+              } else {
+                console.error('Google API failed to initialize');
+                setIsGoogleLoaded(false);
+              }
+            }, 1000);
+          }
+        }, 500);
       };
       script.onerror = () => {
         console.error('Failed to load Google Maps API');
@@ -75,7 +94,26 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   }, [isGoogleLoaded]);
 
   const initializeAutocomplete = () => {
+    console.log('Initializing autocomplete...', { 
+      hasInputRef: !!inputRef.current, 
+      hasGoogle: !!window.google,
+      hasMaps: !!(window.google && window.google.maps),
+      hasPlaces: !!(window.google && window.google.maps && window.google.maps.places),
+      googleObject: window.google
+    });
+
     if (!inputRef.current || !window.google) {
+      console.log('Missing inputRef or Google API');
+      return;
+    }
+
+    if (!window.google.maps) {
+      console.log('Google Maps not loaded yet');
+      return;
+    }
+
+    if (!window.google.maps.places) {
+      console.log('Google Places API not loaded yet');
       return;
     }
 
@@ -89,6 +127,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
+        console.log('Place selected:', place);
         
         if (place.formatted_address) {
           onChange(place.formatted_address);
@@ -98,6 +137,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       });
 
       autocompleteRef.current = autocomplete;
+      console.log('Autocomplete initialized successfully');
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
       // Fallback to regular text input
