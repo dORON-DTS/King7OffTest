@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TextField, TextFieldProps } from '@mui/material';
+import { createPortal } from 'react-dom';
 
 interface GooglePlacesAutocompleteProps extends Omit<TextFieldProps, 'onChange'> {
   value: string;

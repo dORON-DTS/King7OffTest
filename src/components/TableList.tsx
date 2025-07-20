@@ -724,9 +724,13 @@ const TableList: React.FC = () => {
         sx={{
           '& .MuiDialog-paper': {
             overflow: 'visible',
+            pointerEvents: 'auto',
           },
           '& .MuiDialogContent-root': {
             overflow: 'visible',
+          },
+          '& .MuiBackdrop-root': {
+            pointerEvents: 'none',
           },
         }}
       >
