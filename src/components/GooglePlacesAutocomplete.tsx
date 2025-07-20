@@ -111,8 +111,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         componentRestrictions: { country: 'IL' },
       });
 
-      // Listen for place selection
-      autocomplete.addListener('gmp-placeselect', (event: any) => {
+      // Listen for place selection using addEventListener
+      autocomplete.addEventListener('gmp-placeselect', (event: any) => {
         const place = event.detail.place;
         console.log('Place selected:', place);
         
