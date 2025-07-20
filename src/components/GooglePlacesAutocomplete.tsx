@@ -74,17 +74,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   }, [isGoogleLoaded]);
 
   const initializeAutocomplete = () => {
-    console.log('Initializing autocomplete...', { 
-      hasInputRef: !!inputRef.current, 
-      hasGoogle: !!window.google,
-      inputElement: inputRef.current 
-    });
-
     if (!inputRef.current || !window.google) {
-      console.log('Missing requirements:', { 
-        hasInputRef: !!inputRef.current, 
-        hasGoogle: !!window.google 
-      });
       return;
     }
 
@@ -98,7 +88,6 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
-        console.log('Place selected:', place);
         
         if (place.formatted_address) {
           onChange(place.formatted_address);
@@ -108,7 +97,6 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       });
 
       autocompleteRef.current = autocomplete;
-      console.log('Autocomplete initialized successfully');
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
       // Fallback to regular text input
@@ -149,6 +137,10 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         },
         '& .MuiInputBase-input': {
           color: 'white',
+        },
+        // Fix z-index for Google Autocomplete dropdown
+        '& .pac-container': {
+          zIndex: 9999,
         },
       }}
     />

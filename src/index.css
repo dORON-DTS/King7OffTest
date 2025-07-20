@@ -29,3 +29,14 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Google Places Autocomplete z-index fix */
+.pac-container {
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
+/* Ensure Google Autocomplete dropdown appears above Material-UI dialogs */
+.MuiDialog-root .pac-container {
+  z-index: 99999 !important;
+}
