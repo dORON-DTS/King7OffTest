@@ -107,7 +107,7 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
       }
 
       const data = await response.json();
-      console.log('Fetched notifications:', data);
+
       
       // Ensure data is an array and has valid structure
       if (Array.isArray(data)) {
@@ -155,7 +155,7 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
       }
 
       const result = await response.json();
-      console.log('Marked notifications as read:', result);
+      
       
       // Update local notifications to mark them as read
       setNotifications(prev => prev.map(notification => ({
@@ -177,7 +177,7 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
         throw new Error('Authentication required');
       }
 
-      console.log('Approving request:', { groupId: notification.groupId, requestId: notification.requestId });
+
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups/${notification.groupId}/join-request/${notification.requestId}/approve`, {
         method: 'POST',
@@ -209,7 +209,7 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
         throw new Error('Authentication required');
       }
 
-      console.log('Rejecting request:', { groupId: notification.groupId, requestId: notification.requestId });
+
 
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/groups/${notification.groupId}/join-request/${notification.requestId}/reject`, {
         method: 'POST',

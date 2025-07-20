@@ -39,26 +39,24 @@ const DATA_DIR = process.env.RENDER ? '/opt/render/project/src/data' : path.join
 const dbPath = path.join(DATA_DIR, 'poker.db');
 const backupPath = path.join(DATA_DIR, 'backup');
 
-console.log('[DB] Using data directory:', DATA_DIR);
-console.log('[DB] Using database path:', dbPath);
-console.log('[DB] Using backup path:', backupPath);
+
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
-  console.log('[DB] Creating data directory:', DATA_DIR);
+  
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
 // Ensure backup directory exists
 if (!fs.existsSync(backupPath)) {
-  console.log('[DB] Creating backup directory:', backupPath);
+  
   fs.mkdirSync(backupPath, { recursive: true });
 }
 
 // If we're on Render and the database doesn't exist in the data directory,
 // but exists in the root, move it to the data directory
 if (process.env.RENDER && !fs.existsSync(dbPath) && fs.existsSync(path.join(__dirname, 'poker.db'))) {
-  console.log('[DB] Moving database from root to data directory');
+  
   fs.copyFileSync(path.join(__dirname, 'poker.db'), dbPath);
 }
 
@@ -66,14 +64,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('[DB] Error connecting to database:', err);
   } else {
-    console.log('[DB] Connected to SQLite database at:', dbPath);
+    
     
     // Verify database is writable
     db.run('PRAGMA quick_check', (err) => {
       if (err) {
         console.error('[DB] Database write check failed:', err);
       } else {
-        console.log('[DB] Database is writable and healthy');
+        
       }
     });
 
@@ -99,7 +97,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
       if (err && !err.message.includes('duplicate column name')) {
         console.error('[DB] Error adding owner_id column:', err);
       } else if (!err) {
-        console.log('[DB] owner_id column added to groups table');
+        
       }
     });
 
@@ -119,7 +117,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
       if (err) {
         console.error('[DB] Error creating users table:', err);
       } else {
-        console.log('[DB] Users table ready');
+        
       }
     });
 
@@ -130,14 +128,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
       if (err && !err.message.includes('duplicate column name')) {
         console.error('[DB] Error adding email column:', err);
       } else if (!err) {
-        console.log('[DB] Email column added to users table');
+        
       }
     });
 
     // Note: group_join_requests table already exists with INTEGER columns
     // but groups and users tables use TEXT (UUID) columns
     // We'll handle this mismatch in the code by not using foreign keys
-    console.log('[DB] group_join_requests table exists (using INTEGER columns)');
+    
 
     // Create notifications table if it doesn't exist
     db.run(`
@@ -155,7 +153,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
       )
     `, (err) => {
       if (err) { console.error('[DB] Error creating notifications table:', err); }
-      else { console.log('[DB] notifications table ready'); }
+      else { }
     });
   }
 });
@@ -1241,14 +1239,7 @@ app.get('/api/users/me', authenticate, (req, res) => {
 
 // Get all users
 app.get('/api/users', authenticate, authorize(['admin']), (req, res) => {
-  console.log('[Users] Fetching all users - Request received:', {
-    user: req.user,
-    headers: req.headers,
-    ip: req.ip,
-    timestamp: new Date().toISOString()
-  });
 
-  console.log('[Users] Executing database query');
   db.all('SELECT id, username, email, role, isVerified, isBlocked, createdAt FROM users', [], (err, users) => {
     if (err) {
       return res.status(500).json({ error: 'Internal server error' });
@@ -1261,11 +1252,7 @@ app.get('/api/users', authenticate, authorize(['admin']), (req, res) => {
 // Delete user
 app.delete('/api/users/:id', authenticate, authorize(['admin']), (req, res) => {
   const userId = req.params.id;
-  console.log('[Users] Delete request received:', {
-    userId,
-    requestingUser: req.user,
-    timestamp: new Date().toISOString()
-  });
+
 
   // First check if user exists
   db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
@@ -1274,15 +1261,11 @@ app.delete('/api/users/:id', authenticate, authorize(['admin']), (req, res) => {
     }
 
     if (!user) {
-      console.log('[Users] User not found for deletion:', userId);
+
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log('[Users] User found, proceeding with deletion:', {
-      id: user.id,
-      username: user.username,
-      role: user.role
-    });
+
 
     db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
       if (err) {
@@ -1299,12 +1282,7 @@ app.put('/api/users/:id/role', authenticate, authorize(['admin']), (req, res) =>
   const userId = req.params.id;
   const { role } = req.body;
 
-  console.log('[Users] Role update request received:', {
-    userId,
-    newRole: role,
-    requestingUser: req.user,
-    timestamp: new Date().toISOString()
-  });
+
 
   // First check if user exists
   db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
@@ -1313,7 +1291,7 @@ app.put('/api/users/:id/role', authenticate, authorize(['admin']), (req, res) =>
     }
 
     if (!user) {
-      console.log('[Users] User not found for role update:', userId);
+
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -1362,12 +1340,7 @@ app.put('/api/users/:id/email', authenticate, authorize(['admin']), (req, res) =
   const userId = req.params.id;
   const { email } = req.body;
 
-  console.log('[Users] Email update request received:', {
-    userId,
-    newEmail: email,
-    requestingUser: req.user,
-    timestamp: new Date().toISOString()
-  });
+
 
   // Validate email format if provided
   if (email && email.trim()) {
@@ -1429,12 +1402,7 @@ app.put('/api/users/:id/blocked', authenticate, authorize(['admin']), (req, res)
   const userId = req.params.id;
   const { isBlocked } = req.body;
 
-  console.log('[Users] Blocked status update request received:', {
-    userId,
-    newBlockedStatus: isBlocked,
-    requestingUser: req.user,
-    timestamp: new Date().toISOString()
-  });
+
 
   // First check if user exists
   db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
@@ -1443,16 +1411,11 @@ app.put('/api/users/:id/blocked', authenticate, authorize(['admin']), (req, res)
     }
 
     if (!user) {
-      console.log('[Users] User not found for blocked status update:', userId);
+
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log('[Users] User found, proceeding with blocked status update:', {
-      id: user.id,
-      username: user.username,
-      currentBlockedStatus: user.isBlocked,
-      newBlockedStatus: isBlocked
-    });
+
 
     db.run('UPDATE users SET isBlocked = ? WHERE id = ?', [isBlocked, userId], function(err) {
       if (err) {
@@ -2690,7 +2653,7 @@ app.put('/api/groups/:id/members/:userId', authenticate, (req, res) => {
                         if (emailErr) {
                           console.error('Error sending ownership transfer email:', emailErr);
                         } else {
-                          console.log('Ownership transfer email sent successfully to:', newOwner.email);
+                          
                         }
                       });
                     } catch (emailError) {
@@ -2710,7 +2673,7 @@ app.put('/api/groups/:id/members/:userId', authenticate, (req, res) => {
                     if (err) {
                       console.error('Error creating ownership transfer notification:', err);
                     } else {
-                      console.log('Ownership transfer notification created successfully with ID:', this.lastID);
+                      
                     }
                   });
                   
@@ -2785,7 +2748,7 @@ app.put('/api/groups/:id/members/:userId', authenticate, (req, res) => {
                     if (emailErr) {
                       console.error('Error sending manager promotion email:', emailErr);
                     } else {
-                      console.log('Manager promotion email sent successfully to:', newManager.email);
+                      
                     }
                   });
                 } catch (emailError) {
@@ -2805,7 +2768,7 @@ app.put('/api/groups/:id/members/:userId', authenticate, (req, res) => {
                 if (err) {
                   console.error('Error creating manager promotion notification:', err);
                 } else {
-                  console.log('Manager promotion notification created successfully with ID:', this.lastID);
+                  
                 }
               });
             });
@@ -2928,7 +2891,7 @@ app.put('/api/groups/:id/transfer-ownership', authenticate, (req, res) => {
 
 // Request to join a group
 app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
-  console.log('[API] Join request received:', { groupId: req.params.id, userId: req.user.id });
+  
   const groupId = req.params.id;
   const userId = req.user.id;
 
@@ -2956,7 +2919,7 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
       }
 
       // Check if there's already a pending request
-      console.log('[DB] Checking for existing join request:', { groupId, userId });
+      
       
       // Convert UUIDs to integers for checking
       const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
@@ -2972,7 +2935,7 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
         }
 
         // Create join request
-        console.log('[DB] Attempting to insert join request:', { groupId, userId });
+        
         
         // Convert UUID strings to integers for the group_join_requests table
         // We'll use a simple hash function to convert UUID to integer
@@ -3024,7 +2987,7 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
                 console.error('Error sending email:', emailErr);
                 // Don't fail the request if email fails
               } else {
-                console.log('Email sent successfully to:', group.owner_email);
+                
               }
             });
           } catch (emailError) {
@@ -3033,7 +2996,7 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
           }
 
           // Create notification for group owner
-          console.log('[DB] Creating notification with requestId:', this.lastID);
+          
           db.run(`
             INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
             VALUES (?, 'join_request', 'New Join Request', ?, ?, ?)
@@ -3046,7 +3009,7 @@ app.post('/api/groups/:id/join-request', authenticate, (req, res) => {
             if (err) {
               console.error('Error creating join request notification:', err);
             } else {
-              console.log('[DB] Notification created successfully with ID:', this.lastID);
+              
             }
           });
 
@@ -3094,7 +3057,7 @@ app.post('/api/player/payment', authenticate, authorize(['admin', 'editor']), (r
 app.get('/api/notifications', authenticate, (req, res) => {
   const userId = req.user.id;
   
-  console.log('[API] Fetching notifications for user:', userId);
+  
   
   db.all(`
     SELECT id, type, title, message, group_id, request_id, is_read, created_at
@@ -3107,7 +3070,7 @@ app.get('/api/notifications', authenticate, (req, res) => {
       console.error('[DB] Error fetching notifications:', err);
       return res.status(500).json({ error: 'Database error' });
     }
-    console.log('[API] Returning notifications:', notifications);
+    
     res.json(notifications);
   });
 });
@@ -3133,7 +3096,7 @@ app.put('/api/notifications/:id/read', authenticate, (req, res) => {
 app.put('/api/notifications/mark-all-read', authenticate, (req, res) => {
   const userId = req.user.id;
   
-  console.log('[API] Marking all notifications as read for user:', userId);
+  
   
   db.run('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0', 
     [userId], function(err) {
@@ -3141,7 +3104,7 @@ app.put('/api/notifications/mark-all-read', authenticate, (req, res) => {
       console.error('[DB] Error marking notifications as read:', err);
       return res.status(500).json({ error: 'Database error' });
     }
-    console.log('[API] Marked', this.changes, 'notifications as read');
+    
     res.json({ 
       message: 'All notifications marked as read',
       updatedCount: this.changes
@@ -3220,7 +3183,7 @@ app.get('/api/groups/:groupId/join-request/:requestId/status', authenticate, (re
   
   const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
   
-  console.log('[API] Status check:', { groupId, requestId, groupIdInt });
+  
   
   db.get('SELECT * FROM group_join_requests WHERE id = ? AND group_id = ?', 
     [requestId, groupIdInt], (err, request) => {
@@ -3232,7 +3195,7 @@ app.get('/api/groups/:groupId/join-request/:requestId/status', authenticate, (re
       console.error('[DB] Request not found for status check:', { requestId, groupIdInt });
       return res.status(404).json({ error: 'Request not found' });
     }
-    console.log('[DB] Request found:', request);
+    
     res.json({ 
       status: request.status,
       request: request
@@ -3246,7 +3209,7 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
   const requestId = req.params.requestId;
   const userId = req.user.id;
 
-  console.log('[API] Approve request received:', { groupId, requestId, userId });
+  
 
   // Check if user is group owner
   db.get('SELECT owner_id, name FROM groups WHERE id = ?', [groupId], (err, group) => {

@@ -21,11 +21,11 @@ async function createGroups() {
     process.exit(1);
   }
 
-  console.log('Starting to create groups...');
+  
 
   for (const group of groups) {
     try {
-      console.log(`Creating group: ${group.name}`);
+      
       const response = await axios.post(
         `${API_URL}/api/groups`,
         group,
@@ -36,7 +36,7 @@ async function createGroups() {
           }
         }
       );
-      console.log(`Successfully created group: ${group.name}`, response.data);
+      
     } catch (error) {
       console.error(`Error creating group ${group.name}:`, error.response?.data || error.message);
     }

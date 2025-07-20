@@ -54,7 +54,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ open, onClose, player }) 
   const playerIsActive = player?.active === true;
 
   const handleDeleteClick = (buyInId: any) => {
-    console.log(`Delete button clicked for Buy-in ID: ${buyInId}. User Role: ${user?.role}, Player Active: ${player?.active}`);
+
   };
 
   if (!player) return null;

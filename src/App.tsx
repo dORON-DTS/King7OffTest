@@ -102,7 +102,7 @@ const AppLayout = () => {
         if (Array.isArray(notifications)) {
           const unreadCount = notifications.filter((n: any) => !n.is_read && !n.isRead).length;
           setNotificationCount(unreadCount);
-          console.log('Updated notification count:', unreadCount);
+  
         } else {
           console.error('Notifications is not an array:', notifications);
           setNotificationCount(0);

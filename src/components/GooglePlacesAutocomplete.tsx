@@ -54,7 +54,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       }
 
       if (window.google && window.google.maps && window.google.maps.places) {
-        console.log('Google API already loaded');
+
         setIsGoogleLoaded(true);
         initializeServices();
         return;
@@ -65,10 +65,10 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        console.log('Google API script loaded');
+
         setTimeout(() => {
           if (window.google && window.google.maps && window.google.maps.places) {
-            console.log('Google API fully initialized');
+
             setIsGoogleLoaded(true);
             initializeServices();
           } else {
@@ -95,7 +95,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     try {
       autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
       placesServiceRef.current = new window.google.maps.places.PlacesService(document.createElement('div'));
-      console.log('Google Places services initialized');
+
     } catch (error) {
       console.error('Error initializing Google Places services:', error);
     }
@@ -128,11 +128,11 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       autocompleteServiceRef.current.getPlacePredictions(request, (predictions: PlaceSuggestion[], status: string) => {
         setIsLoading(false);
         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-          console.log('Found predictions:', predictions);
+  
           setSuggestions(predictions);
           setShowSuggestions(true);
         } else {
-          console.log('No predictions found, status:', status);
+
           setSuggestions([]);
           setShowSuggestions(false);
         }
