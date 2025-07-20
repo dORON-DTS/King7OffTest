@@ -2332,7 +2332,7 @@ app.get('/api/users/:userId/groups', authenticate, authorize(['admin']), (req, r
 
     // Get groups where user is member
     db.all(`
-      SELECT g.id as groupId, g.name as groupName, gm.role, gm.joinedAt,
+      SELECT g.id as groupId, g.name as groupName, gm.role, gm.created_at as joinedAt,
              COALESCE(table_counts.table_count, 0) as tableCount
       FROM groups g 
       JOIN group_members gm ON g.id = gm.group_id 
