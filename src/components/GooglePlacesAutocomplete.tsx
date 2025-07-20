@@ -184,15 +184,35 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
   // Update position on scroll/resize
   useEffect(() => {
-    const handleScroll = () => updateInputPosition();
+    const handleScroll = () => {
+      // Add a small delay to ensure the scroll has finished
+      setTimeout(() => updateInputPosition(), 10);
+    };
     const handleResize = () => updateInputPosition();
+    const handleTouchMove = () => {
+      // Handle touch scroll on mobile
+      setTimeout(() => updateInputPosition(), 10);
+    };
 
+    // Listen to scroll events on the window and all scrollable elements
     window.addEventListener('scroll', handleScroll, true);
     window.addEventListener('resize', handleResize);
+    window.addEventListener('touchmove', handleTouchMove, true);
+
+    // Also listen to scroll events on the dialog content
+    const dialogContent = document.querySelector('.MuiDialogContent-root');
+    if (dialogContent) {
+      dialogContent.addEventListener('scroll', handleScroll, true);
+    }
 
     return () => {
       window.removeEventListener('scroll', handleScroll, true);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('touchmove', handleTouchMove, true);
+      
+      if (dialogContent) {
+        dialogContent.removeEventListener('scroll', handleScroll, true);
+      }
     };
   }, [updateInputPosition]);
 
