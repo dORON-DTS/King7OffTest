@@ -836,7 +836,7 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
           return res.status(500).json({ error: 'Failed to get table information' });
         }
 
-        const initialBuyInAmount = Number(chips) || table.minimumBuyIn || 0;
+        const initialBuyInAmount = Number(chips) || 0;
 
         db.serialize(() => {
           db.run(
@@ -847,36 +847,54 @@ app.post('/api/tables/:tableId/players', authenticate, authorize(['admin', 'edit
                 return res.status(500).json({ error: 'Failed to add player' });
               }
 
-              db.run(
-                'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
-                [initialBuyInId, playerId, initialBuyInAmount, timestamp],
-                function(buyinErr) {
-                  if (buyinErr) {
-                    // Continue even if buy-in recording fails
+              // Only add buy-in record if there's an initial buy-in amount
+              if (initialBuyInAmount > 0) {
+                db.run(
+                  'INSERT INTO buyins (id, playerId, amount, timestamp) VALUES (?, ?, ?, ?)',
+                  [initialBuyInId, playerId, initialBuyInAmount, timestamp],
+                  function(buyinErr) {
+                    if (buyinErr) {
+                      // Continue even if buy-in recording fails
+                    }
+                    
+                    const newPlayerResponse = {
+                      id: playerId,
+                      tableId: tableId,
+                      name: name,
+                      nickname: nickname,
+                      chips: initialBuyInAmount,
+                      totalBuyIn: initialBuyInAmount,
+                      active: active,
+                      showMe: showMe,
+                      buyIns: [
+                        {
+                          id: initialBuyInId,
+                          playerId: playerId,
+                          amount: initialBuyInAmount,
+                          timestamp: timestamp
+                        }
+                      ],
+                      cashOuts: []
+                    };
+                    res.status(201).json(newPlayerResponse);
                   }
-                  
-                  const newPlayerResponse = {
-                    id: playerId,
-                    tableId: tableId,
-                    name: name,
-                    nickname: nickname,
-                    chips: initialBuyInAmount,
-                    totalBuyIn: initialBuyInAmount,
-                    active: active,
-                    showMe: showMe,
-                    buyIns: [
-                      {
-                        id: initialBuyInId,
-                        playerId: playerId,
-                        amount: initialBuyInAmount,
-                        timestamp: timestamp
-                      }
-                    ],
-                    cashOuts: []
-                  };
-                  res.status(201).json(newPlayerResponse);
-                }
-              );
+                );
+              } else {
+                // No initial buy-in
+                const newPlayerResponse = {
+                  id: playerId,
+                  tableId: tableId,
+                  name: name,
+                  nickname: nickname,
+                  chips: 0,
+                  totalBuyIn: 0,
+                  active: active,
+                  showMe: showMe,
+                  buyIns: [],
+                  cashOuts: []
+                };
+                res.status(201).json(newPlayerResponse);
+              }
             }
           );
         });
