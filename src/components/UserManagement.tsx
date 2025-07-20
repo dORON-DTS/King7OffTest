@@ -206,7 +206,7 @@ const UserManagement: React.FC = () => {
   const handleCreateUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/register`, {
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/admin/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
