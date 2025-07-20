@@ -22,13 +22,21 @@ import {
   Card,
   CardContent,
   Tooltip,
-  Switch
+  Switch,
+  Pagination,
+  FormControl,
+  InputLabel,
+  Grid,
+  Chip
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import ClearIcon from '@mui/icons-material/Clear';
 import { useUser } from '../context/UserContext';
 import { apiFetch } from '../utils/apiInterceptor';
 
@@ -42,8 +50,17 @@ interface User {
   createdAt: string;
 }
 
+interface SearchFilters {
+  searchTerm: string;
+  role: string;
+  verified: string;
+  blocked: string;
+  fromDate: string;
+}
+
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [error, setError] = useState('');
   const [showAddUser, setShowAddUser] = useState(false);
   const [newUsername, setNewUsername] = useState('');
@@ -62,6 +79,27 @@ const UserManagement: React.FC = () => {
   const [emailSuccess, setEmailSuccess] = useState('');
   const [blockError, setBlockError] = useState('');
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(20);
+
+  // Search and filters state
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    searchTerm: '',
+    role: '',
+    verified: '',
+    blocked: '',
+    fromDate: ''
+  });
+  const [appliedFilters, setAppliedFilters] = useState<SearchFilters>({
+    searchTerm: '',
+    role: '',
+    verified: '',
+    blocked: '',
+    fromDate: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
   const { user: currentUser, logout } = useUser();
   const currentUserId = currentUser?.id;
 
@@ -79,6 +117,7 @@ const UserManagement: React.FC = () => {
       }
       const data = await response.json();
       setUsers(data);
+      setFilteredUsers(data);
     } catch (error) {
       if (error instanceof Error && error.message === 'User blocked') {
         return; // User was blocked and logged out
@@ -90,6 +129,79 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // Apply filters function
+  const applyFilters = () => {
+    let filtered = [...users];
+
+    // Search term filter
+    if (appliedFilters.searchTerm) {
+      const searchLower = appliedFilters.searchTerm.toLowerCase();
+      filtered = filtered.filter(user => 
+        user.username.toLowerCase().includes(searchLower) ||
+        (user.email && user.email.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Role filter
+    if (appliedFilters.role) {
+      filtered = filtered.filter(user => user.role === appliedFilters.role);
+    }
+
+    // Verified filter
+    if (appliedFilters.verified) {
+      const isVerified = appliedFilters.verified === 'yes';
+      filtered = filtered.filter(user => user.isVerified === isVerified);
+    }
+
+    // Blocked filter
+    if (appliedFilters.blocked) {
+      const isBlocked = appliedFilters.blocked === 'blocked';
+      filtered = filtered.filter(user => !!user.isBlocked === isBlocked);
+    }
+
+    // Date filter
+    if (appliedFilters.fromDate) {
+      const fromDate = new Date(appliedFilters.fromDate);
+      filtered = filtered.filter(user => 
+        new Date(user.createdAt) >= fromDate
+      );
+    }
+
+    setFilteredUsers(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  // Handle search button click
+  const handleSearch = () => {
+    setAppliedFilters(searchFilters);
+  };
+
+  // Handle clear filters
+  const handleClearFilters = () => {
+    const emptyFilters = {
+      searchTerm: '',
+      role: '',
+      verified: '',
+      blocked: '',
+      fromDate: ''
+    };
+    setSearchFilters(emptyFilters);
+    setAppliedFilters(emptyFilters);
+    setFilteredUsers(users);
+    setCurrentPage(1);
+  };
+
+  // Apply filters when appliedFilters change
+  useEffect(() => {
+    applyFilters();
+  }, [appliedFilters, users]);
+
+
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setCurrentPage(value);
+  };
 
   const handleCreateUser = async () => {
     try {
@@ -343,11 +455,19 @@ const UserManagement: React.FC = () => {
     if (role === 'viewer') return 2;
     return 99;
   };
-  const sortedUsers = [...users].sort((a, b) => {
+  
+  // Sort filtered users
+  const sortedFilteredUsers = [...filteredUsers].sort((a, b) => {
     const roleDiff = getRoleOrder(a.role) - getRoleOrder(b.role);
     if (roleDiff !== 0) return roleDiff;
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
+
+  // Update currentUsers to use sorted filtered users
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = sortedFilteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(sortedFilteredUsers.length / usersPerPage);
 
   return (
     <Box sx={{ mt: 4, maxWidth: 1200, mx: 'auto' }}>
@@ -370,7 +490,7 @@ const UserManagement: React.FC = () => {
                 fontSize: { xs: '1.5rem', sm: '2rem' }
               }}
             >
-              User Management
+              User Management ({filteredUsers.length} Users)
             </Typography>
             <Button
               variant="outlined"
@@ -399,6 +519,178 @@ const UserManagement: React.FC = () => {
             </Alert>
           )}
 
+          {/* Search and Filters Section */}
+          <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <SearchIcon color="primary" />
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                Search & Filters
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={() => setShowFilters(!showFilters)}
+                sx={{ ml: 'auto' }}
+              >
+                <FilterListIcon />
+              </IconButton>
+            </Box>
+
+            {/* Search Bar */}
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item xs={12} sm={6} md={4}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Search by username or email"
+                  value={searchFilters.searchTerm}
+                  onChange={(e) => setSearchFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                  placeholder="Enter search term..."
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<SearchIcon />}
+                  onClick={handleSearch}
+                  sx={{ height: '40px' }}
+                >
+                  Search
+                </Button>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<ClearIcon />}
+                  onClick={handleClearFilters}
+                  sx={{ height: '40px' }}
+                >
+                  Clear
+                </Button>
+              </Grid>
+            </Grid>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Role</InputLabel>
+                    <Select
+                      value={searchFilters.role}
+                      onChange={(e) => setSearchFilters(prev => ({ ...prev, role: e.target.value }))}
+                      label="Role"
+                    >
+                      <MenuItem value="">All Roles</MenuItem>
+                      <MenuItem value="admin">Admin</MenuItem>
+                      <MenuItem value="editor">Manager</MenuItem>
+                      <MenuItem value="viewer">Member</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Verified</InputLabel>
+                    <Select
+                      value={searchFilters.verified}
+                      onChange={(e) => setSearchFilters(prev => ({ ...prev, verified: e.target.value }))}
+                      label="Verified"
+                    >
+                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="yes">Verified</MenuItem>
+                      <MenuItem value="no">Not Verified</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Status</InputLabel>
+                    <Select
+                      value={searchFilters.blocked}
+                      onChange={(e) => setSearchFilters(prev => ({ ...prev, blocked: e.target.value }))}
+                      label="Status"
+                    >
+                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="active">Active</MenuItem>
+                      <MenuItem value="blocked">Blocked</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    label="From Date"
+                    value={searchFilters.fromDate}
+                    onChange={(e) => setSearchFilters(prev => ({ ...prev, fromDate: e.target.value }))}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+              </Grid>
+            )}
+
+            {/* Active Filters Display */}
+            {(appliedFilters.searchTerm || appliedFilters.role || appliedFilters.verified || appliedFilters.blocked || appliedFilters.fromDate) && (
+              <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <Typography variant="body2" sx={{ mr: 1, alignSelf: 'center' }}>
+                  Active Filters:
+                </Typography>
+                {appliedFilters.searchTerm && (
+                  <Chip 
+                    label={`Search: "${appliedFilters.searchTerm}"`} 
+                    size="small" 
+                    onDelete={() => {
+                      setSearchFilters(prev => ({ ...prev, searchTerm: '' }));
+                      setAppliedFilters(prev => ({ ...prev, searchTerm: '' }));
+                    }}
+                  />
+                )}
+                {appliedFilters.role && (
+                  <Chip 
+                    label={`Role: ${appliedFilters.role}`} 
+                    size="small" 
+                    onDelete={() => {
+                      setSearchFilters(prev => ({ ...prev, role: '' }));
+                      setAppliedFilters(prev => ({ ...prev, role: '' }));
+                    }}
+                  />
+                )}
+                {appliedFilters.verified && (
+                  <Chip 
+                    label={`Verified: ${appliedFilters.verified === 'yes' ? 'Yes' : 'No'}`} 
+                    size="small" 
+                    onDelete={() => {
+                      setSearchFilters(prev => ({ ...prev, verified: '' }));
+                      setAppliedFilters(prev => ({ ...prev, verified: '' }));
+                    }}
+                  />
+                )}
+                {appliedFilters.blocked && (
+                  <Chip 
+                    label={`Status: ${appliedFilters.blocked}`} 
+                    size="small" 
+                    onDelete={() => {
+                      setSearchFilters(prev => ({ ...prev, blocked: '' }));
+                      setAppliedFilters(prev => ({ ...prev, blocked: '' }));
+                    }}
+                  />
+                )}
+                {appliedFilters.fromDate && (
+                  <Chip 
+                    label={`From: ${new Date(appliedFilters.fromDate).toLocaleDateString()}`} 
+                    size="small" 
+                    onDelete={() => {
+                      setSearchFilters(prev => ({ ...prev, fromDate: '' }));
+                      setAppliedFilters(prev => ({ ...prev, fromDate: '' }));
+                    }}
+                  />
+                )}
+              </Box>
+            )}
+          </Paper>
+
           <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
             <Table>
               <TableHead>
@@ -425,7 +717,7 @@ const UserManagement: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {sortedUsers.map((user) => {
+                {currentUsers.map((user) => {
                   return (
                     <TableRow key={user.id} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
                       <TableCell>
@@ -650,6 +942,30 @@ const UserManagement: React.FC = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              mt: 3,
+              gap: 2
+            }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing {indexOfFirstUser + 1}-{Math.min(indexOfLastUser, sortedFilteredUsers.length)} of {sortedFilteredUsers.length} users
+              </Typography>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                size="large"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
         </CardContent>
       </Card>
 
