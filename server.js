@@ -2233,7 +2233,8 @@ app.get('/api/my-groups', authenticate, (req, res) => {
           WHEN gm.role IS NOT NULL THEN gm.role
           ELSE 'none'
         END as userRole,
-        COALESCE(table_counts.table_count, 0) as tableCount
+        COALESCE(table_counts.table_count, 0) as tableCount,
+        (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) + 1 as memberCount
       FROM groups g
       LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = ?
       LEFT JOIN (
@@ -2261,7 +2262,8 @@ app.get('/api/my-groups', authenticate, (req, res) => {
     // Non-admin gets only groups where they are owner or member
     db.all(`
       SELECT g.*, "owner" as userRole,
-        COALESCE(table_counts.table_count, 0) as tableCount
+        COALESCE(table_counts.table_count, 0) as tableCount,
+        (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) + 1 as memberCount
       FROM groups g
       LEFT JOIN (
         SELECT groupId, COUNT(*) as table_count 
@@ -2278,7 +2280,8 @@ app.get('/api/my-groups', authenticate, (req, res) => {
 
       db.all(`
         SELECT g.*, gm.role as userRole,
-          COALESCE(table_counts.table_count, 0) as tableCount
+          COALESCE(table_counts.table_count, 0) as tableCount,
+          (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) + 1 as memberCount
         FROM groups g 
         JOIN group_members gm ON g.id = gm.group_id 
         LEFT JOIN (

@@ -420,6 +420,14 @@ const MyGroups: React.FC = () => {
                         label="Group"
                         sx={{ bgcolor: '#2196f3', color: 'white', fontSize: '0.75rem', height: 22 }}
                       />
+                      {/* Chip for member count */}
+                      {typeof group.memberCount === 'number' && (
+                        <Chip
+                          icon={<GroupIcon />}
+                          label={`Members: ${group.memberCount}`}
+                          sx={{ bgcolor: '#4caf50', color: 'white', fontSize: '0.75rem', height: 22, fontWeight: 'bold' }}
+                        />
+                      )}
                     </Box>
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>

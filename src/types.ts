@@ -37,6 +37,7 @@ export interface Group {
   owner_id?: string;
   userRole?: string; // 'owner', 'editor', 'viewer' - for groups where user is a member
   tableCount?: number; // number of tables in this group
+  memberCount?: number; // number of approved members (including owner)
 }
 
 export interface Table {
