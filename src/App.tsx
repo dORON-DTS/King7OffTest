@@ -307,9 +307,21 @@ const AppLayout = () => {
                   size="large"
                   component={RouterLink}
                   to="/tableslist"
-                  sx={{ fontWeight: 700, borderRadius: 3, boxShadow: 2 }}
+                  sx={{ 
+                    fontWeight: 700, 
+                    borderRadius: 3, 
+                    boxShadow: 2,
+                    minWidth: { xs: 'auto', sm: 'auto' },
+                    px: { xs: 1, sm: 2 },
+                    '& .MuiButton-startIcon': {
+                      margin: { xs: 0, sm: 'auto' }
+                    }
+                  }}
+                  startIcon={<PersonIcon />}
                 >
-                  LOGIN
+                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                    LOGIN
+                  </Box>
                 </Button>
               )}
             </Box>
