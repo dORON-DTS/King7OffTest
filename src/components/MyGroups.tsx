@@ -362,7 +362,10 @@ const MyGroups: React.FC = () => {
                       }}>
                         {group.name}
                       </Typography>
-                      
+                      {/* הצגת תפקיד המשתמש בקבוצה */}
+                      <Typography variant="body2" sx={{ color: '#FFD700', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', mt: 0.5 }}>
+                        {getRoleLabel(group.userRole || 'viewer')}
+                      </Typography>
                       {/* Management and Delete buttons for owners or admin */}
                       {(group.userRole === 'owner' || user?.role === 'admin') && (
                         <Box sx={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 0.5 }}>
@@ -405,27 +408,20 @@ const MyGroups: React.FC = () => {
                     </Box>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                      <Chip
-                        label={getRoleLabel(group.userRole || 'viewer')}
-                        sx={{ 
-                          bgcolor: getRoleColor(group.userRole || 'viewer'), 
-                          color: 'white', 
-                          fontWeight: 'bold', 
-                          fontSize: '0.75rem', 
-                          height: 22 
-                        }}
-                      />
-                      <Chip
-                        icon={<GroupIcon />}
-                        label="Group"
-                        sx={{ bgcolor: '#2196f3', color: 'white', fontSize: '0.75rem', height: 22 }}
-                      />
                       {/* Chip for member count */}
                       {typeof group.memberCount === 'number' && (
                         <Chip
                           icon={<GroupIcon />}
                           label={`Members: ${group.memberCount}`}
-                          sx={{ bgcolor: '#4caf50', color: 'white', fontSize: '0.75rem', height: 22, fontWeight: 'bold' }}
+                          sx={{ bgcolor: '#2196f3', color: 'white', fontSize: '0.75rem', height: 22, fontWeight: 'bold' }}
+                        />
+                      )}
+                      {/* Chip for table count */}
+                      {typeof group.tableCount === 'number' && (
+                        <Chip
+                          icon={<TableChartIcon />}
+                          label={`Tables: ${group.tableCount}`}
+                          sx={{ bgcolor: '#9c27b0', color: 'white', fontSize: '0.75rem', height: 22, fontWeight: 'bold' }}
                         />
                       )}
                     </Box>
@@ -451,12 +447,6 @@ const MyGroups: React.FC = () => {
                         <CalendarTodayIcon sx={{ color: '#2196f3' }} />
                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
                           Created: {formatDate(group.createdAt)}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <TableChartIcon sx={{ color: '#4caf50' }} />
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
-                          Tables: {group.tableCount || 0}
                         </Typography>
                       </Box>
                     </Box>
