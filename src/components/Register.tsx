@@ -101,7 +101,18 @@ const Register: React.FC = () => {
           navigate(`/verify-email?email=${encodeURIComponent(email)}`);
         }, 1500);
       } else {
-        setError(result.error || 'Registration failed');
+        // שיפור הודעות שגיאה
+        if (result.error) {
+          if (result.error.toLowerCase().includes('username already exists')) {
+            setError('Username already exists. Please choose a different username.');
+          } else if (result.error.toLowerCase().includes('email already exists')) {
+            setError('Email already exists. Please use a different email address.');
+          } else {
+            setError(result.error);
+          }
+        } else {
+          setError('Registration failed');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration error');
