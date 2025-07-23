@@ -304,30 +304,6 @@ const LandingPage: React.FC = () => {
             mt: { xs: 2, sm: 4 },
           }}
         >
-                  <Button
-          variant="contained"
-          size="large"
-          onClick={() => navigate('/statistics')}
-          startIcon={<BarChartIcon />}
-          sx={{
-            bgcolor: '#43a047',
-            color: '#fff',
-            fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
-            padding: { xs: '12px 24px', sm: '12px 24px', md: '16px 32px' },
-            '&:hover': {
-              bgcolor: '#388e3c',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 6px 8px rgba(0,0,0,0.3)'
-            },
-            boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
-            borderRadius: 2,
-            width: { xs: '100%', sm: 'auto' },
-            marginBottom: { xs: 2, sm: 0 },
-            transition: 'all 0.3s ease'
-          }}
-        >
-          Statistics
-        </Button>
         <Button
           variant="contained"
           size="large"
@@ -370,10 +346,35 @@ const LandingPage: React.FC = () => {
             boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
             borderRadius: 2,
             width: { xs: '100%', sm: 'auto' },
+            marginBottom: { xs: 2, sm: 0 },
             transition: 'all 0.3s ease'
           }}
         >
           My Tables
+        </Button>
+        <Button
+          variant="contained"
+          size="large"
+          onClick={() => navigate('/statistics')}
+          startIcon={<BarChartIcon />}
+          sx={{
+            bgcolor: '#43a047',
+            color: '#fff',
+            fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
+            padding: { xs: '12px 24px', sm: '12px 24px', md: '16px 32px' },
+            '&:hover': {
+              bgcolor: '#388e3c',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 8px rgba(0,0,0,0.3)'
+            },
+            boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+            borderRadius: 2,
+            width: { xs: '100%', sm: 'auto' },
+            marginBottom: { xs: 2, sm: 0 },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          Statistics
         </Button>
         </Box>
       </Box>
