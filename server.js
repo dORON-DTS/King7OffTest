@@ -3830,10 +3830,13 @@ app.get('/api/groups/:groupId/members', authenticate, (req, res) => {
   db.all(`
     SELECT u.id, u.username, u.email 
     FROM users u
-    INNER JOIN group_members gm ON u.id = gm.user_id
-    WHERE gm.group_id = ? AND gm.status = 'approved'
+    WHERE u.id IN (
+      SELECT owner_id FROM groups WHERE id = ?
+      UNION
+      SELECT user_id FROM group_members WHERE group_id = ? AND status = 'approved'
+    )
     ORDER BY u.username
-  `, [groupId], (err, members) => {
+  `, [groupId, groupId], (err, members) => {
     if (err) {
       console.error('[DB] Error fetching group members:', err);
       return res.status(500).json({ error: 'Database error' });
