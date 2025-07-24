@@ -3809,10 +3809,11 @@ app.get('/api/groups/:groupId/players', authenticate, (req, res) => {
   const { groupId } = req.params;
   
   db.all(`
-    SELECT DISTINCT playerName 
-    FROM tables 
-    WHERE groupId = ? AND playerName IS NOT NULL AND playerName != ''
-    ORDER BY playerName
+    SELECT DISTINCT p.name as playerName 
+    FROM players p
+    INNER JOIN tables t ON p.tableId = t.id
+    WHERE t.groupId = ? AND p.name IS NOT NULL AND p.name != ''
+    ORDER BY p.name
   `, [groupId], (err, players) => {
     if (err) {
       console.error('[DB] Error fetching players:', err);
