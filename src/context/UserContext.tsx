@@ -155,7 +155,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (data.error && data.error.toLowerCase().includes('username already exists')) {
             return { success: false, error: 'Username already exists. Please choose a different username.' };
           } else if (data.error && data.error.toLowerCase().includes('email already exists')) {
-            return { success: false, error: 'Email already exists. Please use a different email address.' };
+          return { success: false, error: 'Email already exists. Please use a different email address.' };
           }
           return { success: false, error: data.error || 'Registration failed' };
         }

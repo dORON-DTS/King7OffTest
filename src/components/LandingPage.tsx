@@ -304,7 +304,7 @@ const LandingPage: React.FC = () => {
             mt: { xs: 2, sm: 4 },
           }}
         >
-        <Button
+                  <Button
           variant="contained"
           size="large"
           onClick={() => navigate('/my-groups')}

@@ -1808,57 +1808,57 @@ app.post('/api/register', (req, res) => {
       return res.status(409).json({ error: 'Username already exists' });
     }
 
-    // Check if email already exists
-    db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
+  // Check if email already exists
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (existingUser) {
+      if (existingUser.isBlocked) {
+        return res.status(403).json({ error: 'Your account has been blocked. Please contact an administrator.' });
+      }
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    // Hash password
+    bcrypt.hash(password, 10, (err, hash) => {
       if (err) {
-        return res.status(500).json({ error: 'Database error' });
+        return res.status(500).json({ error: 'Error creating user' });
       }
 
-      if (existingUser) {
-        if (existingUser.isBlocked) {
-          return res.status(403).json({ error: 'Your account has been blocked. Please contact an administrator.' });
-        }
-        return res.status(409).json({ error: 'Email already exists' });
-      }
+      const id = uuidv4();
+      const createdAt = new Date().toISOString();
+      const role = 'user';
+      const verificationCode = generateVerificationCode();
+      const isVerified = 0;
 
-      // Hash password
-      bcrypt.hash(password, 10, (err, hash) => {
-        if (err) {
-          return res.status(500).json({ error: 'Error creating user' });
-        }
-
-        const id = uuidv4();
-        const createdAt = new Date().toISOString();
-        const role = 'user';
-        const verificationCode = generateVerificationCode();
-        const isVerified = 0;
-
-        // Insert new user (not verified yet)
-        db.run(
-          'INSERT INTO users (id, username, email, password, role, createdAt, isVerified, verificationCode) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [id, username, email, hash, role, createdAt, isVerified, verificationCode],
-          function(err) {
-            if (err) {
-              return res.status(500).json({ error: 'Error creating user' });
-            }
-
-            // Send verification email
-            const verifyUrl = `https://poker-management.onrender.com/verify-email?email=${encodeURIComponent(email)}`;
-            const mailOptions = {
-              from: process.env.EMAIL_USER,
-              to: email,
-              subject: 'King7Offsuit - Email Verification',
-              text: `Welcome to King7Offsuit!\n\nYour verification code is: ${verificationCode}\n\nTo verify your email, click the link below or enter the code in the app:\n${verifyUrl}`,
-            };
-
-            transporter.sendMail(mailOptions, (error, info) => {
-              if (error) {
-                return res.status(500).json({ error: 'Failed to send verification email' });
-              }
-              res.status(201).json({ message: 'Registration successful! Please check your email for the verification code.' });
-            });
+      // Insert new user (not verified yet)
+      db.run(
+        'INSERT INTO users (id, username, email, password, role, createdAt, isVerified, verificationCode) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, username, email, hash, role, createdAt, isVerified, verificationCode],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Error creating user' });
           }
-        );
+
+          // Send verification email
+          const verifyUrl = `https://poker-management.onrender.com/verify-email?email=${encodeURIComponent(email)}`;
+          const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'King7Offsuit - Email Verification',
+            text: `Welcome to King7Offsuit!\n\nYour verification code is: ${verificationCode}\n\nTo verify your email, click the link below or enter the code in the app:\n${verifyUrl}`,
+          };
+
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              return res.status(500).json({ error: 'Failed to send verification email' });
+            }
+            res.status(201).json({ message: 'Registration successful! Please check your email for the verification code.' });
+          });
+        }
+      );
       });
     });
   });
@@ -3786,6 +3786,115 @@ app.post('/api/debug/cleanup-orphaned-notifications', authenticate, (req, res) =
       res.json({ 
         message: `Updated ${this.changes} orphaned notifications`,
         updatedNotifications: orphanedNotifications
+      });
+    });
+  });
+});
+
+// ===== PLAYER ALIASES API ENDPOINTS =====
+
+// Get all groups for dropdown
+app.get('/api/groups', authenticate, (req, res) => {
+  db.all('SELECT id, name FROM groups WHERE isActive = 1 ORDER BY name', (err, groups) => {
+    if (err) {
+      console.error('[DB] Error fetching groups:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(groups);
+  });
+});
+
+// Get all players in a group (from all tables)
+app.get('/api/groups/:groupId/players', authenticate, (req, res) => {
+  const { groupId } = req.params;
+  
+  db.all(`
+    SELECT DISTINCT playerName 
+    FROM tables 
+    WHERE groupId = ? AND playerName IS NOT NULL AND playerName != ''
+    ORDER BY playerName
+  `, [groupId], (err, players) => {
+    if (err) {
+      console.error('[DB] Error fetching players:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(players.map(p => ({ playerName: p.playerName })));
+  });
+});
+
+// Get all members of a group (users)
+app.get('/api/groups/:groupId/members', authenticate, (req, res) => {
+  const { groupId } = req.params;
+  
+  db.all(`
+    SELECT u.id, u.username, u.email 
+    FROM users u
+    INNER JOIN group_members gm ON u.id = gm.user_id
+    WHERE gm.group_id = ? AND gm.status = 'approved'
+    ORDER BY u.username
+  `, [groupId], (err, members) => {
+    if (err) {
+      console.error('[DB] Error fetching group members:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(members);
+  });
+});
+
+// Check if player is already connected to a user
+app.get('/api/player-aliases/:playerName/:groupId', authenticate, (req, res) => {
+  const { playerName, groupId } = req.params;
+  
+  db.get(`
+    SELECT pa.*, u.username, u.email
+    FROM player_aliases pa
+    INNER JOIN users u ON pa.user_id = u.id
+    WHERE pa.player_name = ? AND pa.group_id = ? AND pa.is_active = 1
+  `, [playerName, groupId], (err, alias) => {
+    if (err) {
+      console.error('[DB] Error checking player alias:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(alias || null);
+  });
+});
+
+// Create new player alias connection
+app.post('/api/player-aliases', authenticate, authorize(['admin']), (req, res) => {
+  const { playerName, groupId, userId } = req.body;
+  
+  if (!playerName || !groupId || !userId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  
+  // Check if connection already exists
+  db.get('SELECT * FROM player_aliases WHERE player_name = ? AND group_id = ? AND is_active = 1', 
+    [playerName, groupId], (err, existing) => {
+    if (err) {
+      console.error('[DB] Error checking existing alias:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (existing) {
+      return res.status(409).json({ error: 'Player is already connected to a user in this group' });
+    }
+    
+    // Create new connection
+    const aliasId = uuidv4();
+    const now = new Date().toISOString();
+    
+    db.run(`
+      INSERT INTO player_aliases (id, user_id, player_name, group_id, created_at, is_active)
+      VALUES (?, ?, ?, ?, ?, 1)
+    `, [aliasId, userId, playerName, groupId, now], function(err) {
+      if (err) {
+        console.error('[DB] Error creating player alias:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      res.json({ 
+        message: 'Player connected successfully',
+        aliasId: aliasId
       });
     });
   });

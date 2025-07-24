@@ -320,7 +320,7 @@ const AppLayout = () => {
                   startIcon={<PersonIcon />}
                 >
                   <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                    LOGIN
+                  LOGIN
                   </Box>
                 </Button>
               )}

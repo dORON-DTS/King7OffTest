@@ -32,7 +32,8 @@ import {
   ListItem,
   ListItemText,
   Divider,
-  Avatar
+  Avatar,
+  Autocomplete
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
@@ -80,6 +81,32 @@ interface SearchFilters {
   fromDate: string;
 }
 
+interface Group {
+  id: string;
+  name: string;
+}
+
+interface Player {
+  playerName: string;
+}
+
+interface GroupMember {
+  id: string;
+  username: string;
+  email: string;
+}
+
+interface PlayerAlias {
+  id: string;
+  user_id: string;
+  player_name: string;
+  group_id: string;
+  created_at: string;
+  is_active: number;
+  username: string;
+  email: string;
+}
+
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -98,6 +125,18 @@ const UserManagement: React.FC = () => {
   const [editingEmail, setEditingEmail] = useState<string | null>(null);
   const [emailValue, setEmailValue] = useState('');
   const [emailError, setEmailError] = useState('');
+  
+  // Player Alias Connection Tool
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [selectedUser, setSelectedUser] = useState<GroupMember | null>(null);
+  const [existingAlias, setExistingAlias] = useState<PlayerAlias | null>(null);
+  const [connectConfirmOpen, setConnectConfirmOpen] = useState(false);
+  const [connectError, setConnectError] = useState('');
+  const [connectSuccess, setConnectSuccess] = useState('');
   const [emailSuccess, setEmailSuccess] = useState('');
   const [blockError, setBlockError] = useState('');
 
@@ -153,8 +192,180 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  // Player Alias Connection Functions
+  const fetchGroups = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/groups`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }, logout);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch groups');
+      }
+      const data = await response.json();
+      setGroups(data);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return;
+      }
+      console.error('Error fetching groups:', error);
+    }
+  };
+
+  const fetchPlayers = async (groupId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/groups/${groupId}/players`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }, logout);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch players');
+      }
+      const data = await response.json();
+      setPlayers(data);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return;
+      }
+      console.error('Error fetching players:', error);
+    }
+  };
+
+  const fetchGroupMembers = async (groupId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/groups/${groupId}/members`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }, logout);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch group members');
+      }
+      const data = await response.json();
+      setGroupMembers(data);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return;
+      }
+      console.error('Error fetching group members:', error);
+    }
+  };
+
+  const checkExistingAlias = async (playerName: string, groupId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/player-aliases/${encodeURIComponent(playerName)}/${groupId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }, logout);
+      
+      if (!response.ok) {
+        throw new Error('Failed to check existing alias');
+      }
+      const data = await response.json();
+      setExistingAlias(data);
+      if (data) {
+        // Find the user in groupMembers and set it as selected
+        const user = groupMembers.find(member => member.id === data.user_id);
+        setSelectedUser(user || null);
+      } else {
+        setSelectedUser(null);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return;
+      }
+      console.error('Error checking existing alias:', error);
+    }
+  };
+
+  const handleGroupChange = (group: Group | null) => {
+    setSelectedGroup(group);
+    setSelectedPlayer(null);
+    setSelectedUser(null);
+    setExistingAlias(null);
+    setPlayers([]);
+    setGroupMembers([]);
+    
+    if (group) {
+      fetchPlayers(group.id);
+      fetchGroupMembers(group.id);
+    }
+  };
+
+  const handlePlayerChange = (player: Player | null) => {
+    setSelectedPlayer(player);
+    setSelectedUser(null);
+    setExistingAlias(null);
+    
+    if (player && selectedGroup) {
+      checkExistingAlias(player.playerName, selectedGroup.id);
+    }
+  };
+
+  const handleUserChange = (user: GroupMember | null) => {
+    setSelectedUser(user);
+  };
+
+  const handleConnectPlayer = async () => {
+    if (!selectedGroup || !selectedPlayer || !selectedUser) {
+      setConnectError('Please select all required fields');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/player-aliases`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          playerName: selectedPlayer.playerName,
+          groupId: selectedGroup.id,
+          userId: selectedUser.id
+        })
+      }, logout);
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to connect player');
+      }
+
+      setConnectSuccess('Player connected successfully!');
+      setConnectError('');
+      // Reset form
+      setSelectedGroup(null);
+      setSelectedPlayer(null);
+      setSelectedUser(null);
+      setExistingAlias(null);
+      setPlayers([]);
+      setGroupMembers([]);
+      setConnectConfirmOpen(false);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setConnectSuccess(''), 3000);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'User blocked') {
+        return;
+      }
+      setConnectError(error instanceof Error ? error.message : 'Error connecting player');
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchGroups();
   }, []);
 
   // Fetch user details with group memberships
@@ -1407,6 +1618,141 @@ const UserManagement: React.FC = () => {
         <DialogActions sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
           <Button onClick={() => setUserDetailsDialogOpen(false)} variant="contained">
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Connect Player to User Tool */}
+      <Box sx={{ mt: 4 }}>
+        <Card>
+          <CardContent>
+            <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}>
+              <PersonIcon />
+              CONNECT PLAYERS TO USERS
+            </Typography>
+            
+            {connectSuccess && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                {connectSuccess}
+              </Alert>
+            )}
+            
+            {connectError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {connectError}
+              </Alert>
+            )}
+
+            <Grid container spacing={3}>
+              {/* Select Group */}
+              <Grid item xs={12} md={4}>
+                <Autocomplete
+                  options={groups}
+                  getOptionLabel={(option) => option.name}
+                  value={selectedGroup}
+                  onChange={(event, newValue) => handleGroupChange(newValue)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Group"
+                      required
+                      fullWidth
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
+              </Grid>
+
+              {/* Select Player */}
+              <Grid item xs={12} md={4}>
+                <Autocomplete
+                  options={players}
+                  getOptionLabel={(option) => option.playerName}
+                  value={selectedPlayer}
+                  onChange={(event, newValue) => handlePlayerChange(newValue)}
+                  disabled={!selectedGroup}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Player"
+                      required
+                      fullWidth
+                      helperText={existingAlias ? `Already connected to: ${existingAlias.username} (${existingAlias.email})` : ''}
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) => option.playerName === value.playerName}
+                />
+              </Grid>
+
+              {/* Select User */}
+              <Grid item xs={12} md={4}>
+                <Autocomplete
+                  options={groupMembers}
+                  getOptionLabel={(option) => `${option.username} (${option.email})`}
+                  value={selectedUser}
+                  onChange={(event, newValue) => handleUserChange(newValue)}
+                  disabled={!selectedPlayer}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select User"
+                      required
+                      fullWidth
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
+              </Grid>
+
+              {/* Connect Button */}
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    onClick={() => setConnectConfirmOpen(true)}
+                    disabled={!selectedGroup || !selectedPlayer || !selectedUser}
+                    sx={{
+                      px: 4,
+                      py: 1.5,
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    CONNECT USER
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      </Box>
+
+      {/* Connect Confirmation Dialog */}
+      <Dialog
+        open={connectConfirmOpen}
+        onClose={() => setConnectConfirmOpen(false)}
+        PaperProps={{ sx: { borderRadius: 2, width: '100%', maxWidth: { xs: '100%', sm: '500px' }, m: { xs: 0, sm: 2 } } }}
+        fullScreen={false}
+      >
+        <DialogTitle sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'warning.main', color: 'white', py: 2 }}>
+          Confirm Connection
+        </DialogTitle>
+        <DialogContent sx={{ mt: 3, px: 3 }}>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Are you sure you want to connect the player <strong>"{selectedPlayer?.playerName}"</strong> to the user <strong>"{selectedUser?.username}"</strong> in the group <strong>"{selectedGroup?.name}"</strong>?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            This action cannot be undone and will link all future statistics for this player to this user account.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: 1, borderColor: 'divider', gap: 1, flexDirection: { xs: 'column', sm: 'row' }, '& > button': { width: { xs: '100%', sm: 'auto' } } }}>
+          <Button onClick={() => setConnectConfirmOpen(false)} variant="outlined" fullWidth sx={{ color: 'text.secondary', borderColor: 'divider', '&:hover': { borderColor: 'text.primary', bgcolor: 'action.hover' }, order: { xs: 2, sm: 1 } }}>
+            Cancel
+          </Button>
+          <Button onClick={handleConnectPlayer} variant="contained" color="warning" fullWidth sx={{ bgcolor: 'warning.main', '&:hover': { bgcolor: 'warning.dark' }, order: { xs: 1, sm: 2 } }}>
+            Confirm Connection
           </Button>
         </DialogActions>
       </Dialog>
