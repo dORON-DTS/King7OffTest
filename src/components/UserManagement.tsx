@@ -206,12 +206,14 @@ const UserManagement: React.FC = () => {
         throw new Error('Failed to fetch groups');
       }
       const data = await response.json();
-      setGroups(data);
+      // Ensure data is an array
+      setGroups(Array.isArray(data) ? data : []);
     } catch (error) {
       if (error instanceof Error && error.message === 'User blocked') {
         return;
       }
       console.error('Error fetching groups:', error);
+      setGroups([]); // Set empty array on error
     }
   };
 
@@ -228,12 +230,14 @@ const UserManagement: React.FC = () => {
         throw new Error('Failed to fetch players');
       }
       const data = await response.json();
-      setPlayers(data);
+      // Ensure data is an array
+      setPlayers(Array.isArray(data) ? data : []);
     } catch (error) {
       if (error instanceof Error && error.message === 'User blocked') {
         return;
       }
       console.error('Error fetching players:', error);
+      setPlayers([]); // Set empty array on error
     }
   };
 
@@ -250,12 +254,14 @@ const UserManagement: React.FC = () => {
         throw new Error('Failed to fetch group members');
       }
       const data = await response.json();
-      setGroupMembers(data);
+      // Ensure data is an array
+      setGroupMembers(Array.isArray(data) ? data : []);
     } catch (error) {
       if (error instanceof Error && error.message === 'User blocked') {
         return;
       }
       console.error('Error fetching group members:', error);
+      setGroupMembers([]); // Set empty array on error
     }
   };
 
