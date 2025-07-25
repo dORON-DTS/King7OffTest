@@ -134,8 +134,6 @@ export const getPlayerDisplayNames = async (
   logout: () => void
 ): Promise<{ displayNames: { [key: string]: string }, hasAlias: { [key: string]: boolean } }> => {
   try {
-    console.log('getPlayerDisplayNames - Request:', { playerNames, groupId });
-    
     const token = localStorage.getItem('token');
     const response = await apiFetch(
       `${process.env.REACT_APP_API_URL}/api/player-aliases/display-names`,
@@ -153,10 +151,7 @@ export const getPlayerDisplayNames = async (
       logout
     );
     
-    console.log('getPlayerDisplayNames - Response status:', response.status);
-    
     if (!response.ok) {
-      console.log('getPlayerDisplayNames - Response not OK, using fallback');
       // If API fails, fallback to player names
       const fallbackDisplayNames: { [key: string]: string } = {};
       const fallbackHasAlias: { [key: string]: boolean } = {};
@@ -168,7 +163,6 @@ export const getPlayerDisplayNames = async (
     }
     
     const data = await response.json();
-    console.log('getPlayerDisplayNames - Response data:', data);
     return { 
       displayNames: data.displayNames || {}, 
       hasAlias: data.hasAlias || {} 

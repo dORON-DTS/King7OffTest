@@ -499,20 +499,7 @@ const StatisticsView: React.FC = () => {
       
       if (playersToLoad.length > 0) {
         try {
-          console.log('StatisticsView - Loading display names for players:', playersToLoad);
-          console.log('StatisticsView - Selected group ID:', selectedGroupId);
-          
           const result = await getPlayerDisplayNames(playersToLoad, selectedGroupId, () => {});
-          console.log('StatisticsView - Display names loaded:', result.displayNames);
-          console.log('StatisticsView - Has alias loaded:', result.hasAlias);
-          
-          // Log each player's display name status
-          playersToLoad.forEach(playerName => {
-            const displayName = result.displayNames[playerName];
-            const isLinked = result.hasAlias[playerName];
-            console.log(`StatisticsView - Player "${playerName}": displayName="${displayName}", isLinked=${isLinked}`);
-          });
-          
           setDisplayNames(prev => ({ ...prev, ...result.displayNames }));
           setHasAlias(prev => ({ ...prev, ...result.hasAlias }));
         } catch (error) {
