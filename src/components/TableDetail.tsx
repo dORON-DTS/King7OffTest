@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { usePoker } from '../context/PokerContext';
 import { useUser } from '../context/UserContext';
 import { Player, BuyIn, CashOut, EditForm, EditFormErrors, Group } from '../types';
+import { getPlayerDisplayName } from '../utils/apiInterceptor';
 import { 
   Box, 
   Typography, 
@@ -172,6 +173,7 @@ const TableDetail: React.FC = () => {
   // Add new state for delete confirmation
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [buyInToDelete, setBuyInToDelete] = useState<{ id: number; amount: number; playerName: string } | null>(null);
+  const [displayNames, setDisplayNames] = useState<{ [key: string]: string }>({});
 
   const table = id ? getTable(id) : null;
 
@@ -232,6 +234,34 @@ const TableDetail: React.FC = () => {
       // and the table data is already available through getTable
     }
   }, [id]); // Remove fetchTableData from dependencies
+
+  // Load display names for players
+  useEffect(() => {
+    const loadDisplayNames = async () => {
+      if (!table || !table.groupId || !table.players.length) return;
+
+      const namesToLoad: { [key: string]: string } = {};
+      
+      // Load display names for each player in the table
+      for (const player of table.players) {
+        if (!displayNames[player.name]) {
+          try {
+            const displayName = await getPlayerDisplayName(player.name, table.groupId, () => {});
+            namesToLoad[player.name] = displayName;
+          } catch (error) {
+            // Fallback to player name
+            namesToLoad[player.name] = player.name;
+          }
+        }
+      }
+
+      if (Object.keys(namesToLoad).length > 0) {
+        setDisplayNames(prev => ({ ...prev, ...namesToLoad }));
+      }
+    };
+
+    loadDisplayNames();
+  }, [table, displayNames]);
 
   if (!id) {
     return <Typography>Invalid table ID</Typography>;
@@ -867,7 +897,7 @@ const TableDetail: React.FC = () => {
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="h6">
-                      {player.name}
+                      {displayNames[player.name] || player.name}
                       {!player.active && (
                         <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
                           (Inactive)
@@ -1053,7 +1083,10 @@ const TableDetail: React.FC = () => {
 
       {/* Buy In Dialog */}
       <Dialog open={buyInDialogOpen} onClose={() => setBuyInDialogOpen(false)}>
-        <DialogTitle>Add Buy In for {table.players.find(p => p.id === selectedPlayerId)?.name}</DialogTitle>
+        <DialogTitle>Add Buy In for {(() => {
+          const player = table.players.find(p => p.id === selectedPlayerId);
+          return player ? (displayNames[player.name] || player.name) : '';
+        })()}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -1094,7 +1127,7 @@ const TableDetail: React.FC = () => {
         }}
       >
         <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)'}}>
-          History for {selectedPlayerForHistory?.name}
+          History for {selectedPlayerForHistory ? (displayNames[selectedPlayerForHistory.name] || selectedPlayerForHistory.name) : ''}
         </DialogTitle>
         <DialogContent>
           {selectedPlayerForHistory ? (
@@ -1169,7 +1202,10 @@ const TableDetail: React.FC = () => {
 
       {/* Cash Out Dialog */}
       <Dialog open={cashOutDialogOpen} onClose={() => setCashOutDialogOpen(false)}>
-        <DialogTitle>Cash Out for {table.players.find(p => p.id === selectedPlayerId)?.name}</DialogTitle>
+        <DialogTitle>Cash Out for {(() => {
+          const player = table.players.find(p => p.id === selectedPlayerId);
+          return player ? (displayNames[player.name] || player.name) : '';
+        })()}</DialogTitle>
         <DialogContent>
           <Box sx={{ mb: 3 }}>
             <Typography variant="body1" sx={{ mb: 2 }}>
@@ -1266,7 +1302,10 @@ const TableDetail: React.FC = () => {
         <DialogTitle>Remove Player</DialogTitle>
         <DialogContent>
           <Typography sx={{ mb: 2 }}>
-            Are you sure you want to remove {playerToRemove ? table.players.find(p => p.id === playerToRemove)?.name : ''} from the table?
+            Are you sure you want to remove {(() => {
+              const player = playerToRemove ? table.players.find(p => p.id === playerToRemove) : null;
+              return player ? (displayNames[player.name] || player.name) : '';
+            })()} from the table?
           </Typography>
           <Typography color="error" variant="body2">
             ⚠️ This action cannot be undone. All player history will be permanently deleted.
