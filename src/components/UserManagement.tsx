@@ -244,6 +244,8 @@ const UserManagement: React.FC = () => {
   const fetchGroupMembers = async (groupId: string) => {
     try {
       const token = localStorage.getItem('token');
+      console.log('[Frontend] Fetching group members for group:', groupId);
+      
       const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/groups/${groupId}/members`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -254,8 +256,12 @@ const UserManagement: React.FC = () => {
         throw new Error('Failed to fetch group members');
       }
       const data = await response.json();
+      console.log('[Frontend] Received group members data:', data);
+      
       // Ensure data is an array
-      setGroupMembers(Array.isArray(data) ? data : []);
+      const membersArray = Array.isArray(data) ? data : [];
+      console.log('[Frontend] Setting group members:', membersArray);
+      setGroupMembers(membersArray);
     } catch (error) {
       if (error instanceof Error && error.message === 'User blocked') {
         return;
