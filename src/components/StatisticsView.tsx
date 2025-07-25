@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { usePoker } from '../context/PokerContext';
 import { Table, PlayerStats, AggregatedPlayerStats } from '../types';
 import { useUser } from '../context/UserContext';
+import { getPlayerDisplayName } from '../utils/apiInterceptor';
 import {
   Box,
   Typography,
@@ -325,6 +326,7 @@ const StatisticsView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+  const [displayNames, setDisplayNames] = useState<{ [key: string]: string }>({});
 
   // Check for group parameter in URL and set initial filter
   useEffect(() => {
@@ -475,6 +477,42 @@ const StatisticsView: React.FC = () => {
     if (!selectedGroupId) return staticTables.filter(table => !table.isActive);
     return staticTables.filter(table => table.groupId === selectedGroupId && !table.isActive);
   }, [staticTables, selectedGroupId]);
+
+  // Load display names for players
+  useEffect(() => {
+    const loadDisplayNames = async () => {
+      if (!selectedGroupId || !filteredTables.length) return;
+
+      const namesToLoad: { [key: string]: string } = {};
+      
+      // Get all unique player names from filtered tables
+      const uniquePlayerNames = new Set<string>();
+      filteredTables.forEach(table => {
+        table.players.forEach(player => {
+          uniquePlayerNames.add(player.name);
+        });
+      });
+
+      // Load display names for each player
+      for (const playerName of Array.from(uniquePlayerNames)) {
+        if (!displayNames[playerName]) {
+          try {
+            const displayName = await getPlayerDisplayName(playerName, selectedGroupId, () => {});
+            namesToLoad[playerName] = displayName;
+          } catch (error) {
+            // Fallback to player name
+            namesToLoad[playerName] = playerName;
+          }
+        }
+      }
+
+      if (Object.keys(namesToLoad).length > 0) {
+        setDisplayNames(prev => ({ ...prev, ...namesToLoad }));
+      }
+    };
+
+    loadDisplayNames();
+  }, [selectedGroupId, filteredTables, displayNames]);
 
   // Get selected group name
   const selectedGroupName = useMemo(() => {
@@ -1313,7 +1351,7 @@ const StatisticsView: React.FC = () => {
                 {overallStats.mostPlayed ? (
                   <>
                     <Typography variant="h5" sx={{ color: '#29b6f6', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                      {overallStats.mostPlayed.name}
+                      {displayNames[overallStats.mostPlayed.name] || overallStats.mostPlayed.name}
                     </Typography>
                     <Typography variant="h6" sx={{ color: '#fff', fontSize: { xs: '0.8rem', sm: '1rem' } }}>
                       {overallStats.mostPlayed.tablesPlayed}
@@ -1347,7 +1385,7 @@ const StatisticsView: React.FC = () => {
                 </Typography>
                 {singleGameStats.maxWin > 0 ? (
                   <Typography variant="h5" sx={{ color: 'success.main', fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                    {singleGameStats.maxWinPlayer} (+{singleGameStats.maxWin})
+                    {displayNames[singleGameStats.maxWinPlayer] || singleGameStats.maxWinPlayer} (+{singleGameStats.maxWin})
                   </Typography>
                 ) : (
                   <Typography variant="body2" sx={{ color: 'grey.500', fontSize: { xs: '0.8rem', sm: '1rem' } }}>No single game wins yet</Typography>
@@ -1652,7 +1690,7 @@ const StatisticsView: React.FC = () => {
                     #{index + 1}
                     {getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}
                   </div>
-                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>{stat.name}</div>
+                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>{displayNames[stat.name] || stat.name}</div>
                   {headCells.map((headCell) => {
                     let cellColor = 'inherit';
                     if (headCell.id === 'netResult') {
@@ -1834,7 +1872,7 @@ const StatisticsView: React.FC = () => {
                               padding: '6px 10px',
                             }}
                           >
-                            {stat.name}
+                            {displayNames[stat.name] || stat.name}
                           </TableCell>
                           {headCells.map((headCell) => {
                             let cellColor = 'inherit';

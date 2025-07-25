@@ -93,4 +93,36 @@ export const apiFetch = async (url: string, options: RequestInit, logout: () => 
   }
   
   return response;
+};
+
+// Helper function to get display name (username if exists, otherwise playerName)
+export const getPlayerDisplayName = async (
+  playerName: string, 
+  groupId: string, 
+  logout: () => void
+): Promise<string> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await apiFetch(
+      `${process.env.REACT_APP_API_URL}/api/player-aliases/username/${encodeURIComponent(playerName)}/${groupId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      },
+      logout
+    );
+    
+    if (!response.ok) {
+      // If API fails, fallback to playerName
+      return playerName;
+    }
+    
+    const data = await response.json();
+    return data.displayName || playerName;
+  } catch (error) {
+    // If any error occurs, fallback to playerName
+    console.error('Error getting player display name:', error);
+    return playerName;
+  }
 }; 

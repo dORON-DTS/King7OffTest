@@ -3867,6 +3867,24 @@ app.get('/api/player-aliases/:playerName/:groupId', authenticate, (req, res) => 
   });
 });
 
+// Get username for player name in group (returns username if exists, otherwise playerName)
+app.get('/api/player-aliases/username/:playerName/:groupId', authenticate, (req, res) => {
+  const { playerName, groupId } = req.params;
+  db.get(`
+    SELECT u.username
+    FROM player_aliases pa
+    INNER JOIN users u ON pa.user_id = u.id
+    WHERE pa.player_name = ? AND pa.group_id = ? AND pa.is_active = 1
+  `, [playerName, groupId], (err, result) => {
+    if (err) {
+      console.error('[DB] Error getting username for player:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    // Return username if found, otherwise return the original playerName
+    res.json({ displayName: result ? result.username : playerName });
+  });
+});
+
 // Create new player alias connection
 app.post('/api/player-aliases', authenticate, authorize(['admin']), (req, res) => {
   const { playerName, groupId, userId } = req.body;
