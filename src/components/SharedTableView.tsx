@@ -544,7 +544,9 @@ const SharedTableView: React.FC = () => {
                     py: { xs: 0.5, sm: 1.5 },
                   }}>
                     <Box>
-                      {displayNames[player.name] || player.name}
+                      <span style={{ color: player.id ? '#29b6f6' : '#ffffff' }}>
+                        {displayNames[player.name] || player.name}
+                      </span>
                       {player.nickname && (
                         <Typography 
                           component="span" 

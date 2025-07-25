@@ -1685,7 +1685,11 @@ const StatisticsView: React.FC = () => {
                     #{index + 1}
                     {getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}
                   </div>
-                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>{displayNames[stat.name] || stat.name}</div>
+                  <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>
+                    <span style={{ color: stat.id ? '#29b6f6' : '#ffffff' }}>
+                      {displayNames[stat.name] || stat.name}
+                    </span>
+                  </div>
                   {headCells.map((headCell) => {
                     let cellColor = 'inherit';
                     if (headCell.id === 'netResult') {
@@ -1867,7 +1871,9 @@ const StatisticsView: React.FC = () => {
                               padding: '6px 10px',
                             }}
                           >
-                            {displayNames[stat.name] || stat.name}
+                            <span style={{ color: stat.id ? '#29b6f6' : '#ffffff' }}>
+                              {displayNames[stat.name] || stat.name}
+                            </span>
                           </TableCell>
                           {headCells.map((headCell) => {
                             let cellColor = 'inherit';
