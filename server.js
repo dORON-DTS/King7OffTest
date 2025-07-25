@@ -3889,6 +3889,8 @@ app.get('/api/player-aliases/username/:playerName/:groupId', authenticate, (req,
 app.post('/api/player-aliases/display-names', authenticate, (req, res) => {
   const { playerNames, groupId } = req.body;
   
+  console.log('[SERVER] Display names request:', { playerNames, groupId });
+  
   if (!playerNames || !Array.isArray(playerNames) || !groupId) {
     return res.status(400).json({ error: 'Missing required fields: playerNames array and groupId' });
   }
@@ -3900,16 +3902,23 @@ app.post('/api/player-aliases/display-names', authenticate, (req, res) => {
   // Create placeholders for the IN clause
   const placeholders = playerNames.map(() => '?').join(',');
   
-  db.all(`
+  const query = `
     SELECT pa.player_name, u.username
     FROM player_aliases pa
     INNER JOIN users u ON pa.user_id = u.id
     WHERE pa.player_name IN (${placeholders}) AND pa.group_id = ? AND pa.is_active = 1
-  `, [...playerNames, groupId], (err, results) => {
+  `;
+  
+  console.log('[SERVER] SQL Query:', query);
+  console.log('[SERVER] SQL Parameters:', [...playerNames, groupId]);
+  
+  db.all(query, [...playerNames, groupId], (err, results) => {
     if (err) {
       console.error('[DB] Error getting display names for players:', err);
       return res.status(500).json({ error: 'Database error' });
     }
+    
+    console.log('[SERVER] Database results:', results);
     
     // Create a map of player names to usernames
     const displayNames = {};
@@ -3924,6 +3933,7 @@ app.post('/api/player-aliases/display-names', authenticate, (req, res) => {
       }
     });
     
+    console.log('[SERVER] Final display names:', displayNames);
     res.json({ displayNames });
   });
 });
@@ -3931,6 +3941,8 @@ app.post('/api/player-aliases/display-names', authenticate, (req, res) => {
 // Create new player alias connection
 app.post('/api/player-aliases', authenticate, authorize(['admin']), (req, res) => {
   const { playerName, groupId, userId } = req.body;
+  
+  console.log('[SERVER] Creating player alias:', { playerName, groupId, userId });
   
   if (!playerName || !groupId || !userId) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -3944,6 +3956,8 @@ app.post('/api/player-aliases', authenticate, authorize(['admin']), (req, res) =
       return res.status(500).json({ error: 'Database error' });
     }
     
+    console.log('[SERVER] Existing alias check result:', existing);
+    
     if (existing) {
       return res.status(409).json({ error: 'Player is already connected to a user in this group' });
     }
@@ -3952,14 +3966,21 @@ app.post('/api/player-aliases', authenticate, authorize(['admin']), (req, res) =
     const aliasId = uuidv4();
     const now = new Date().toISOString();
     
-    db.run(`
+    const insertQuery = `
       INSERT INTO player_aliases (id, user_id, player_name, group_id, created_at, is_active)
       VALUES (?, ?, ?, ?, ?, 1)
-    `, [aliasId, userId, playerName, groupId, now], function(err) {
+    `;
+    
+    console.log('[SERVER] Inserting player alias with query:', insertQuery);
+    console.log('[SERVER] Insert parameters:', [aliasId, userId, playerName, groupId, now]);
+    
+    db.run(insertQuery, [aliasId, userId, playerName, groupId, now], function(err) {
       if (err) {
         console.error('[DB] Error creating player alias:', err);
         return res.status(500).json({ error: 'Database error' });
       }
+      
+      console.log('[SERVER] Player alias created successfully with ID:', aliasId);
       
       res.json({ 
         message: 'Player connected successfully',
