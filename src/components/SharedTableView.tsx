@@ -33,7 +33,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import CircularProgress from '@mui/material/CircularProgress';
 import GroupIcon from '@mui/icons-material/Group';
 import { Player, Table, BuyIn, CashOut } from '../types';
-import { getPlayerDisplayName } from '../utils/apiInterceptor';
+import { getPlayerDisplayNames } from '../utils/apiInterceptor';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import { sortPlayers } from './ShareTable';
@@ -231,23 +231,18 @@ const SharedTableView: React.FC = () => {
     const loadDisplayNames = async () => {
       if (!table || !table.groupId || !table.players.length) return;
 
-      const namesToLoad: { [key: string]: string } = {};
+      // Get player names that we don't have display names for yet
+      const playersToLoad = table.players
+        .map(player => player.name)
+        .filter(playerName => !displayNames[playerName]);
       
-      // Load display names for each player in the table
-      for (const player of table.players) {
-        if (!displayNames[player.name]) {
-          try {
-            const displayName = await getPlayerDisplayName(player.name, table.groupId, () => {});
-            namesToLoad[player.name] = displayName;
-          } catch (error) {
-            // Fallback to player name
-            namesToLoad[player.name] = player.name;
-          }
+      if (playersToLoad.length > 0) {
+        try {
+          const newDisplayNames = await getPlayerDisplayNames(playersToLoad, table.groupId, () => {});
+          setDisplayNames(prev => ({ ...prev, ...newDisplayNames }));
+        } catch (error) {
+          console.error('Error loading display names:', error);
         }
-      }
-
-      if (Object.keys(namesToLoad).length > 0) {
-        setDisplayNames(prev => ({ ...prev, ...namesToLoad }));
       }
     };
 

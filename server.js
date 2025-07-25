@@ -3885,6 +3885,49 @@ app.get('/api/player-aliases/username/:playerName/:groupId', authenticate, (req,
   });
 });
 
+// Get display names for multiple players in a group (batch endpoint for performance)
+app.post('/api/player-aliases/display-names', authenticate, (req, res) => {
+  const { playerNames, groupId } = req.body;
+  
+  if (!playerNames || !Array.isArray(playerNames) || !groupId) {
+    return res.status(400).json({ error: 'Missing required fields: playerNames array and groupId' });
+  }
+  
+  if (playerNames.length === 0) {
+    return res.json({ displayNames: {} });
+  }
+  
+  // Create placeholders for the IN clause
+  const placeholders = playerNames.map(() => '?').join(',');
+  
+  db.all(`
+    SELECT pa.player_name, u.username
+    FROM player_aliases pa
+    INNER JOIN users u ON pa.user_id = u.id
+    WHERE pa.player_name IN (${placeholders}) AND pa.group_id = ? AND pa.is_active = 1
+  `, [...playerNames, groupId], (err, results) => {
+    if (err) {
+      console.error('[DB] Error getting display names for players:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    // Create a map of player names to usernames
+    const displayNames = {};
+    results.forEach(row => {
+      displayNames[row.player_name] = row.username;
+    });
+    
+    // For players not found in results, use their original name
+    playerNames.forEach(playerName => {
+      if (!displayNames[playerName]) {
+        displayNames[playerName] = playerName;
+      }
+    });
+    
+    res.json({ displayNames });
+  });
+});
+
 // Create new player alias connection
 app.post('/api/player-aliases', authenticate, authorize(['admin']), (req, res) => {
   const { playerName, groupId, userId } = req.body;

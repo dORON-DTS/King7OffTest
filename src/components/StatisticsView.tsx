@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { usePoker } from '../context/PokerContext';
 import { Table, PlayerStats, AggregatedPlayerStats } from '../types';
 import { useUser } from '../context/UserContext';
-import { getPlayerDisplayName } from '../utils/apiInterceptor';
+import { getPlayerDisplayNames } from '../utils/apiInterceptor';
 import {
   Box,
   Typography,
@@ -483,8 +483,6 @@ const StatisticsView: React.FC = () => {
     const loadDisplayNames = async () => {
       if (!selectedGroupId || !filteredTables.length) return;
 
-      const namesToLoad: { [key: string]: string } = {};
-      
       // Get all unique player names from filtered tables
       const uniquePlayerNames = new Set<string>();
       filteredTables.forEach(table => {
@@ -493,21 +491,18 @@ const StatisticsView: React.FC = () => {
         });
       });
 
-      // Load display names for each player
-      for (const playerName of Array.from(uniquePlayerNames)) {
-        if (!displayNames[playerName]) {
-          try {
-            const displayName = await getPlayerDisplayName(playerName, selectedGroupId, () => {});
-            namesToLoad[playerName] = displayName;
-          } catch (error) {
-            // Fallback to player name
-            namesToLoad[playerName] = playerName;
-          }
+      const playerNamesArray = Array.from(uniquePlayerNames);
+      
+      // Filter out players we already have display names for
+      const playersToLoad = playerNamesArray.filter(playerName => !displayNames[playerName]);
+      
+      if (playersToLoad.length > 0) {
+        try {
+          const newDisplayNames = await getPlayerDisplayNames(playersToLoad, selectedGroupId, () => {});
+          setDisplayNames(prev => ({ ...prev, ...newDisplayNames }));
+        } catch (error) {
+          console.error('Error loading display names:', error);
         }
-      }
-
-      if (Object.keys(namesToLoad).length > 0) {
-        setDisplayNames(prev => ({ ...prev, ...namesToLoad }));
       }
     };
 

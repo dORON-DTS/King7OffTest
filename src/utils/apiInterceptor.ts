@@ -125,4 +125,50 @@ export const getPlayerDisplayName = async (
     console.error('Error getting player display name:', error);
     return playerName;
   }
+};
+
+// Helper function to get display names for multiple players (batch operation for performance)
+export const getPlayerDisplayNames = async (
+  playerNames: string[],
+  groupId: string,
+  logout: () => void
+): Promise<{ [key: string]: string }> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await apiFetch(
+      `${process.env.REACT_APP_API_URL}/api/player-aliases/display-names`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          playerNames,
+          groupId
+        })
+      },
+      logout
+    );
+    
+    if (!response.ok) {
+      // If API fails, fallback to player names
+      const fallback: { [key: string]: string } = {};
+      playerNames.forEach(name => {
+        fallback[name] = name;
+      });
+      return fallback;
+    }
+    
+    const data = await response.json();
+    return data.displayNames || {};
+  } catch (error) {
+    // If any error occurs, fallback to player names
+    console.error('Error getting player display names:', error);
+    const fallback: { [key: string]: string } = {};
+    playerNames.forEach(name => {
+      fallback[name] = name;
+    });
+    return fallback;
+  }
 }; 

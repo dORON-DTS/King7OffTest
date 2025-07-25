@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import { Table, PlayerStats } from '../types';
-import { getPlayerDisplayName } from '../utils/apiInterceptor';
+import { getPlayerDisplayNames } from '../utils/apiInterceptor';
 // Import Recharts components
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -126,8 +126,8 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
       if (!groupId) return;
 
       try {
-        const name = await getPlayerDisplayName(playerData.name, groupId, () => {});
-        setDisplayName(name);
+        const displayNames = await getPlayerDisplayNames([playerData.name], groupId, () => {});
+        setDisplayName(displayNames[playerData.name] || playerData.name);
       } catch (error) {
         // Fallback to player name
         setDisplayName(playerData.name);
