@@ -238,7 +238,19 @@ const SharedTableView: React.FC = () => {
       
       if (playersToLoad.length > 0) {
         try {
+          console.log('SharedTableView - Loading display names for players:', playersToLoad);
+          console.log('SharedTableView - Table group ID:', table.groupId);
+          
           const newDisplayNames = await getPlayerDisplayNames(playersToLoad, table.groupId, () => {});
+          console.log('SharedTableView - Display names loaded:', newDisplayNames);
+          
+          // Log each player's display name status
+          playersToLoad.forEach(playerName => {
+            const displayName = newDisplayNames[playerName];
+            const isLinked = displayName !== playerName;
+            console.log(`SharedTableView - Player "${playerName}": displayName="${displayName}", isLinked=${isLinked}`);
+          });
+          
           setDisplayNames(prev => ({ ...prev, ...newDisplayNames }));
         } catch (error) {
           console.error('Error loading display names:', error);

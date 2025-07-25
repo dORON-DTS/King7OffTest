@@ -134,6 +134,8 @@ export const getPlayerDisplayNames = async (
   logout: () => void
 ): Promise<{ [key: string]: string }> => {
   try {
+    console.log('getPlayerDisplayNames - Request:', { playerNames, groupId });
+    
     const token = localStorage.getItem('token');
     const response = await apiFetch(
       `${process.env.REACT_APP_API_URL}/api/player-aliases/display-names`,
@@ -151,7 +153,10 @@ export const getPlayerDisplayNames = async (
       logout
     );
     
+    console.log('getPlayerDisplayNames - Response status:', response.status);
+    
     if (!response.ok) {
+      console.log('getPlayerDisplayNames - Response not OK, using fallback');
       // If API fails, fallback to player names
       const fallback: { [key: string]: string } = {};
       playerNames.forEach(name => {
@@ -161,6 +166,7 @@ export const getPlayerDisplayNames = async (
     }
     
     const data = await response.json();
+    console.log('getPlayerDisplayNames - Response data:', data);
     return data.displayNames || {};
   } catch (error) {
     // If any error occurs, fallback to player names
