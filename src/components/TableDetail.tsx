@@ -247,8 +247,8 @@ const TableDetail: React.FC = () => {
       
       if (playersToLoad.length > 0) {
         try {
-          const newDisplayNames = await getPlayerDisplayNames(playersToLoad, table.groupId, () => {});
-          setDisplayNames(prev => ({ ...prev, ...newDisplayNames }));
+          const result = await getPlayerDisplayNames(playersToLoad, table.groupId, () => {});
+          setDisplayNames(prev => ({ ...prev, ...result.displayNames }));
         } catch (error) {
           console.error('Error loading display names:', error);
         }

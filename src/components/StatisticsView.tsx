@@ -327,6 +327,7 @@ const StatisticsView: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   const [displayNames, setDisplayNames] = useState<{ [key: string]: string }>({});
+  const [hasAlias, setHasAlias] = useState<{ [key: string]: boolean }>({});
 
   // Check for group parameter in URL and set initial filter
   useEffect(() => {
@@ -501,17 +502,19 @@ const StatisticsView: React.FC = () => {
           console.log('StatisticsView - Loading display names for players:', playersToLoad);
           console.log('StatisticsView - Selected group ID:', selectedGroupId);
           
-          const newDisplayNames = await getPlayerDisplayNames(playersToLoad, selectedGroupId, () => {});
-          console.log('StatisticsView - Display names loaded:', newDisplayNames);
+          const result = await getPlayerDisplayNames(playersToLoad, selectedGroupId, () => {});
+          console.log('StatisticsView - Display names loaded:', result.displayNames);
+          console.log('StatisticsView - Has alias loaded:', result.hasAlias);
           
           // Log each player's display name status
           playersToLoad.forEach(playerName => {
-            const displayName = newDisplayNames[playerName];
-            const isLinked = displayName !== playerName;
+            const displayName = result.displayNames[playerName];
+            const isLinked = result.hasAlias[playerName];
             console.log(`StatisticsView - Player "${playerName}": displayName="${displayName}", isLinked=${isLinked}`);
           });
           
-          setDisplayNames(prev => ({ ...prev, ...newDisplayNames }));
+          setDisplayNames(prev => ({ ...prev, ...result.displayNames }));
+          setHasAlias(prev => ({ ...prev, ...result.hasAlias }));
         } catch (error) {
           console.error('Error loading display names:', error);
         }
@@ -1698,7 +1701,7 @@ const StatisticsView: React.FC = () => {
                     {getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}
                   </div>
                   <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>
-                    <span style={{ color: displayNames[stat.name] !== stat.name ? '#29b6f6' : '#ffffff' }}>
+                    <span style={{ color: hasAlias[stat.name] ? '#29b6f6' : '#ffffff' }}>
                       {displayNames[stat.name] || stat.name}
                     </span>
                   </div>
@@ -1883,7 +1886,7 @@ const StatisticsView: React.FC = () => {
                               padding: '6px 10px',
                             }}
                           >
-                            <span style={{ color: displayNames[stat.name] !== stat.name ? '#29b6f6' : '#ffffff' }}>
+                            <span style={{ color: hasAlias[stat.name] ? '#29b6f6' : '#ffffff' }}>
                               {displayNames[stat.name] || stat.name}
                             </span>
                           </TableCell>

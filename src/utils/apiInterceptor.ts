@@ -132,7 +132,7 @@ export const getPlayerDisplayNames = async (
   playerNames: string[],
   groupId: string,
   logout: () => void
-): Promise<{ [key: string]: string }> => {
+): Promise<{ displayNames: { [key: string]: string }, hasAlias: { [key: string]: boolean } }> => {
   try {
     console.log('getPlayerDisplayNames - Request:', { playerNames, groupId });
     
@@ -158,23 +158,30 @@ export const getPlayerDisplayNames = async (
     if (!response.ok) {
       console.log('getPlayerDisplayNames - Response not OK, using fallback');
       // If API fails, fallback to player names
-      const fallback: { [key: string]: string } = {};
+      const fallbackDisplayNames: { [key: string]: string } = {};
+      const fallbackHasAlias: { [key: string]: boolean } = {};
       playerNames.forEach(name => {
-        fallback[name] = name;
+        fallbackDisplayNames[name] = name;
+        fallbackHasAlias[name] = false;
       });
-      return fallback;
+      return { displayNames: fallbackDisplayNames, hasAlias: fallbackHasAlias };
     }
     
     const data = await response.json();
     console.log('getPlayerDisplayNames - Response data:', data);
-    return data.displayNames || {};
+    return { 
+      displayNames: data.displayNames || {}, 
+      hasAlias: data.hasAlias || {} 
+    };
   } catch (error) {
     // If any error occurs, fallback to player names
     console.error('Error getting player display names:', error);
-    const fallback: { [key: string]: string } = {};
+    const fallbackDisplayNames: { [key: string]: string } = {};
+    const fallbackHasAlias: { [key: string]: boolean } = {};
     playerNames.forEach(name => {
-      fallback[name] = name;
+      fallbackDisplayNames[name] = name;
+      fallbackHasAlias[name] = false;
     });
-    return fallback;
+    return { displayNames: fallbackDisplayNames, hasAlias: fallbackHasAlias };
   }
 }; 

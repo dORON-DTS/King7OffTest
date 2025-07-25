@@ -3896,7 +3896,7 @@ app.post('/api/player-aliases/display-names', authenticate, (req, res) => {
   }
   
   if (playerNames.length === 0) {
-    return res.json({ displayNames: {} });
+    return res.json({ displayNames: {}, hasAlias: {} });
   }
   
   // Create placeholders for the IN clause
@@ -3920,21 +3920,25 @@ app.post('/api/player-aliases/display-names', authenticate, (req, res) => {
     
     console.log('[SERVER] Database results:', results);
     
-    // Create a map of player names to usernames
+    // Create a map of player names to usernames and hasAlias
     const displayNames = {};
-    results.forEach(row => {
-      displayNames[row.player_name] = row.username;
+    const hasAlias = {};
+    
+    // First, mark all players as not having alias
+    playerNames.forEach(playerName => {
+      hasAlias[playerName] = false;
+      displayNames[playerName] = playerName; // Default to original name
     });
     
-    // For players not found in results, use their original name
-    playerNames.forEach(playerName => {
-      if (!displayNames[playerName]) {
-        displayNames[playerName] = playerName;
-      }
+    // Then, update with actual aliases
+    results.forEach(row => {
+      displayNames[row.player_name] = row.username;
+      hasAlias[row.player_name] = true; // This player has an alias
     });
     
     console.log('[SERVER] Final display names:', displayNames);
-    res.json({ displayNames });
+    console.log('[SERVER] Has alias mapping:', hasAlias);
+    res.json({ displayNames, hasAlias });
   });
 });
 

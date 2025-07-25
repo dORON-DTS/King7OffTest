@@ -126,8 +126,8 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
       if (!groupId) return;
 
       try {
-        const displayNames = await getPlayerDisplayNames([playerData.name], groupId, () => {});
-        setDisplayName(displayNames[playerData.name] || playerData.name);
+        const result = await getPlayerDisplayNames([playerData.name], groupId, () => {});
+        setDisplayName(result.displayNames[playerData.name] || playerData.name);
       } catch (error) {
         // Fallback to player name
         setDisplayName(playerData.name);

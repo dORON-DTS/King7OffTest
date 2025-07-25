@@ -170,6 +170,7 @@ const SharedTableView: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [popoverContent, setPopoverContent] = useState<string>('');
   const [displayNames, setDisplayNames] = useState<{ [key: string]: string }>({});
+  const [hasAlias, setHasAlias] = useState<{ [key: string]: boolean }>({});
 
   const fetchTableData = useCallback(async () => {
     if (!id) {
@@ -241,17 +242,19 @@ const SharedTableView: React.FC = () => {
           console.log('SharedTableView - Loading display names for players:', playersToLoad);
           console.log('SharedTableView - Table group ID:', table.groupId);
           
-          const newDisplayNames = await getPlayerDisplayNames(playersToLoad, table.groupId, () => {});
-          console.log('SharedTableView - Display names loaded:', newDisplayNames);
+          const result = await getPlayerDisplayNames(playersToLoad, table.groupId, () => {});
+          console.log('SharedTableView - Display names loaded:', result.displayNames);
+          console.log('SharedTableView - Has alias loaded:', result.hasAlias);
           
           // Log each player's display name status
           playersToLoad.forEach(playerName => {
-            const displayName = newDisplayNames[playerName];
-            const isLinked = displayName !== playerName;
+            const displayName = result.displayNames[playerName];
+            const isLinked = result.hasAlias[playerName];
             console.log(`SharedTableView - Player "${playerName}": displayName="${displayName}", isLinked=${isLinked}`);
           });
           
-          setDisplayNames(prev => ({ ...prev, ...newDisplayNames }));
+          setDisplayNames(prev => ({ ...prev, ...result.displayNames }));
+          setHasAlias(prev => ({ ...prev, ...result.hasAlias }));
         } catch (error) {
           console.error('Error loading display names:', error);
         }
@@ -556,7 +559,7 @@ const SharedTableView: React.FC = () => {
                     py: { xs: 0.5, sm: 1.5 },
                   }}>
                     <Box>
-                      <span style={{ color: displayNames[player.name] !== player.name ? '#29b6f6' : '#ffffff' }}>
+                      <span style={{ color: hasAlias[player.name] ? '#29b6f6' : '#ffffff' }}>
                         {displayNames[player.name] || player.name}
                       </span>
                       {player.nickname && (
