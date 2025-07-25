@@ -258,8 +258,18 @@ const UserManagement: React.FC = () => {
       const data = await response.json();
       console.log('[Frontend] Received group members data:', data);
       
-      // Ensure data is an array
-      const membersArray = Array.isArray(data) ? data : [];
+      // Handle the new data structure: {owner: {...}, members: [...]}
+      let membersArray = [];
+      if (data && typeof data === 'object') {
+        if (Array.isArray(data)) {
+          // Old format - direct array
+          membersArray = data;
+        } else if (data.owner && data.members) {
+          // New format - combine owner and members
+          membersArray = [data.owner, ...data.members];
+        }
+      }
+      
       console.log('[Frontend] Setting group members:', membersArray);
       setGroupMembers(membersArray);
     } catch (error) {
