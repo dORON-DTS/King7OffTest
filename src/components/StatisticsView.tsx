@@ -1686,7 +1686,7 @@ const StatisticsView: React.FC = () => {
                     {getMedalForPlayer(stat.id) || getSheepForPlayer(stat.id) || ''}
                   </div>
                   <div className={`${styles['mobile-stats-cell']} ${styles['mobile-stats-sticky2']}`} style={{ width: 160 }}>
-                    <span style={{ color: stat.id ? '#29b6f6' : '#ffffff' }}>
+                    <span style={{ color: displayNames[stat.name] !== stat.name ? '#29b6f6' : '#ffffff' }}>
                       {displayNames[stat.name] || stat.name}
                     </span>
                   </div>
@@ -1871,7 +1871,7 @@ const StatisticsView: React.FC = () => {
                               padding: '6px 10px',
                             }}
                           >
-                            <span style={{ color: stat.id ? '#29b6f6' : '#ffffff' }}>
+                            <span style={{ color: displayNames[stat.name] !== stat.name ? '#29b6f6' : '#ffffff' }}>
                               {displayNames[stat.name] || stat.name}
                             </span>
                           </TableCell>
