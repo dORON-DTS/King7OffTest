@@ -1808,57 +1808,68 @@ app.post('/api/register', (req, res) => {
       return res.status(409).json({ error: 'Username already exists' });
     }
 
-  // Check if email already exists
-  db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
-    }
-
-    if (existingUser) {
-      if (existingUser.isBlocked) {
-        return res.status(403).json({ error: 'Your account has been blocked. Please contact an administrator.' });
-      }
-      return res.status(409).json({ error: 'Email already exists' });
-    }
-
-    // Hash password
-    bcrypt.hash(password, 10, (err, hash) => {
+    // Check if email already exists
+    db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
       if (err) {
-        return res.status(500).json({ error: 'Error creating user' });
+        return res.status(500).json({ error: 'Database error' });
       }
 
-      const id = uuidv4();
-      const createdAt = new Date().toISOString();
-      const role = 'user';
-      const verificationCode = generateVerificationCode();
-      const isVerified = 0;
-
-      // Insert new user (not verified yet)
-      db.run(
-        'INSERT INTO users (id, username, email, password, role, createdAt, isVerified, verificationCode) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, username, email, hash, role, createdAt, isVerified, verificationCode],
-        function(err) {
-          if (err) {
-            return res.status(500).json({ error: 'Error creating user' });
-          }
-
-          // Send verification email
-          const verifyUrl = `https://poker-management.onrender.com/verify-email?email=${encodeURIComponent(email)}`;
-          const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'King7Offsuit - Email Verification',
-            text: `Welcome to King7Offsuit!\n\nYour verification code is: ${verificationCode}\n\nTo verify your email, click the link below or enter the code in the app:\n${verifyUrl}`,
-          };
-
-          transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              return res.status(500).json({ error: 'Failed to send verification email' });
-            }
-            res.status(201).json({ message: 'Registration successful! Please check your email for the verification code.' });
-          });
+      if (existingUser) {
+        if (existingUser.isBlocked) {
+          return res.status(403).json({ error: 'Your account has been blocked. Please contact an administrator.' });
         }
-      );
+        return res.status(409).json({ error: 'Email already exists' });
+      }
+
+      // Hash password
+      bcrypt.hash(password, 10, (err, hash) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error creating user' });
+        }
+
+        const id = uuidv4();
+        const createdAt = new Date().toISOString();
+        const role = 'user';
+        const verificationCode = generateVerificationCode();
+        const isVerified = 0;
+
+        // Insert new user (not verified yet)
+        db.run(
+          'INSERT INTO users (id, username, email, password, role, createdAt, isVerified, verificationCode) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [id, username, email, hash, role, createdAt, isVerified, verificationCode],
+          function(err) {
+            if (err) {
+              return res.status(500).json({ error: 'Error creating user' });
+            }
+
+            // Send verification email
+            const verifyUrl = `https://poker-management.onrender.com/verify-email?email=${encodeURIComponent(email)}`;
+            const mailOptions = {
+              from: process.env.EMAIL_USER,
+              to: email,
+              subject: 'King7Offsuit - Email Verification',
+              text: `Welcome to King7Offsuit!\n\nYour verification code is: ${verificationCode}\n\nTo verify your email, click the link below or enter the code in the app:\n${verifyUrl}`,
+            };
+
+            // Check if email configuration is set up
+            if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+              console.error('Email configuration missing:', { 
+                EMAIL_USER: !!process.env.EMAIL_USER, 
+                EMAIL_PASS: !!process.env.EMAIL_PASS 
+              });
+              return res.status(500).json({ error: 'Email service not configured' });
+            }
+
+            transporter.sendMail(mailOptions, (error, info) => {
+              if (error) {
+                console.error('Email send error:', error);
+                return res.status(500).json({ error: 'Failed to send verification email' });
+              }
+              console.log('Email sent successfully:', info.messageId);
+              res.status(201).json({ message: 'Registration successful! Please check your email for the verification code.' });
+            });
+          }
+        );
       });
     });
   });
