@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import { Table, PlayerStats } from '../types';
+import { getPlayerDisplayName } from '../utils/apiInterceptor';
 // Import Recharts components
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -113,7 +114,29 @@ function renderOrdinal(ordinal: string) {
 const MIN_GAMES_FOR_ORDINAL = 5;
 
 const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, playerData, allTablesData }) => {
-  
+    const [displayName, setDisplayName] = React.useState<string>('');
+    
+  // Load display name for player
+  React.useEffect(() => {
+    const loadDisplayName = async () => {
+      if (!playerData || !allTablesData.length) return;
+
+      // Get groupId from the first table (assuming all tables are from the same group)
+      const groupId = allTablesData[0]?.groupId;
+      if (!groupId) return;
+
+      try {
+        const name = await getPlayerDisplayName(playerData.name, groupId, () => {});
+        setDisplayName(name);
+      } catch (error) {
+        // Fallback to player name
+        setDisplayName(playerData.name);
+      }
+    };
+
+    loadDisplayName();
+  }, [playerData, allTablesData]);
+    
   // Calculate Timeline Data and Matchup Data here using useMemo
   const detailedStats = useMemo(() => {
     if (!playerData || !allTablesData) {
@@ -285,7 +308,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { bgcolor: '#1e1e1e', color: 'white' } }}>
       <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
-          Stats for {playerData.name} {playerData.nickname ? `(${playerData.nickname})` : ''}
+          Stats for {displayName || playerData.name} {playerData.nickname ? `(${playerData.nickname})` : ''}
       </DialogTitle>
       <DialogContent dividers sx={{ bgcolor: '#121212' }}> {/* Slightly different background for content */}
         <Grid container spacing={3}>
