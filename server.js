@@ -3976,6 +3976,85 @@ app.post('/api/player-aliases', authenticate, authorize(['admin']), (req, res) =
   });
 });
 
+// Get users linked to a group (for new groups without tables)
+app.get('/api/groups/:groupId/linked-users', authenticate, (req, res) => {
+  const groupId = req.params.groupId;
+  const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
+  // Check if user has access to this group
+  db.get('SELECT owner_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // ADMIN can access any group
+    if (isAdmin) {
+      return fetchLinkedUsers();
+    }
+
+    // Check if user is owner or member
+    const isOwner = group.owner_id === userId;
+    if (!isOwner) {
+      // Check if user is a member
+      db.get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], (err, member) => {
+        if (err || !member) {
+          return res.status(403).json({ error: 'Access denied' });
+        }
+        // Continue to fetch linked users
+        fetchLinkedUsers();
+      });
+    } else {
+      fetchLinkedUsers();
+    }
+
+    function fetchLinkedUsers() {
+      // Get all users who are members of this group (owner + members)
+      const query = `
+        SELECT u.id, u.username, u.email, 'owner' as role
+        FROM users u 
+        WHERE u.id = ?
+        UNION
+        SELECT u.id, u.username, u.email, gm.role
+        FROM users u 
+        JOIN group_members gm ON u.id = gm.user_id 
+        WHERE gm.group_id = ?
+        ORDER BY username ASC
+      `;
+      
+      db.all(query, [group.owner_id, groupId], (err, users) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        // Get existing player aliases for this group
+        db.all('SELECT player_name, user_id FROM player_aliases WHERE group_id = ? AND is_active = 1', [groupId], (err, aliases) => {
+          if (err) {
+            return res.status(500).json({ error: 'Database error' });
+          }
+
+          // Create a map of user_id to player_name
+          const userToPlayerMap = {};
+          aliases.forEach(alias => {
+            userToPlayerMap[alias.user_id] = alias.player_name;
+          });
+
+          // Add player_name to each user if they have an alias
+          const usersWithAliases = users.map(user => ({
+            ...user,
+            player_name: userToPlayerMap[user.id] || null
+          }));
+
+          res.json({ users: usersWithAliases });
+        });
+      });
+    }
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

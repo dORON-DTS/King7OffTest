@@ -179,3 +179,34 @@ export const getPlayerDisplayNames = async (
     return { displayNames: fallbackDisplayNames, hasAlias: fallbackHasAlias };
   }
 }; 
+
+// Helper function to get users linked to a group (for new groups without tables)
+export const getGroupLinkedUsers = async (
+  groupId: string,
+  logout: () => void
+): Promise<{ users: Array<{ id: string; username: string; email: string; role: string; player_name: string | null }> }> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await apiFetch(
+      `${process.env.REACT_APP_API_URL}/api/groups/${groupId}/linked-users`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      },
+      logout
+    );
+    
+    if (!response.ok) {
+      // If API fails, return empty array
+      return { users: [] };
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // If any error occurs, return empty array
+    console.error('Error getting group linked users:', error);
+    return { users: [] };
+  }
+}; 

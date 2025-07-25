@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { usePoker } from '../context/PokerContext';
 import { useUser } from '../context/UserContext';
 import { Player, BuyIn, CashOut, EditForm, EditFormErrors, Group } from '../types';
-import { getPlayerDisplayNames } from '../utils/apiInterceptor';
+import { getPlayerDisplayNames, getGroupLinkedUsers } from '../utils/apiInterceptor';
 import { 
   Box, 
   Typography, 
@@ -174,6 +174,7 @@ const TableDetail: React.FC = () => {
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [buyInToDelete, setBuyInToDelete] = useState<{ id: number; amount: number; playerName: string } | null>(null);
   const [displayNames, setDisplayNames] = useState<{ [key: string]: string }>({});
+  const [hasAlias, setHasAlias] = useState<{ [key: string]: boolean }>({});
 
   const table = id ? getTable(id) : null;
 
@@ -207,16 +208,60 @@ const TableDetail: React.FC = () => {
       // Get all player names from tables with the same groupId as the current table
       if (table && table.groupId && allTables) {
         const relevantTables = allTables.filter(t => t.groupId === table.groupId);
-        const namesSet = new Set<string>();
-        relevantTables.forEach(t => {
-          t.players.forEach(p => {
-            namesSet.add(p.name);
+        
+        if (relevantTables.length === 0) {
+          // New group without tables - get linked users
+          try {
+            const result = await getGroupLinkedUsers(table.groupId, () => {});
+            const userNames = result.users
+              .filter(user => !user.player_name) // Only users without existing aliases
+              .map(user => user.username);
+            setUniquePlayerNames(userNames.sort((a, b) => a.localeCompare(b)));
+            
+            // Set display names and hasAlias for users
+            const userDisplayNames: { [key: string]: string } = {};
+            const userHasAlias: { [key: string]: boolean } = {};
+            result.users.forEach(user => {
+              if (user.player_name) {
+                // User already has an alias
+                userDisplayNames[user.player_name] = user.username;
+                userHasAlias[user.player_name] = true;
+              } else {
+                // User without alias - show as potential player
+                userDisplayNames[user.username] = user.username;
+                userHasAlias[user.username] = false;
+              }
+            });
+            setDisplayNames(prev => ({ ...prev, ...userDisplayNames }));
+            setHasAlias(prev => ({ ...prev, ...userHasAlias }));
+          } catch (error) {
+            console.error('Error loading linked users for new group:', error);
+            setUniquePlayerNames([]);
+          }
+        } else {
+          // Existing group with tables - get player names from tables
+          const namesSet = new Set<string>();
+          relevantTables.forEach(t => {
+            t.players.forEach(p => {
+              namesSet.add(p.name);
+            });
           });
-        });
-        // Exclude players already at the current table
-        const currentTableNames = new Set(table.players.map(p => p.name));
-        const filteredNames = Array.from(namesSet).filter(name => !currentTableNames.has(name));
-        setUniquePlayerNames(filteredNames.sort((a, b) => a.localeCompare(b)));
+          // Exclude players already at the current table
+          const currentTableNames = new Set(table.players.map(p => p.name));
+          const filteredNames = Array.from(namesSet).filter(name => !currentTableNames.has(name));
+          setUniquePlayerNames(filteredNames.sort((a, b) => a.localeCompare(b)));
+
+          // Load display names and hasAlias for the filtered names
+          if (filteredNames.length > 0) {
+            try {
+              const result = await getPlayerDisplayNames(filteredNames, table.groupId, () => {});
+              setDisplayNames(prev => ({ ...prev, ...result.displayNames }));
+              setHasAlias(prev => ({ ...prev, ...result.hasAlias }));
+            } catch (error) {
+              console.error('Error loading display names for unique players:', error);
+            }
+          }
+        }
       } else {
         setUniquePlayerNames([]);
       }
@@ -1020,6 +1065,16 @@ const TableDetail: React.FC = () => {
               setNewPlayerName(newValue);
               setPlayerNameInput(newValue || '');
             }}
+            renderOption={(props, option) => (
+              <li {...props}>
+                <span style={{ 
+                  color: hasAlias[option] ? '#29b6f6' : '#ffffff',
+                  fontWeight: hasAlias[option] ? 500 : 400
+                }}>
+                  {displayNames[option] || option}
+                </span>
+              </li>
+            )}
             renderInput={(params) => (
               <TextField
                 {...params}
