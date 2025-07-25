@@ -33,6 +33,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import CircularProgress from '@mui/material/CircularProgress';
 import GroupIcon from '@mui/icons-material/Group';
 import { Player, Table, BuyIn, CashOut } from '../types';
+import { getPlayerDisplayName } from '../utils/apiInterceptor';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import { sortPlayers } from './ShareTable';
@@ -168,6 +169,7 @@ const SharedTableView: React.FC = () => {
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [popoverContent, setPopoverContent] = useState<string>('');
+  const [displayNames, setDisplayNames] = useState<{ [key: string]: string }>({});
 
   const fetchTableData = useCallback(async () => {
     if (!id) {
@@ -223,6 +225,34 @@ const SharedTableView: React.FC = () => {
       fetchTableData();
     }
   }, [id, fetchTableData]);
+
+  // Load display names for players
+  useEffect(() => {
+    const loadDisplayNames = async () => {
+      if (!table || !table.groupId || !table.players.length) return;
+
+      const namesToLoad: { [key: string]: string } = {};
+      
+      // Load display names for each player in the table
+      for (const player of table.players) {
+        if (!displayNames[player.name]) {
+          try {
+            const displayName = await getPlayerDisplayName(player.name, table.groupId, () => {});
+            namesToLoad[player.name] = displayName;
+          } catch (error) {
+            // Fallback to player name
+            namesToLoad[player.name] = player.name;
+          }
+        }
+      }
+
+      if (Object.keys(namesToLoad).length > 0) {
+        setDisplayNames(prev => ({ ...prev, ...namesToLoad }));
+      }
+    };
+
+    loadDisplayNames();
+  }, [table, displayNames]);
 
   // Effect to clear feedback after a delay
   useEffect(() => {
@@ -519,7 +549,7 @@ const SharedTableView: React.FC = () => {
                     py: { xs: 0.5, sm: 1.5 },
                   }}>
                     <Box>
-                      {player.name}
+                      {displayNames[player.name] || player.name}
                       {player.nickname && (
                         <Typography 
                           component="span" 
@@ -615,7 +645,7 @@ const SharedTableView: React.FC = () => {
           gap: 1
         }}>
           <GroupIcon sx={{ color: '#2196f3' }} />
-          {selectedPlayer?.name}'s History
+          {selectedPlayer ? (displayNames[selectedPlayer.name] || selectedPlayer.name) : ''}'s History
         </DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
