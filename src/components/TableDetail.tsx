@@ -221,12 +221,9 @@ const TableDetail: React.FC = () => {
           const userHasAlias: { [key: string]: boolean } = {};
           linkedUsersResult.users.forEach(user => {
             if (user.player_name) {
-              // User already has an alias - show both the alias and username
+              // User already has an alias - only show the alias (not the username)
               userDisplayNames[user.player_name] = user.username;
               userHasAlias[user.player_name] = true;
-              // Also add the username itself as an option
-              userDisplayNames[user.username] = user.username;
-              userHasAlias[user.username] = false;
             } else {
               // User without alias - show as potential player
               userDisplayNames[user.username] = user.username;
