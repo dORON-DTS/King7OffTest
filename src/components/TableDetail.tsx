@@ -212,10 +212,13 @@ const TableDetail: React.FC = () => {
         if (relevantTables.length === 0) {
           // New group without tables - get linked users
           try {
+            console.log('Fetching linked users for new group:', table.groupId);
             const result = await getGroupLinkedUsers(table.groupId, () => {});
-            const userNames = result.users
-              .filter(user => !user.player_name) // Only users without existing aliases
-              .map(user => user.username);
+            console.log('Linked users result:', result);
+            
+            // For new groups, show all users regardless of aliases
+            const userNames = result.users.map(user => user.username);
+            console.log('User names to show:', userNames);
             setUniquePlayerNames(userNames.sort((a, b) => a.localeCompare(b)));
             
             // Set display names and hasAlias for users
@@ -223,15 +226,20 @@ const TableDetail: React.FC = () => {
             const userHasAlias: { [key: string]: boolean } = {};
             result.users.forEach(user => {
               if (user.player_name) {
-                // User already has an alias
+                // User already has an alias - show both the alias and username
                 userDisplayNames[user.player_name] = user.username;
                 userHasAlias[user.player_name] = true;
+                // Also add the username itself as an option
+                userDisplayNames[user.username] = user.username;
+                userHasAlias[user.username] = false;
               } else {
                 // User without alias - show as potential player
                 userDisplayNames[user.username] = user.username;
                 userHasAlias[user.username] = false;
               }
             });
+            console.log('Display names:', userDisplayNames);
+            console.log('Has alias:', userHasAlias);
             setDisplayNames(prev => ({ ...prev, ...userDisplayNames }));
             setHasAlias(prev => ({ ...prev, ...userHasAlias }));
           } catch (error) {
