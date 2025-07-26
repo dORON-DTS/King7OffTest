@@ -1104,6 +1104,17 @@ const TableDetail: React.FC = () => {
               setNewPlayerName(newValue);
               setPlayerNameInput(newValue || '');
             }}
+            filterOptions={(options, { inputValue }) => {
+              const searchTerm = inputValue.toLowerCase();
+              return options.filter(option => {
+                const displayName = displayNames[option] || option;
+                const optionLower = option.toLowerCase();
+                const displayNameLower = displayName.toLowerCase();
+                
+                // Search by both the option (player name/alias) and display name (username)
+                return optionLower.includes(searchTerm) || displayNameLower.includes(searchTerm);
+              });
+            }}
             renderOption={(props, option) => (
               <li {...props}>
                 <span style={{ 
