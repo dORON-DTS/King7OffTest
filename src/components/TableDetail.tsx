@@ -219,11 +219,14 @@ const TableDetail: React.FC = () => {
           // Set display names and hasAlias for linked users
           const userDisplayNames: { [key: string]: string } = {};
           const userHasAlias: { [key: string]: boolean } = {};
+          const usernamesWithAliases = new Set<string>(); // Track usernames that have aliases
+          
           linkedUsersResult.users.forEach(user => {
             if (user.player_name) {
               // User already has an alias - only show the alias (not the username)
               userDisplayNames[user.player_name] = user.username;
               userHasAlias[user.player_name] = true;
+              usernamesWithAliases.add(user.username); // Mark this username as having an alias
             } else {
               // User without alias - show as potential player
               userDisplayNames[user.username] = user.username;
@@ -243,8 +246,11 @@ const TableDetail: React.FC = () => {
             const currentTableNames = new Set(table.players.map(p => p.name));
             const filteredNames = Array.from(namesSet).filter(name => !currentTableNames.has(name));
             
+            // Filter out usernames that already have aliases to avoid duplication
+            const filteredLinkedUserNames = linkedUserNames.filter(username => !usernamesWithAliases.has(username));
+            
             // Combine linked users with existing players
-            const allNames = Array.from(new Set([...linkedUserNames, ...filteredNames]));
+            const allNames = Array.from(new Set([...filteredLinkedUserNames, ...filteredNames]));
             setUniquePlayerNames(allNames.sort((a, b) => a.localeCompare(b)));
 
             // Load display names and hasAlias for existing players
