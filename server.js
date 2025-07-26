@@ -3427,83 +3427,94 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
                   });
                 }
 
-                // Update existing notification to mark it as processed
-                db.run(`
-                  UPDATE notifications 
-                  SET type = 'request_approved', 
-                      title = 'Join Request Approved',
-                      message = ?,
-                      is_read = 1
-                  WHERE request_id = ? AND type = 'join_request'
-                `, [
-                  `Your request to join group "${group.name}" has been approved!`,
-                  requestId
-                ], function(err) {
+                // Get requesting user details for notifications
+                db.get('SELECT username FROM users WHERE id = ?', [originalUserId.id], (err, requestingUser) => {
                   if (err) {
-                    console.error('Error updating notification:', err);
-                  }
-                });
-
-                // Create new notification for requesting user
-                db.run(`
-                  INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
-                  VALUES (?, 'request_approved', 'Join Request Approved', ?, ?, ?)
-                `, [
-                  originalUserId.id,
-                  `Your request to join group "${group.name}" has been approved!`,
-                  groupId,
-                  requestId
-                ], function(err) {
-                  if (err) {
-                    console.error('Error creating approval notification:', err);
-                  }
-                });
-
-                // Send email to requesting user
-                db.get('SELECT username, email FROM users WHERE id = ?', [originalUserId.id], (err, requestingUser) => {
-                  if (err) {
-                    console.error('Error fetching requesting user for email:', err);
+                    console.error('Error fetching requesting user for notifications:', err);
                     return;
                   }
                   
-                  if (!requestingUser || !requestingUser.email) {
-                    console.warn('No email found for requesting user:', originalUserId.id);
-                    return;
-                  }
+                  const requestingUsername = requestingUser ? requestingUser.username : 'Unknown User';
+                  const approverUsername = req.user.username;
 
-                  const mailOptions = {
-                    from: process.env.EMAIL_USER,
-                    to: requestingUser.email,
-                    subject: `Join Request Approved - ${group.name}`,
-                    html: `
-                      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2 style="color: #4caf50;">Join Request Approved!</h2>
-                        <p>Hello ${requestingUser.username},</p>
-                        <p>Great news! Your request to join the group <strong>"${group.name}"</strong> has been approved by the group owner.</p>
-                        <p>You are now a member of this group with <strong>viewer</strong> permissions. You can:</p>
-                        <ul>
-                          <li>View all tables in this group</li>
-                          <li>See group statistics and member information</li>
-                          <li>Access group-specific features</li>
-                        </ul>
-                        <p>You can manage your group membership and view your groups from the "My Groups" section in your dashboard.</p>
-                        <p>If you have any questions, please contact the group owner.</p>
-                        <br>
-                        <p>Best regards,<br>Poker Management System</p>
-                      </div>
-                    `
-                  };
-
-                  transporter.sendMail(mailOptions, (emailErr) => {
-                    if (emailErr) {
-                      console.error('Error sending approval email:', emailErr);
-                    } else {
-                      console.log('Approval email sent successfully to:', requestingUser.email);
+                  // Update existing notification to mark it as processed (for approver)
+                  db.run(`
+                    UPDATE notifications 
+                    SET type = 'request_approved', 
+                        title = 'Join Request Approved',
+                        message = ?,
+                        is_read = 1
+                    WHERE request_id = ? AND type = 'join_request'
+                  `, [
+                    `You approved ${requestingUsername}'s request to join group "${group.name}"!`,
+                    requestId
+                  ], function(err) {
+                    if (err) {
+                      console.error('Error updating notification:', err);
                     }
                   });
-                });
 
-                res.json({ message: 'Join request approved successfully' });
+                  // Create new notification for requesting user
+                  db.run(`
+                    INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
+                    VALUES (?, 'request_approved', 'Join Request Approved', ?, ?, ?)
+                  `, [
+                    originalUserId.id,
+                    `${approverUsername} approved your request to join group "${group.name}"!`,
+                    groupId,
+                    requestId
+                  ], function(err) {
+                    if (err) {
+                      console.error('Error creating approval notification:', err);
+                    }
+                  });
+
+                  // Send email to requesting user
+                  db.get('SELECT username, email FROM users WHERE id = ?', [originalUserId.id], (err, requestingUser) => {
+                    if (err) {
+                      console.error('Error fetching requesting user for email:', err);
+                      return;
+                    }
+                    
+                    if (!requestingUser || !requestingUser.email) {
+                      console.warn('No email found for requesting user:', originalUserId.id);
+                      return;
+                    }
+
+                    const mailOptions = {
+                      from: process.env.EMAIL_USER,
+                      to: requestingUser.email,
+                      subject: `Join Request Approved - ${group.name}`,
+                      html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                          <h2 style="color: #4caf50;">Join Request Approved!</h2>
+                          <p>Hello ${requestingUser.username},</p>
+                          <p>Great news! Your request to join the group <strong>"${group.name}"</strong> has been approved by the group owner.</p>
+                          <p>You are now a member of this group with <strong>viewer</strong> permissions. You can:</p>
+                          <ul>
+                            <li>View all tables in this group</li>
+                            <li>See group statistics and member information</li>
+                            <li>Access group-specific features</li>
+                          </ul>
+                          <p>You can manage your group membership and view your groups from the "My Groups" section in your dashboard.</p>
+                          <p>If you have any questions, please contact the group owner.</p>
+                          <br>
+                          <p>Best regards,<br>Poker Management System</p>
+                        </div>
+                      `
+                    };
+
+                    transporter.sendMail(mailOptions, (emailErr) => {
+                      if (emailErr) {
+                        console.error('Error sending approval email:', emailErr);
+                      } else {
+                        console.log('Approval email sent successfully to:', requestingUser.email);
+                      }
+                    });
+                  });
+
+                  res.json({ message: 'Join request approved successfully' });
+                });
               });
             });
           });
@@ -3577,29 +3588,11 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
             return res.status(500).json({ error: 'Database error' });
           }
 
-          // Update existing notification to mark it as processed
-          db.run(`
-            UPDATE notifications 
-            SET type = 'request_rejected', 
-                title = 'Join Request Rejected',
-                message = ?,
-                is_read = 1
-            WHERE request_id = ? AND type = 'join_request'
-          `, [
-            `Your request to join group "${group.name}" has been rejected.`,
-            requestId
-          ], function(err) {
-            if (err) {
-              console.error('Error updating notification:', err);
-            }
-          });
-
-          // Create new notification for requesting user
-          // Convert the integer user_id back to UUID format
+          // Get requesting user details for notifications
           const userIdInt = request.user_id;
           
           // Find the original UUID by matching the integer hash
-          db.all('SELECT id FROM users', (err, allUsers) => {
+          db.all('SELECT id, username FROM users', (err, allUsers) => {
             if (err) {
               console.error('[DB] Error fetching all users for rejection:', err);
               return;
@@ -3616,6 +3609,27 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
               return;
             }
             
+            const requestingUsername = originalUserId.username || 'Unknown User';
+            const rejecterUsername = req.user.username;
+
+            // Update existing notification to mark it as processed (for rejecter)
+            db.run(`
+              UPDATE notifications 
+              SET type = 'request_rejected', 
+                  title = 'Join Request Rejected',
+                  message = ?,
+                  is_read = 1
+              WHERE request_id = ? AND type = 'join_request'
+            `, [
+              `You rejected ${requestingUsername}'s request to join group "${group.name}".`,
+              requestId
+            ], function(err) {
+              if (err) {
+                console.error('Error updating notification:', err);
+              }
+            });
+
+            // Create new notification for requesting user
             db.run(`
               INSERT INTO notifications (user_id, type, title, message, group_id, request_id)
               VALUES (?, 'request_rejected', 'Join Request Rejected', ?, ?, ?)
