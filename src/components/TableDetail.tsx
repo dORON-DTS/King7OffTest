@@ -203,27 +203,18 @@ const TableDetail: React.FC = () => {
   }, [openDialog]);
 
   const fetchUniquePlayerNames = async () => {
-    console.log('=== fetchUniquePlayerNames called ===');
-    console.log('Table:', table);
-    console.log('Table groupId:', table?.groupId);
-    console.log('All tables:', allTables);
-    
     try {
       setLoadingNames(true);
       // Get all player names from tables with the same groupId as the current table
       if (table && table.groupId && allTables) {
         const relevantTables = allTables.filter(t => t.groupId === table.groupId);
-        console.log('Relevant tables count:', relevantTables.length);
         
         // Always try to load linked users for the group first
         try {
-          console.log('Fetching linked users for group:', table.groupId);
           const linkedUsersResult = await getGroupLinkedUsers(table.groupId, () => {});
-          console.log('Linked users result:', linkedUsersResult);
           
           // Get all linked users as potential players
           const linkedUserNames = linkedUsersResult.users.map(user => user.username);
-          console.log('Linked user names:', linkedUserNames);
           
           // Set display names and hasAlias for linked users
           const userDisplayNames: { [key: string]: string } = {};
@@ -280,9 +271,6 @@ const TableDetail: React.FC = () => {
             setDisplayNames(prev => ({ ...prev, ...userDisplayNames }));
             setHasAlias(prev => ({ ...prev, ...userHasAlias }));
           }
-          
-          console.log('Final display names:', userDisplayNames);
-          console.log('Final has alias:', userHasAlias);
         } catch (error) {
           console.error('Error loading linked users:', error);
           // Fallback to existing logic if linked users fail
@@ -309,8 +297,6 @@ const TableDetail: React.FC = () => {
           } else {
             setUniquePlayerNames([]);
           }
-        } finally {
-          setLoadingNames(false);
         }
       } else {
         setUniquePlayerNames([]);
