@@ -215,66 +215,102 @@ const TableDetail: React.FC = () => {
         const relevantTables = allTables.filter(t => t.groupId === table.groupId);
         console.log('Relevant tables count:', relevantTables.length);
         
-        if (relevantTables.length === 0) {
-          // New group without tables - get linked users
-          try {
-            console.log('Fetching linked users for new group:', table.groupId);
-            const result = await getGroupLinkedUsers(table.groupId, () => {});
-            console.log('Linked users result:', result);
-            
-            // For new groups, show all users regardless of aliases
-            const userNames = result.users.map(user => user.username);
-            console.log('User names to show:', userNames);
-            setUniquePlayerNames(userNames.sort((a, b) => a.localeCompare(b)));
-            
-            // Set display names and hasAlias for users
-            const userDisplayNames: { [key: string]: string } = {};
-            const userHasAlias: { [key: string]: boolean } = {};
-            result.users.forEach(user => {
-              if (user.player_name) {
-                // User already has an alias - show both the alias and username
-                userDisplayNames[user.player_name] = user.username;
-                userHasAlias[user.player_name] = true;
-                // Also add the username itself as an option
-                userDisplayNames[user.username] = user.username;
-                userHasAlias[user.username] = false;
-              } else {
-                // User without alias - show as potential player
-                userDisplayNames[user.username] = user.username;
-                userHasAlias[user.username] = false;
-              }
+        // Always try to load linked users for the group first
+        try {
+          console.log('Fetching linked users for group:', table.groupId);
+          const linkedUsersResult = await getGroupLinkedUsers(table.groupId, () => {});
+          console.log('Linked users result:', linkedUsersResult);
+          
+          // Get all linked users as potential players
+          const linkedUserNames = linkedUsersResult.users.map(user => user.username);
+          console.log('Linked user names:', linkedUserNames);
+          
+          // Set display names and hasAlias for linked users
+          const userDisplayNames: { [key: string]: string } = {};
+          const userHasAlias: { [key: string]: boolean } = {};
+          linkedUsersResult.users.forEach(user => {
+            if (user.player_name) {
+              // User already has an alias - show both the alias and username
+              userDisplayNames[user.player_name] = user.username;
+              userHasAlias[user.player_name] = true;
+              // Also add the username itself as an option
+              userDisplayNames[user.username] = user.username;
+              userHasAlias[user.username] = false;
+            } else {
+              // User without alias - show as potential player
+              userDisplayNames[user.username] = user.username;
+              userHasAlias[user.username] = false;
+            }
+          });
+          
+          // If there are existing tables, also get player names from them
+          if (relevantTables.length > 0) {
+            const namesSet = new Set<string>();
+            relevantTables.forEach(t => {
+              t.players.forEach(p => {
+                namesSet.add(p.name);
+              });
             });
-            console.log('Display names:', userDisplayNames);
-            console.log('Has alias:', userHasAlias);
+            // Exclude players already at the current table
+            const currentTableNames = new Set(table.players.map(p => p.name));
+            const filteredNames = Array.from(namesSet).filter(name => !currentTableNames.has(name));
+            
+            // Combine linked users with existing players
+            const allNames = Array.from(new Set([...linkedUserNames, ...filteredNames]));
+            setUniquePlayerNames(allNames.sort((a, b) => a.localeCompare(b)));
+
+            // Load display names and hasAlias for existing players
+            if (filteredNames.length > 0) {
+              try {
+                const result = await getPlayerDisplayNames(filteredNames, table.groupId, () => {});
+                setDisplayNames(prev => ({ ...prev, ...userDisplayNames, ...result.displayNames }));
+                setHasAlias(prev => ({ ...prev, ...userHasAlias, ...result.hasAlias }));
+              } catch (error) {
+                console.error('Error loading display names for existing players:', error);
+                setDisplayNames(prev => ({ ...prev, ...userDisplayNames }));
+                setHasAlias(prev => ({ ...prev, ...userHasAlias }));
+              }
+            } else {
+              setDisplayNames(prev => ({ ...prev, ...userDisplayNames }));
+              setHasAlias(prev => ({ ...prev, ...userHasAlias }));
+            }
+          } else {
+            // No existing tables - just use linked users
+            setUniquePlayerNames(linkedUserNames.sort((a, b) => a.localeCompare(b)));
             setDisplayNames(prev => ({ ...prev, ...userDisplayNames }));
             setHasAlias(prev => ({ ...prev, ...userHasAlias }));
-          } catch (error) {
-            console.error('Error loading linked users for new group:', error);
+          }
+          
+          console.log('Final display names:', userDisplayNames);
+          console.log('Final has alias:', userHasAlias);
+        } catch (error) {
+          console.error('Error loading linked users:', error);
+          // Fallback to existing logic if linked users fail
+          if (relevantTables.length > 0) {
+            const namesSet = new Set<string>();
+            relevantTables.forEach(t => {
+              t.players.forEach(p => {
+                namesSet.add(p.name);
+              });
+            });
+            const currentTableNames = new Set(table.players.map(p => p.name));
+            const filteredNames = Array.from(namesSet).filter(name => !currentTableNames.has(name));
+            setUniquePlayerNames(filteredNames.sort((a, b) => a.localeCompare(b)));
+
+            if (filteredNames.length > 0) {
+              try {
+                const result = await getPlayerDisplayNames(filteredNames, table.groupId, () => {});
+                setDisplayNames(prev => ({ ...prev, ...result.displayNames }));
+                setHasAlias(prev => ({ ...prev, ...result.hasAlias }));
+              } catch (error) {
+                console.error('Error loading display names for unique players:', error);
+              }
+            }
+          } else {
             setUniquePlayerNames([]);
           }
-        } else {
-          // Existing group with tables - get player names from tables
-          const namesSet = new Set<string>();
-          relevantTables.forEach(t => {
-            t.players.forEach(p => {
-              namesSet.add(p.name);
-            });
-          });
-          // Exclude players already at the current table
-          const currentTableNames = new Set(table.players.map(p => p.name));
-          const filteredNames = Array.from(namesSet).filter(name => !currentTableNames.has(name));
-          setUniquePlayerNames(filteredNames.sort((a, b) => a.localeCompare(b)));
-
-          // Load display names and hasAlias for the filtered names
-          if (filteredNames.length > 0) {
-            try {
-              const result = await getPlayerDisplayNames(filteredNames, table.groupId, () => {});
-              setDisplayNames(prev => ({ ...prev, ...result.displayNames }));
-              setHasAlias(prev => ({ ...prev, ...result.hasAlias }));
-            } catch (error) {
-              console.error('Error loading display names for unique players:', error);
-            }
-          }
+        } finally {
+          setLoadingNames(false);
         }
       } else {
         setUniquePlayerNames([]);
