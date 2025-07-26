@@ -3317,10 +3317,8 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
 
     // Convert groupId to integer for group_join_requests table
     const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
-    console.log('[API] Converted groupId:', { original: groupId, converted: groupIdInt });
 
     // Get the join request
-    console.log('[DB] Searching for join request:', { requestId, groupIdInt });
     db.get('SELECT * FROM group_join_requests WHERE id = ? AND group_id = ? AND status = "pending"', 
       [requestId, groupIdInt], (err, request) => {
       if (err) {
@@ -3329,14 +3327,6 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
       }
       if (!request) {
         console.error('[DB] Join request not found:', { requestId, groupIdInt });
-        // Let's check what requests exist for this group
-        db.all('SELECT * FROM group_join_requests WHERE group_id = ?', [groupIdInt], (err, allRequests) => {
-          if (err) {
-            console.error('[DB] Error checking all requests:', err);
-          } else {
-            console.log('[DB] All requests for group:', allRequests);
-          }
-        });
         return res.status(404).json({ error: 'Join request not found or already processed' });
       }
 
@@ -3344,8 +3334,6 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
       const userIdToCheck = typeof request.user_id === 'string' && request.user_id.includes('-') 
         ? request.user_id 
         : request.user_id.toString();
-        
-      console.log('[DB] Looking for user:', { originalUserId: request.user_id, userIdToCheck });
       
       // Try to find user, but don't fail if not found
       db.get('SELECT username, email FROM users WHERE id = ? OR CAST(id AS TEXT) = ?', 
@@ -3372,7 +3360,6 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
             // Convert the integer user_id back to UUID format
             // We need to find the original UUID by matching the integer hash
             const userIdInt = request.user_id;
-            console.log('[DB] Looking for user with integer ID:', userIdInt);
             
             // Find the original UUID by matching the integer hash
             db.all('SELECT id FROM users', (err, allUsers) => {
@@ -3392,13 +3379,6 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
                 return res.status(500).json({ error: 'Could not find original user ID' });
               }
               
-              console.log('[DB] Found original user ID:', { 
-                integerId: userIdInt, 
-                originalUserId: originalUserId.id,
-                groupId, 
-                groupName: group.name 
-              });
-              
               // Check if user is already a member
               db.get('SELECT id FROM group_members WHERE group_id = ? AND user_id = ?', 
                 [groupId, originalUserId.id], (err, existingMember) => {
@@ -3408,7 +3388,6 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
                 }
                 
                 if (existingMember) {
-                  console.log('[DB] User already a member:', { groupId, userId: originalUserId.id });
                   // Continue with notification update
                 } else {
                   // Add new member
@@ -3418,12 +3397,6 @@ app.post('/api/groups/:groupId/join-request/:requestId/approve', authenticate, (
                       console.error('[DB] Error adding user to group:', err);
                       return res.status(500).json({ error: 'Database error' });
                     }
-                    console.log('[DB] User added to group successfully:', { 
-                      groupId, 
-                      userId: originalUserId.id,
-                      changes: this.changes,
-                      lastID: this.lastID
-                    });
                   });
                 }
 
@@ -3530,8 +3503,6 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
   const requestId = req.params.requestId;
   const userId = req.user.id;
 
-  console.log('[API] Reject request received:', { groupId, requestId, userId });
-
   // Check if user is group owner
   db.get('SELECT owner_id, name FROM groups WHERE id = ?', [groupId], (err, group) => {
     if (err) {
@@ -3549,7 +3520,6 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
 
     // Convert groupId to integer for group_join_requests table
     const groupIdInt = parseInt(groupId.replace(/[^0-9]/g, '').substring(0, 9), 10);
-    console.log('[API] Converted groupId:', { original: groupId, converted: groupIdInt });
 
     // Get the join request
     db.get('SELECT * FROM group_join_requests WHERE id = ? AND group_id = ? AND status = "pending"', 
@@ -3566,8 +3536,6 @@ app.post('/api/groups/:groupId/join-request/:requestId/reject', authenticate, (r
       const userIdToCheck = typeof request.user_id === 'string' && request.user_id.includes('-') 
         ? request.user_id 
         : request.user_id.toString();
-        
-      console.log('[DB] Looking for user in reject:', { originalUserId: request.user_id, userIdToCheck });
       
       // Try to find user, but don't fail if not found
       db.get('SELECT username, email FROM users WHERE id = ? OR CAST(id AS TEXT) = ?', 
@@ -3852,8 +3820,6 @@ app.get('/api/groups/:groupId/players', authenticate, (req, res) => {
 app.get('/api/groups/:groupId/members', authenticate, (req, res) => {
   const { groupId } = req.params;
   
-  console.log(`[API] Fetching members for group: ${groupId}`);
-  
   db.all(`
     SELECT u.id, u.username, u.email 
     FROM users u
@@ -3869,7 +3835,6 @@ app.get('/api/groups/:groupId/members', authenticate, (req, res) => {
       return res.status(500).json({ error: 'Database error' });
     }
     
-    console.log(`[API] Found ${members.length} members for group ${groupId}:`, members);
     res.json(members);
   });
 });
