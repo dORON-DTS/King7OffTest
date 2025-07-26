@@ -203,11 +203,17 @@ const TableDetail: React.FC = () => {
   }, [openDialog]);
 
   const fetchUniquePlayerNames = async () => {
+    console.log('=== fetchUniquePlayerNames called ===');
+    console.log('Table:', table);
+    console.log('Table groupId:', table?.groupId);
+    console.log('All tables:', allTables);
+    
     try {
       setLoadingNames(true);
       // Get all player names from tables with the same groupId as the current table
       if (table && table.groupId && allTables) {
         const relevantTables = allTables.filter(t => t.groupId === table.groupId);
+        console.log('Relevant tables count:', relevantTables.length);
         
         if (relevantTables.length === 0) {
           // New group without tables - get linked users
