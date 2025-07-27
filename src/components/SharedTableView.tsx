@@ -435,10 +435,12 @@ const SharedTableView: React.FC = () => {
               {table.location}
             </Typography>
           )}
-          {/* Weather info */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <WeatherCardInfo date={table.gameDate || table.createdAt} location={table.location} iconSize={20} />
-          </Box>
+          {/* Weather info - only show if location exists */}
+          {table.location && table.location.trim() !== '' && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <WeatherCardInfo date={table.gameDate || table.createdAt} location={table.location} iconSize={20} />
+            </Box>
+          )}
           {/* Food info - always last */}
           {table.food && (
             <Typography variant="body1" sx={{ color: 'grey.400', display: 'flex', alignItems: 'center', gap: 1 }}>
