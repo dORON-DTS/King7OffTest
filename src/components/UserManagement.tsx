@@ -258,16 +258,28 @@ const UserManagement: React.FC = () => {
       console.log('[DEBUG] Received group members data:', data);
       
       if (Array.isArray(data)) {
+        // Old format - direct array
         const membersArray = data.map((member: any) => ({
           id: member.id,
           username: member.username,
           email: member.email,
           role: member.role
         }));
-        console.log('[DEBUG] Setting group members:', membersArray);
+        console.log('[DEBUG] Setting group members (array format):', membersArray);
+        setGroupMembers(membersArray);
+      } else if (data && typeof data === 'object' && data.owner && data.members) {
+        // New format - combine owner and members
+        const allMembers = [data.owner, ...data.members];
+        const membersArray = allMembers.map((member: any) => ({
+          id: member.id,
+          username: member.username,
+          email: member.email,
+          role: member.role
+        }));
+        console.log('[DEBUG] Setting group members (object format):', membersArray);
         setGroupMembers(membersArray);
       } else {
-        console.log('[DEBUG] Data is not an array, setting empty array');
+        console.log('[DEBUG] Data is not in expected format, setting empty array');
         setGroupMembers([]);
       }
     } catch (error) {
