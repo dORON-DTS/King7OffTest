@@ -3820,8 +3820,6 @@ app.get('/api/groups/:groupId/players', authenticate, (req, res) => {
 app.get('/api/groups/:groupId/members', authenticate, (req, res) => {
   const { groupId } = req.params;
   
-  console.log('[DEBUG] Fetching members for group:', groupId);
-  
   db.all(`
     SELECT u.id, u.username, u.email 
     FROM users u
@@ -3837,7 +3835,6 @@ app.get('/api/groups/:groupId/members', authenticate, (req, res) => {
       return res.status(500).json({ error: 'Database error' });
     }
     
-    console.log('[DEBUG] Found members:', members);
     res.json(members);
   });
 });
