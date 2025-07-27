@@ -548,7 +548,7 @@ const SharedTableView: React.FC = () => {
                     py: { xs: 0.5, sm: 1.5 },
                   }}>
                     <Box>
-                      <span style={{ color: hasAlias[player.name] ? '#29b6f6' : '#ffffff' }}>
+                      <span style={{ color: '#ffffff' }}>
                         {displayNames[player.name] || player.name}
                       </span>
                       {player.nickname && (
