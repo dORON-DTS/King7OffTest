@@ -568,11 +568,14 @@ const StatisticsView: React.FC = () => {
       const tableTimestampMs = new Date(table.gameDate || table.createdAt).getTime();
       if (table.isActive) return;
       table.players.forEach(player => {
-        const playerIdentifier = player.name.toLowerCase();
+        // Use displayName (username) if available, otherwise use player name
+        const displayName = displayNames[player.name] || player.name;
+        const playerIdentifier = displayName.toLowerCase();
+        
         if (!statsMap[playerIdentifier]) {
           statsMap[playerIdentifier] = {
             id: player.id,
-            name: player.name,
+            name: displayName, // Use displayName as the main name
             nickname: player.nickname,
             totalBuyIn: 0,
             totalCashOut: 0,
@@ -611,13 +614,13 @@ const StatisticsView: React.FC = () => {
         // Track overall single game max win / min loss (first occurrence only)
         if (tableNetResult > overallMaxWin || (tableNetResult === overallMaxWin && overallMaxWinTableIdx === -1)) {
           overallMaxWin = tableNetResult;
-          overallMaxWinPlayer = player.name;
+          overallMaxWinPlayer = displayName; // Use displayName for consistency
           overallMaxWinTableIdx = tableIdx;
         }
         // Only update min loss if it's a new minimum, or first occurrence
         if (tableNetResult < overallMinLoss || (tableNetResult === overallMinLoss && overallMinLossTableIdx === -1)) {
           overallMinLoss = tableNetResult;
-          overallMinLossPlayer = player.name;
+          overallMinLossPlayer = displayName; // Use displayName for consistency
           overallMinLossTableIdx = tableIdx;
         }
         if (tableNetResult > 0) {
@@ -657,7 +660,7 @@ const StatisticsView: React.FC = () => {
     statsArray.sort((a, b) => b.netResult - a.netResult);
 
     return statsArray;
-  }, [filteredTables]);
+  }, [filteredTables, displayNames]);
 
   // Filtered and sorted stats
   const filteredPlayerStats = useMemo(() => {
