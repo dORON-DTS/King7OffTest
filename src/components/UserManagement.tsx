@@ -243,6 +243,7 @@ const UserManagement: React.FC = () => {
 
   const fetchGroupMembers = async (groupId: string) => {
     try {
+      console.log('[DEBUG] Fetching group members for group:', groupId);
       const token = localStorage.getItem('token');
       const response = await apiFetch(`${process.env.REACT_APP_API_URL}/api/groups/${groupId}/members`, {
         headers: {
@@ -254,6 +255,7 @@ const UserManagement: React.FC = () => {
         throw new Error('Failed to fetch group members');
       }
       const data = await response.json();
+      console.log('[DEBUG] Received group members data:', data);
       
       if (Array.isArray(data)) {
         const membersArray = data.map((member: any) => ({
@@ -262,8 +264,10 @@ const UserManagement: React.FC = () => {
           email: member.email,
           role: member.role
         }));
+        console.log('[DEBUG] Setting group members:', membersArray);
         setGroupMembers(membersArray);
       } else {
+        console.log('[DEBUG] Data is not an array, setting empty array');
         setGroupMembers([]);
       }
     } catch (error) {
