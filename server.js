@@ -3826,7 +3826,7 @@ app.get('/api/groups/:groupId/members', authenticate, (req, res) => {
     WHERE u.id IN (
       SELECT owner_id FROM groups WHERE id = ?
       UNION
-      SELECT user_id FROM group_members WHERE group_id = ? AND status = 'approved'
+      SELECT user_id FROM group_members WHERE group_id = ?
     )
     ORDER BY u.username
   `, [groupId, groupId], (err, members) => {
