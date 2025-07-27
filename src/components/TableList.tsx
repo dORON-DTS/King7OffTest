@@ -137,11 +137,11 @@ const TableList: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
 
-  // Sort tables by creation date (newest first)
+  // Sort tables by game date (earliest game first), fallback to creation date
   const sortedTables = [...tables].sort((a, b) => {
-    const dateA = new Date(a.createdAt || 0);
-    const dateB = new Date(b.createdAt || 0);
-    return dateB.getTime() - dateA.getTime();
+    const dateA = new Date(a.gameDate || a.createdAt || 0);
+    const dateB = new Date(b.gameDate || b.createdAt || 0);
+    return dateA.getTime() - dateB.getTime();
   });
 
   // Fetch groups when dialog opens
