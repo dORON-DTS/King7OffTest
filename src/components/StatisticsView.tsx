@@ -549,7 +549,7 @@ const StatisticsView: React.FC = () => {
 
   // Calculate player stats
   const playerStats = useMemo(() => {
-    const statsMap: { [key: string]: AggregatedPlayerStats & { potentialGames?: number } } = {};
+    const statsMap: { [key: string]: AggregatedPlayerStats & { potentialGames?: number, originalPlayerNames?: string[] } } = {};
     // Variables to track overall single game max/min and their first occurrence
     let overallMaxWin = 0;
     let overallMaxWinPlayer = '-';
@@ -587,13 +587,18 @@ const StatisticsView: React.FC = () => {
             largestLoss: 0,
             gamesWon: 0,
             gamesLost: 0,
-            latestTableTimestamp: tableTimestampMs
+            latestTableTimestamp: tableTimestampMs,
+            originalPlayerNames: [player.name] // Track original player names for potential games calculation
           };
         } else {
           const currentStats = statsMap[playerIdentifier];
           if (tableTimestampMs >= (currentStats.latestTableTimestamp || 0)) {
             currentStats.nickname = player.nickname;
             currentStats.latestTableTimestamp = tableTimestampMs;
+          }
+          // Add original player name if not already tracked
+          if (!currentStats.originalPlayerNames?.includes(player.name)) {
+            currentStats.originalPlayerNames = [...(currentStats.originalPlayerNames || []), player.name];
           }
         }
         const tableBuyIn = player.totalBuyIn || 0;
@@ -633,8 +638,14 @@ const StatisticsView: React.FC = () => {
 
     // Calculate final aggregate stats (Net, Avgs) and convert map to array
     const statsArray: (PlayerStats & { potentialGames: number })[] = Object.values(statsMap).map(stat => {
-      // Calculate potential games for this player
-      const potentialGames = getPlayerPotentialGames(stat.name, sortedTables);
+      // Calculate potential games for all original player names associated with this displayName
+      let totalPotentialGames = 0;
+      if (stat.originalPlayerNames) {
+        stat.originalPlayerNames.forEach(originalName => {
+          totalPotentialGames += getPlayerPotentialGames(originalName, sortedTables);
+        });
+      }
+      
       // Calculate netResult, avgBuyIn, avgNetResult based on actual games played
       const netResult = stat.totalCashOut - stat.totalBuyIn;
       const avgBuyIn = stat.tablesPlayed > 0 ? stat.totalBuyIn / stat.tablesPlayed : 0;
@@ -644,7 +655,7 @@ const StatisticsView: React.FC = () => {
         netResult,
         avgBuyIn,
         avgNetResult,
-        potentialGames,
+        potentialGames: totalPotentialGames,
       };
     });
 
