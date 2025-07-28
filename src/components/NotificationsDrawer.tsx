@@ -53,7 +53,22 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
     [theme.breakpoints.down('sm')]: {
       width: '100vw',
     },
-    transition: 'transform 0.3s ease-in-out',
+    transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+    transform: 'translateX(100%)',
+    '&.MuiDrawer-paperAnchorRight': {
+      transform: 'translateX(100%)',
+    },
+    '&.MuiDrawer-paperAnchorRight.MuiDrawer-paperAnchorDockedLeft': {
+      transform: 'translateX(0)',
+    },
+  },
+  '&.MuiDrawer-root.MuiDrawer-modal': {
+    '& .MuiDrawer-paper': {
+      transform: 'translateX(100%)',
+    },
+    '&.MuiModal-root.MuiModal-open .MuiDrawer-paper': {
+      transform: 'translateX(0)',
+    },
   },
 }));
 
