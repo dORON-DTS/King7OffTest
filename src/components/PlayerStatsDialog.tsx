@@ -217,11 +217,19 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
     // ROI
     const roi = playerData.totalBuyIn > 0 ? (playerData.netResult / playerData.totalBuyIn) * 100 : null;
 
+    // Get all possible names for this player (display name + original names)
+    const playerNames = [playerData.name.toLowerCase()];
+    if ((playerData as any).originalPlayerNames) {
+        (playerData as any).originalPlayerNames.forEach((name: string) => {
+            playerNames.push(name.toLowerCase());
+        });
+    }
+
     // Gather all games for this player
     const games = allTablesData
-      .filter(table => table.players.some(p => p.name.toLowerCase() === playerData.name.toLowerCase()))
+      .filter(table => table.players.some(p => playerNames.includes(p.name.toLowerCase())))
       .map(table => {
-        const player = table.players.find(p => p.name.toLowerCase() === playerData.name.toLowerCase());
+        const player = table.players.find(p => playerNames.includes(p.name.toLowerCase()));
         const buyIn = player?.totalBuyIn || 0;
         const cashOut = player?.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
         const chips = player?.active ? (player?.chips || 0) : 0;
@@ -230,7 +238,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
           table,
           date: new Date(table.gameDate || table.createdAt),
           netResult: net,
-          opponents: table.players.filter(p => p.name.toLowerCase() !== playerData.name.toLowerCase()),
+          opponents: table.players.filter(p => !playerNames.includes(p.name.toLowerCase())),
         };
       });
 
