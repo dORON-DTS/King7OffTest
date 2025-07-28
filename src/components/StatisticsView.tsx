@@ -637,7 +637,7 @@ const StatisticsView: React.FC = () => {
     });
 
     // Calculate final aggregate stats (Net, Avgs) and convert map to array
-    const statsArray: (PlayerStats & { potentialGames: number })[] = Object.values(statsMap).map(stat => {
+    const statsArray: (PlayerStats & { potentialGames: number, originalPlayerNames?: string[] })[] = Object.values(statsMap).map(stat => {
       // Calculate potential games for all original player names associated with this displayName
       let totalPotentialGames = 0;
       if (stat.originalPlayerNames) {
@@ -888,16 +888,24 @@ const StatisticsView: React.FC = () => {
     let maxStreak = 0;
     let maxStreakPlayer = '-';
     playerStats.forEach(player => {
-      // Gather all games for this player
+      // Gather all games for this player using original player names
       const games = filteredTables
-        .filter(table => table.players.some(p => p.name.toLowerCase() === player.name.toLowerCase()))
+        .filter(table => table.players.some(p => {
+          // Check if this table has any player that matches the original names for this displayName
+          const originalNames = player.originalPlayerNames || [player.name];
+          return originalNames.some(originalName => p.name.toLowerCase() === originalName.toLowerCase());
+        }))
         .map(table => {
-          const p = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+          // Find the player in this table using original names
+          const originalNames = player.originalPlayerNames || [player.name];
+          const p = table.players.find(p => 
+            originalNames.some(originalName => p.name.toLowerCase() === originalName.toLowerCase())
+          );
           const buyIn = p?.totalBuyIn || 0;
           const cashOut = p?.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
           const chips = p?.active ? (p?.chips || 0) : 0;
           const net = cashOut + chips - buyIn;
-          return { netResult: net, date: new Date(table.createdAt) };
+          return { netResult: net, date: new Date(table.gameDate || table.createdAt) };
         });
       // Sort games by date ascending
       games.sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -933,7 +941,11 @@ const StatisticsView: React.FC = () => {
       let foundLoss = false;
 
       for (const table of sortedTables) {
-        const playerInTable = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+        // Find the player in this table using original names
+        const originalNames = player.originalPlayerNames || [player.name];
+        const playerInTable = table.players.find(p => 
+          originalNames.some(originalName => p.name.toLowerCase() === originalName.toLowerCase())
+        );
         if (!playerInTable) continue;
 
         const buyIn = playerInTable.totalBuyIn || 0;
@@ -1115,11 +1127,19 @@ const StatisticsView: React.FC = () => {
     // For each player, calculate their longest win streak and when it was achieved
     const streaks: { player: string; streak: number; date: Date | null }[] = [];
     playerStats.forEach(player => {
-      // Gather all games for this player
+      // Gather all games for this player using original player names
       const games = filteredTables
-        .filter(table => table.players.some(p => p.name.toLowerCase() === player.name.toLowerCase()))
+        .filter(table => table.players.some(p => {
+          // Check if this table has any player that matches the original names for this displayName
+          const originalNames = player.originalPlayerNames || [player.name];
+          return originalNames.some(originalName => p.name.toLowerCase() === originalName.toLowerCase());
+        }))
         .map(table => {
-          const p = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+          // Find the player in this table using original names
+          const originalNames = player.originalPlayerNames || [player.name];
+          const p = table.players.find(p => 
+            originalNames.some(originalName => p.name.toLowerCase() === originalName.toLowerCase())
+          );
           const buyIn = p?.totalBuyIn || 0;
           const cashOut = p?.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
           const chips = p?.active ? (p?.chips || 0) : 0;
