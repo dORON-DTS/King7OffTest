@@ -157,15 +157,26 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
     console.log('[DEBUG] Sorted tables count:', sortedTables.length);
 
     console.log('[DEBUG] Looking for player name:', playerData.name);
+    console.log('[DEBUG] Original player names:', (playerData as any).originalPlayerNames);
+    
+    // Get all possible names for this player (display name + original names)
+    const playerNames = [playerData.name.toLowerCase()];
+    if ((playerData as any).originalPlayerNames) {
+        (playerData as any).originalPlayerNames.forEach((name: string) => {
+            playerNames.push(name.toLowerCase());
+        });
+    }
+    console.log('[DEBUG] All player names to search for:', playerNames);
+    
     sortedTables.forEach((table, index) => {
         console.log(`[DEBUG] Table ${index + 1}: ${table.name} - Players:`, table.players.map(p => p.name));
         
         const playerInstance = table.players.find(p => 
-            p.name.toLowerCase() === playerData.name.toLowerCase()
+            playerNames.includes(p.name.toLowerCase())
         );
 
         if (playerInstance) {
-            console.log(`[DEBUG] Found player in table ${index + 1}: ${table.name}`);
+            console.log(`[DEBUG] Found player in table ${index + 1}: ${table.name} (matched: ${playerInstance.name})`);
             // Calculate result for this specific game
             const gameBuyIn = playerInstance.totalBuyIn || 0;
             const gameCashOutTotal = playerInstance.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
