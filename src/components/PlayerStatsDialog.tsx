@@ -139,13 +139,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
     
   // Calculate Timeline Data and Matchup Data here using useMemo
   const detailedStats = useMemo(() => {
-    console.log('[DEBUG] PlayerStatsDialog - detailedStats calculation started');
-    console.log('[DEBUG] playerData:', playerData);
-    console.log('[DEBUG] allTablesData length:', allTablesData?.length);
-    
     if (!playerData || !allTablesData) {
-      console.log('[DEBUG] Missing playerData or allTablesData, returning empty timeline');
-      // Return only timeline data
       return { timeline: [] }; 
     }
 
@@ -154,11 +148,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
 
     // Sort tables by date for timeline
     const sortedTables = [...allTablesData].sort((a, b) => new Date(a.gameDate || a.createdAt).getTime() - new Date(b.gameDate || b.createdAt).getTime());
-    console.log('[DEBUG] Sorted tables count:', sortedTables.length);
 
-    console.log('[DEBUG] Looking for player name:', playerData.name);
-    console.log('[DEBUG] Original player names:', (playerData as any).originalPlayerNames);
-    
     // Get all possible names for this player (display name + original names)
     const playerNames = [playerData.name.toLowerCase()];
     if ((playerData as any).originalPlayerNames) {
@@ -166,17 +156,13 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
             playerNames.push(name.toLowerCase());
         });
     }
-    console.log('[DEBUG] All player names to search for:', playerNames);
     
-    sortedTables.forEach((table, index) => {
-        console.log(`[DEBUG] Table ${index + 1}: ${table.name} - Players:`, table.players.map(p => p.name));
-        
+    sortedTables.forEach((table) => {
         const playerInstance = table.players.find(p => 
             playerNames.includes(p.name.toLowerCase())
         );
 
         if (playerInstance) {
-            console.log(`[DEBUG] Found player in table ${index + 1}: ${table.name} (matched: ${playerInstance.name})`);
             // Calculate result for this specific game
             const gameBuyIn = playerInstance.totalBuyIn || 0;
             const gameCashOutTotal = playerInstance.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
@@ -191,15 +177,9 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
                 netResult: gameNetResult,
                 cumulativeResult: cumulativeResult
             });
-        } else {
-            console.log(`[DEBUG] Player NOT found in table ${index + 1}: ${table.name}`);
         }
     });
 
-    console.log('[DEBUG] Timeline data length:', timelineData.length);
-    console.log('[DEBUG] Timeline data:', timelineData);
-
-    // Return only timeline data
     return { timeline: timelineData }; 
 
   }, [playerData, allTablesData]);
@@ -212,9 +192,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
 
   // --- Advanced Stats Calculations ---
   const advancedStats = useMemo<AdvancedStats | null>(() => {
-    console.log('[DEBUG] Advanced stats calculation started');
     if (!playerData || !allTablesData) {
-      console.log('[DEBUG] Missing playerData or allTablesData, returning null');
       return null;
     }
 
@@ -245,9 +223,6 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
           opponents: table.players.filter(p => !playerNames.includes(p.name.toLowerCase())),
         };
       });
-    
-    console.log('[DEBUG] Found games for advanced stats:', games.length);
-    console.log('[DEBUG] Games data:', games);
 
     // Sort games by date ascending (oldest to newest)
     games.sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -311,7 +286,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
     let bestEnemyPercent = bestEnemy !== null && totalProfit > 0 ? ((bestEnemy as Enemy).net / totalProfit) * 100 : null;
     let worstEnemyPercent = worstEnemy !== null && totalLoss > 0 ? (-(worstEnemy as Enemy).net / totalLoss) * 100 : null;
 
-    const result = {
+    return {
       roi,
       maxWin,
       maxLose,
@@ -322,9 +297,6 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
       worstEnemy,
       worstEnemyPercent,
     };
-    
-    console.log('[DEBUG] Advanced stats result:', result);
-    return result;
   }, [playerData, allTablesData]);
 
   const allPlayerStats = useMemo(() => getAllPlayerStats(allTablesData), [allTablesData]);
