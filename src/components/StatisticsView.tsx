@@ -1242,7 +1242,11 @@ const StatisticsView: React.FC = () => {
       let currentStreak = 0;
       const sortedTables = [...filteredTables].sort((a, b) => new Date(b.gameDate || b.createdAt).getTime() - new Date(a.gameDate || a.createdAt).getTime());
       for (const table of sortedTables) {
-        const playerInTable = table.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+        // Find the player in this table using original names
+        const originalNames = player.originalPlayerNames || [player.name];
+        const playerInTable = table.players.find(p => 
+          originalNames.some(originalName => p.name.toLowerCase() === originalName.toLowerCase())
+        );
         if (!playerInTable) continue;
         const buyIn = playerInTable.totalBuyIn || 0;
         const cashOut = playerInTable.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
