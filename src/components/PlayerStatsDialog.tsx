@@ -139,7 +139,12 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
     
   // Calculate Timeline Data and Matchup Data here using useMemo
   const detailedStats = useMemo(() => {
+    console.log('[DEBUG] PlayerStatsDialog - detailedStats calculation started');
+    console.log('[DEBUG] playerData:', playerData);
+    console.log('[DEBUG] allTablesData length:', allTablesData?.length);
+    
     if (!playerData || !allTablesData) {
+      console.log('[DEBUG] Missing playerData or allTablesData, returning empty timeline');
       // Return only timeline data
       return { timeline: [] }; 
     }
@@ -149,13 +154,15 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
 
     // Sort tables by date for timeline
     const sortedTables = [...allTablesData].sort((a, b) => new Date(a.gameDate || a.createdAt).getTime() - new Date(b.gameDate || b.createdAt).getTime());
+    console.log('[DEBUG] Sorted tables count:', sortedTables.length);
 
-    sortedTables.forEach(table => {
+    sortedTables.forEach((table, index) => {
         const playerInstance = table.players.find(p => 
             p.name.toLowerCase() === playerData.name.toLowerCase()
         );
 
         if (playerInstance) {
+            console.log(`[DEBUG] Found player in table ${index + 1}: ${table.name}`);
             // Calculate result for this specific game
             const gameBuyIn = playerInstance.totalBuyIn || 0;
             const gameCashOutTotal = playerInstance.cashOuts?.reduce((sum, co) => sum + (Number(co.amount) || 0), 0) || 0;
@@ -172,6 +179,9 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
             });
         }
     });
+
+    console.log('[DEBUG] Timeline data length:', timelineData.length);
+    console.log('[DEBUG] Timeline data:', timelineData);
 
     // Return only timeline data
     return { timeline: timelineData }; 
