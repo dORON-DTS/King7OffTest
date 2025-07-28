@@ -212,7 +212,11 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
 
   // --- Advanced Stats Calculations ---
   const advancedStats = useMemo<AdvancedStats | null>(() => {
-    if (!playerData || !allTablesData) return null;
+    console.log('[DEBUG] Advanced stats calculation started');
+    if (!playerData || !allTablesData) {
+      console.log('[DEBUG] Missing playerData or allTablesData, returning null');
+      return null;
+    }
 
     // ROI
     const roi = playerData.totalBuyIn > 0 ? (playerData.netResult / playerData.totalBuyIn) * 100 : null;
@@ -241,6 +245,9 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
           opponents: table.players.filter(p => !playerNames.includes(p.name.toLowerCase())),
         };
       });
+    
+    console.log('[DEBUG] Found games for advanced stats:', games.length);
+    console.log('[DEBUG] Games data:', games);
 
     // Sort games by date ascending (oldest to newest)
     games.sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -304,7 +311,7 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
     let bestEnemyPercent = bestEnemy !== null && totalProfit > 0 ? ((bestEnemy as Enemy).net / totalProfit) * 100 : null;
     let worstEnemyPercent = worstEnemy !== null && totalLoss > 0 ? (-(worstEnemy as Enemy).net / totalLoss) * 100 : null;
 
-    return {
+    const result = {
       roi,
       maxWin,
       maxLose,
@@ -315,6 +322,9 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
       worstEnemy,
       worstEnemyPercent,
     };
+    
+    console.log('[DEBUG] Advanced stats result:', result);
+    return result;
   }, [playerData, allTablesData]);
 
   const allPlayerStats = useMemo(() => getAllPlayerStats(allTablesData), [allTablesData]);
