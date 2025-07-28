@@ -997,22 +997,23 @@ const StatisticsView: React.FC = () => {
       if (table.food) {
         const foodOrderer = table.players.find(p => p.id === table.food);
         if (foodOrderer) {
-          const count = (foodOrders.get(foodOrderer.name) || 0) + 1;
-          foodOrders.set(foodOrderer.name, count);
+          const displayName = displayNames[foodOrderer.name] || foodOrderer.name;
+          const count = (foodOrders.get(displayName) || 0) + 1;
+          foodOrders.set(displayName, count);
           
           // Add to history (up to 20 entries)
           if (foodHistory.length < 20) {
             foodHistory.push({
-                          date: new Date(table.gameDate || table.createdAt).toLocaleString('he-IL', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false
-            }),
-            player: foodOrderer.name,
-            tableCreatedAt: table.gameDate || table.createdAt ? String(table.gameDate || table.createdAt) : undefined // keep the raw date for sorting
+              date: new Date(table.gameDate || table.createdAt).toLocaleString('he-IL', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }),
+              player: displayName,
+              tableCreatedAt: table.gameDate || table.createdAt ? String(table.gameDate || table.createdAt) : undefined // keep the raw date for sorting
             });
           }
         }
@@ -1035,7 +1036,7 @@ const StatisticsView: React.FC = () => {
       count: maxOrders,
       history: foodHistory
     });
-  }, [filteredTables]);
+  }, [filteredTables, displayNames]);
 
   // Sorted player options for Autocomplete
   const playerOptions = useMemo(() =>
