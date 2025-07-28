@@ -156,7 +156,10 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
     const sortedTables = [...allTablesData].sort((a, b) => new Date(a.gameDate || a.createdAt).getTime() - new Date(b.gameDate || b.createdAt).getTime());
     console.log('[DEBUG] Sorted tables count:', sortedTables.length);
 
+    console.log('[DEBUG] Looking for player name:', playerData.name);
     sortedTables.forEach((table, index) => {
+        console.log(`[DEBUG] Table ${index + 1}: ${table.name} - Players:`, table.players.map(p => p.name));
+        
         const playerInstance = table.players.find(p => 
             p.name.toLowerCase() === playerData.name.toLowerCase()
         );
@@ -177,6 +180,8 @@ const PlayerStatsDialog: React.FC<PlayerStatsDialogProps> = ({ open, onClose, pl
                 netResult: gameNetResult,
                 cumulativeResult: cumulativeResult
             });
+        } else {
+            console.log(`[DEBUG] Player NOT found in table ${index + 1}: ${table.name}`);
         }
     });
 
