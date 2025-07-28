@@ -362,10 +362,6 @@ const MyGroups: React.FC = () => {
                       }}>
                         {group.name}
                       </Typography>
-                      {/* הצגת תפקיד המשתמש בקבוצה */}
-                      <Typography variant="body2" sx={{ color: '#FFD700', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', mt: 0.5 }}>
-                        {getRoleLabel(group.userRole || 'viewer')}
-                      </Typography>
                       {/* Management and Delete buttons for owners or admin */}
                       {(group.userRole === 'owner' || user?.role === 'admin') && (
                         <Box sx={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 0.5 }}>
