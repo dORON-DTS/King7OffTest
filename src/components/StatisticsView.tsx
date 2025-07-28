@@ -849,7 +849,7 @@ const StatisticsView: React.FC = () => {
       table.players.forEach(player => {
         if ((player.totalBuyIn || 0) > maxSingleBuyIn) {
           maxSingleBuyIn = player.totalBuyIn || 0;
-          maxSingleBuyInPlayer = player.name;
+          maxSingleBuyInPlayer = displayNames[player.name] || player.name;
         }
       });
     });
@@ -858,11 +858,11 @@ const StatisticsView: React.FC = () => {
     playerStats.forEach(stat => {
       if (stat.avgBuyIn > maxAvgBuyIn) {
         maxAvgBuyIn = stat.avgBuyIn;
-        maxAvgBuyInPlayer = stat.name;
+        maxAvgBuyInPlayer = stat.name; // stat.name is already displayName
       }
       if (stat.avgNetResult > maxAvgResult) {
         maxAvgResult = stat.avgNetResult;
-        maxAvgResultPlayer = stat.name;
+        maxAvgResultPlayer = stat.name; // stat.name is already displayName
       }
     });
 
@@ -880,7 +880,7 @@ const StatisticsView: React.FC = () => {
       table: calmestTableData,
       avgBuyIn: minTableAvgBuyIn === Number.POSITIVE_INFINITY ? 0 : minTableAvgBuyIn
     });
-  }, [filteredTables, playerStats]);
+  }, [filteredTables, playerStats, displayNames]);
 
   // After playerStats calculation, add effect to calculate best winning streak
   useEffect(() => {
@@ -922,7 +922,7 @@ const StatisticsView: React.FC = () => {
       }
       if (maxPlayerStreak > maxStreak) {
         maxStreak = maxPlayerStreak;
-        maxStreakPlayer = player.name;
+        maxStreakPlayer = player.name; // player.name is already displayName
       }
     });
     setBestWinStreak({ value: maxStreak, player: maxStreakPlayer });
@@ -962,7 +962,7 @@ const StatisticsView: React.FC = () => {
       }
 
       if (currentStreak > 0) {
-        playerStreaks.set(player.name, currentStreak);
+        playerStreaks.set(player.name, currentStreak); // player.name is already displayName
       }
     });
 
@@ -1111,7 +1111,7 @@ const StatisticsView: React.FC = () => {
         const net = cashOut + chips - buyIn;
         if (net > 0) {
           wins.push({
-            player: player.name,
+            player: displayNames[player.name] || player.name,
             amount: net,
             tableName: table.name,
             date: table.gameDate || table.createdAt ? new Date(table.gameDate || table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined
@@ -1120,7 +1120,7 @@ const StatisticsView: React.FC = () => {
       });
     });
     return wins.sort((a, b) => b.amount - a.amount).slice(0, 3);
-  }, [filteredTables]);
+  }, [filteredTables, displayNames]);
 
   // Helper: get top 3 best winning streaks
   const top3BestWinningStreaks = useMemo(() => {
@@ -1169,7 +1169,7 @@ const StatisticsView: React.FC = () => {
       }
       if (maxPlayerStreak > 0) {
         // We'll use the end date of the streak as the achievement date
-        streaks.push({ player: player.name, streak: maxPlayerStreak, date: games[maxStreakEndIdx]?.date || null });
+        streaks.push({ player: player.name, streak: maxPlayerStreak, date: games[maxStreakEndIdx]?.date || null }); // player.name is already displayName
       }
     });
     return streaks.sort((a, b) => {
@@ -1187,7 +1187,7 @@ const StatisticsView: React.FC = () => {
         const buyIn = player.totalBuyIn || 0;
         if (buyIn > 0) {
           buyIns.push({
-            player: player.name,
+            player: displayNames[player.name] || player.name,
             amount: buyIn,
             tableName: table.name,
             date: table.gameDate || table.createdAt ? new Date(table.gameDate || table.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' }) : undefined,
@@ -1206,14 +1206,14 @@ const StatisticsView: React.FC = () => {
       }
       return 0;
     }).slice(0, 3);
-  }, [filteredTables]);
+  }, [filteredTables, displayNames]);
 
   // Helper: get top 3 biggest avg buy-in
   const top3BiggestAvgBuyIn = useMemo(() => {
     return [...playerStats]
       .filter(p => p.tablesPlayed > 0)
       .map(p => ({
-        player: p.name,
+        player: p.name, // p.name is already displayName
         avgBuyIn: Math.round(p.avgBuyIn),
         games: p.tablesPlayed
       }))
@@ -1226,7 +1226,7 @@ const StatisticsView: React.FC = () => {
     return [...playerStats]
       .filter(p => p.tablesPlayed > 0)
       .map(p => ({
-        player: p.name,
+        player: p.name, // p.name is already displayName
         avgResult: Math.round(p.avgNetResult),
         games: p.tablesPlayed
       }))
