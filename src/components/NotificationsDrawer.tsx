@@ -17,6 +17,7 @@ import {
   useMediaQuery
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useSwipeable } from 'react-swipeable';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -52,6 +53,7 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
     [theme.breakpoints.down('sm')]: {
       width: '100vw',
     },
+    transition: 'transform 0.3s ease-in-out',
   },
 }));
 
@@ -75,6 +77,20 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Swipe handlers for mobile
+  const swipeHandlers = useSwipeable({
+    onSwipedRight: (eventData) => {
+      // Only close on swipe right if it's a significant swipe
+      if (eventData.deltaX > 50) {
+        onClose();
+      }
+    },
+    preventScrollOnSwipe: true,
+    trackMouse: false,
+    delta: 10,
+    swipeDuration: 500,
+  });
 
   useEffect(() => {
     if (open) {
@@ -313,6 +329,7 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
       BackdropProps={{
         onClick: onClose
       }}
+      {...swipeHandlers}
     >
       <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
@@ -328,21 +345,6 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
               <CloseIcon />
             </IconButton>
           </Box>
-        </Box>
-
-        {/* Close button for mobile */}
-        <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mb: 2 }}>
-          <Button
-            variant="outlined"
-            onClick={onClose}
-            sx={{ 
-              color: 'white', 
-              borderColor: 'white',
-              '&:hover': { borderColor: '#2196f3', color: '#2196f3' }
-            }}
-          >
-            Close
-          </Button>
         </Box>
 
         <Divider sx={{ mb: 2, bgcolor: '#444' }} />

@@ -21,6 +21,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.1",
     "react-scripts": "5.0.1",
+    "react-swipeable": "^7.0.2",
     "recharts": "^2.15.3",
     "serve": "^14.2.4",
     "sqlite3": "^5.1.7",

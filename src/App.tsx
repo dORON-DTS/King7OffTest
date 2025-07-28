@@ -259,7 +259,7 @@ const AppLayout = () => {
                     <IconButton
                       size="large"
                       color="inherit"
-                      onClick={() => setNotificationsOpen(true)}
+                      onClick={() => setNotificationsOpen(!notificationsOpen)}
                       sx={{ p: 1 }}
                     >
                       <Badge badgeContent={notificationCount} color="error">
