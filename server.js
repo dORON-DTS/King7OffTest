@@ -1255,6 +1255,111 @@ app.get('/api/users/me', authenticate, (req, res) => {
   });
 });
 
+// Get current user profile with extended info
+app.get('/api/users/profile', authenticate, (req, res) => {
+  const userId = req.user.id;
+  
+  // Get user info with additional fields
+  db.get(`
+    SELECT id, username, email, role, isVerified as is_verified, createdAt as created_at, lastLogin as last_login
+    FROM users WHERE id = ?
+  `, [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database error' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get user statistics
+    db.get(`
+      SELECT 
+        COUNT(DISTINCT t.id) as total_tables,
+        COUNT(DISTINCT p.tableId) as total_games
+      FROM users u
+      LEFT JOIN tables t ON u.id = t.owner_id
+      LEFT JOIN players p ON t.id = p.tableId
+      WHERE u.id = ?
+    `, [userId], (err, stats) => {
+      if (err) {
+        console.error('Error fetching user stats:', err);
+        stats = { total_tables: 0, total_games: 0 };
+      }
+
+      const profile = {
+        ...user,
+        total_tables: stats.total_tables || 0,
+        total_games: stats.total_games || 0
+      };
+
+      res.json(profile);
+    });
+  });
+});
+
+// Get current user statistics
+app.get('/api/users/statistics', authenticate, (req, res) => {
+  const userId = req.user.id;
+  
+  // Get comprehensive user statistics
+  db.get(`
+    SELECT 
+      COUNT(DISTINCT t.id) as total_tables,
+      COUNT(DISTINCT p.tableId) as total_games,
+      COUNT(CASE WHEN p.cashOut > p.buyIn THEN 1 END) as games_won,
+      COUNT(CASE WHEN p.cashOut < p.buyIn THEN 1 END) as games_lost,
+      COALESCE(SUM(CASE WHEN p.cashOut > p.buyIn THEN p.cashOut - p.buyIn ELSE 0 END), 0) as total_earnings,
+      COALESCE(SUM(CASE WHEN p.cashOut < p.buyIn THEN p.buyIn - p.cashOut ELSE 0 END), 0) as total_losses,
+      COALESCE(AVG(t.duration), 0) as average_game_duration
+    FROM users u
+    LEFT JOIN tables t ON u.id = t.owner_id
+    LEFT JOIN players p ON t.id = p.tableId
+    WHERE u.id = ?
+  `, [userId], (err, stats) => {
+    if (err) {
+      console.error('Error fetching user statistics:', err);
+      return res.status(500).json({ message: 'Database error' });
+    }
+
+    // Calculate win rate
+    const totalGames = (stats.games_won || 0) + (stats.games_lost || 0);
+    const winRate = totalGames > 0 ? ((stats.games_won || 0) / totalGames) * 100 : 0;
+
+    // Get favorite table type (most common table type)
+    db.get(`
+      SELECT t.type as favorite_table_type
+      FROM tables t
+      WHERE t.owner_id = ?
+      GROUP BY t.type
+      ORDER BY COUNT(*) DESC
+      LIMIT 1
+    `, [userId], (err, favoriteType) => {
+      // Get last game date
+      db.get(`
+        SELECT MAX(t.createdAt) as last_game_date
+        FROM tables t
+        WHERE t.owner_id = ?
+      `, [userId], (err, lastGame) => {
+        const statistics = {
+          total_games: stats.total_games || 0,
+          total_tables: stats.total_tables || 0,
+          games_won: stats.games_won || 0,
+          games_lost: stats.games_lost || 0,
+          total_earnings: stats.total_earnings || 0,
+          total_losses: stats.total_losses || 0,
+          average_game_duration: Math.round(stats.average_game_duration || 0),
+          win_rate: Math.round(winRate * 10) / 10, // Round to 1 decimal place
+          favorite_table_type: favoriteType?.favorite_table_type || null,
+          last_game_date: lastGame?.last_game_date || null
+        };
+
+        res.json(statistics);
+      });
+    });
+  });
+});
+
 // Get all users
 app.get('/api/users', authenticate, authorize(['admin']), (req, res) => {
 
