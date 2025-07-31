@@ -1261,7 +1261,7 @@ app.get('/api/users/profile', authenticate, (req, res) => {
   
   // Get user info with additional fields
   db.get(`
-    SELECT id, username, email, role, isVerified as is_verified, createdAt as created_at, lastLogin as last_login
+    SELECT id, username, email, role, isVerified as is_verified, createdAt as created_at
     FROM users WHERE id = ?
   `, [userId], (err, user) => {
     if (err) {
@@ -1278,7 +1278,7 @@ app.get('/api/users/profile', authenticate, (req, res) => {
         COUNT(DISTINCT t.id) as total_tables,
         COUNT(DISTINCT p.tableId) as total_games
       FROM users u
-      LEFT JOIN tables t ON u.id = t.owner_id
+      LEFT JOIN tables t ON u.id = t.creatorId
       LEFT JOIN players p ON t.id = p.tableId
       WHERE u.id = ?
     `, [userId], (err, stats) => {
@@ -1313,7 +1313,7 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
       COALESCE(SUM(CASE WHEN p.cashOut < p.buyIn THEN p.buyIn - p.cashOut ELSE 0 END), 0) as total_losses,
       COALESCE(AVG(t.duration), 0) as average_game_duration
     FROM users u
-    LEFT JOIN tables t ON u.id = t.owner_id
+    LEFT JOIN tables t ON u.id = t.creatorId
     LEFT JOIN players p ON t.id = p.tableId
     WHERE u.id = ?
   `, [userId], (err, stats) => {
@@ -1328,10 +1328,10 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
 
     // Get favorite table type (most common table type)
     db.get(`
-      SELECT t.type as favorite_table_type
+      SELECT t.name as favorite_table_type
       FROM tables t
-      WHERE t.owner_id = ?
-      GROUP BY t.type
+      WHERE t.creatorId = ?
+      GROUP BY t.name
       ORDER BY COUNT(*) DESC
       LIMIT 1
     `, [userId], (err, favoriteType) => {
@@ -1339,7 +1339,7 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
       db.get(`
         SELECT MAX(t.createdAt) as last_game_date
         FROM tables t
-        WHERE t.owner_id = ?
+        WHERE t.creatorId = ?
       `, [userId], (err, lastGame) => {
         const statistics = {
           total_games: stats.total_games || 0,
