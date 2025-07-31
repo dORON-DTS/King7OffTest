@@ -5,11 +5,9 @@ import {
   Typography,
   Box,
   Avatar,
-  Grid,
   Card,
   CardContent,
   Divider,
-  Chip,
   CircularProgress,
   Alert
 } from '@mui/material';
@@ -17,7 +15,6 @@ import {
   Person as PersonIcon,
   Email as EmailIcon,
   CalendarToday as CalendarIcon,
-  Security as SecurityIcon,
   AccessTime as AccessTimeIcon
 } from '@mui/icons-material';
 
@@ -81,31 +78,7 @@ const MyProfile: React.FC = () => {
     });
   };
 
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'System Administrator';
-      case 'editor':
-        return 'Editor';
-      case 'user':
-        return 'User';
-      default:
-        return role;
-    }
-  };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'error';
-      case 'editor':
-        return 'warning';
-      case 'user':
-        return 'primary';
-      default:
-        return 'default';
-    }
-  };
 
   if (loading) {
     return (
@@ -199,152 +172,77 @@ const MyProfile: React.FC = () => {
             >
               {profile.username}
             </Typography>
-            
-            <Chip
-              icon={<SecurityIcon />}
-              label={getRoleDisplayName(profile.role)}
-              color={getRoleColor(profile.role) as any}
-              variant="outlined"
-              sx={{ fontWeight: 600 }}
-            />
-            
-            {profile.is_verified && (
-              <Chip
-                                 label="Verified"
-                color="success"
-                size="small"
-                sx={{ ml: 1, fontWeight: 600 }}
-              />
-            )}
           </Box>
         </Box>
 
-        {/* Profile Details Grid */}
-        <Grid container spacing={3}>
-          {/* Personal Information */}
-          <Grid item xs={12} md={6}>
-            <Card
+        {/* Personal Information Card */}
+        <Card
+          sx={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 2
+          }}
+        >
+          <CardContent>
+            <Typography
+              variant="h6"
+              component="h3"
+              gutterBottom
               sx={{
-                height: '100%',
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: 2
+                fontWeight: 600,
+                color: 'primary.main',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
               }}
             >
-              <CardContent>
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 600,
-                    color: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}
-                >
-                  <PersonIcon />
-                                     Personal Information
-                </Typography>
-                
-                <Divider sx={{ mb: 2 }} />
-                
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <EmailIcon color="action" />
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Email
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {profile.email}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <CalendarIcon color="action" />
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                                                 Join Date
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {formatDate(profile.created_at)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  
-                  {profile.last_login && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <AccessTimeIcon color="action" />
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                                                     Last Login
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                          {formatDate(profile.last_login)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  )}
+              <PersonIcon />
+              Personal Information
+            </Typography>
+            
+            <Divider sx={{ mb: 2 }} />
+            
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <EmailIcon color="action" />
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Email
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {profile.email}
+                  </Typography>
                 </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Statistics */}
-          <Grid item xs={12} md={6}>
-            <Card
-              sx={{
-                height: '100%',
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: 2
-              }}
-            >
-              <CardContent>
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 600,
-                    color: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}
-                >
-                  <AccessTimeIcon />
-                                     Statistics
-                </Typography>
-                
-                <Divider sx={{ mb: 2 }} />
-                
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                                             Games Played
+              </Box>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <CalendarIcon color="action" />
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Join Date
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {formatDate(profile.created_at)}
+                  </Typography>
+                </Box>
+              </Box>
+              
+              {profile.last_login && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <AccessTimeIcon color="action" />
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Last Login
                     </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                      {profile.total_games || 0}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                                             Tables Created
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                      {profile.total_tables || 0}
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {formatDate(profile.last_login)}
                     </Typography>
                   </Box>
                 </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
       </Paper>
     </Container>
   );
