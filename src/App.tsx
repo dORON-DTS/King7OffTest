@@ -30,6 +30,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import LandingPage from './components/LandingPage';
 import Footer from './components/Footer';
 import MyGroups from './components/MyGroups';
+import MyProfile from './components/MyProfile';
+import MyStatistics from './components/MyStatistics';
 import './App.css';
 
 // Create emotion cache
@@ -292,11 +294,17 @@ const AppLayout = () => {
                         User Management
                       </MenuItem>
                     )}
+                    <MenuItem component={RouterLink} to="/my-profile" onClick={handleClose}>
+                      My Profile
+                    </MenuItem>
                     {(user.role === 'admin' || user.role === 'editor') && (
                       <MenuItem component={RouterLink} to="/my-groups" onClick={handleClose}>
                         My Groups
                       </MenuItem>
                     )}
+                    <MenuItem component={RouterLink} to="/my-statistics" onClick={handleClose}>
+                      My Statistics
+                    </MenuItem>
                     <MenuItem onClick={handleLogout}>Logout</MenuItem>
                   </Menu>
                 </>
@@ -411,6 +419,16 @@ const router = createBrowserRouter(
       <Route path="my-groups" element={
         <ProtectedRoute allowedRoles={['admin', 'editor']}>
           <MyGroups />
+        </ProtectedRoute>
+      } />
+      <Route path="my-profile" element={
+        <ProtectedRoute>
+          <MyProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="my-statistics" element={
+        <ProtectedRoute>
+          <MyStatistics />
         </ProtectedRoute>
       } />
     </Route>
