@@ -1306,11 +1306,10 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
   
   // First get all groups where user is owner or member
   db.all(`
-    SELECT DISTINCT g.id as group_id, g.name as group_name, g.createdBy, gm.user_id as member_user_id
-    FROM groups g
-    LEFT JOIN group_members gm ON g.id = gm.group_id
-    WHERE g.createdBy = ? OR gm.user_id = ?
-  `, [userId, userId], (err, userGroups) => {
+    SELECT DISTINCT gm.group_id, gm.user_id as member_user_id
+    FROM group_members gm
+    WHERE gm.user_id = ?
+  `, [userId], (err, userGroups) => {
     if (err) {
       console.error('Error fetching user groups:', err);
       return res.status(500).json({ message: 'Database error' });
