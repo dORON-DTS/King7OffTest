@@ -4306,3 +4306,153 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 }); 
+
+// Update user username
+app.put('/api/users/:id/username', authenticate, (req, res) => {
+  const userId = req.params.id;
+  const { username } = req.body;
+  
+  // Check if user is updating their own username
+  if (userId !== req.user.id) {
+    return res.status(403).json({ detail: 'You can only update your own username' });
+  }
+
+  // Validate username
+  if (!username || username.trim().length < 2) {
+    return res.status(400).json({ detail: 'Username must be at least 2 characters long' });
+  }
+
+  const trimmedUsername = username.trim();
+
+  // Check if username already exists
+  db.get('SELECT id FROM users WHERE username = ? AND id != ?', [trimmedUsername, userId], (err, existingUser) => {
+    if (err) {
+      console.error('Error checking username:', err);
+      return res.status(500).json({ detail: 'Database error' });
+    }
+
+    if (existingUser) {
+      return res.status(400).json({ detail: 'Username already exists. Please choose a different username.' });
+    }
+
+    // Update username
+    db.run('UPDATE users SET username = ? WHERE id = ?', [trimmedUsername, userId], function(err) {
+      if (err) {
+        console.error('Error updating username:', err);
+        return res.status(500).json({ detail: 'Failed to update username' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ detail: 'User not found' });
+      }
+
+      // Get updated user data
+      db.get(`
+        SELECT id, username, email, role, isVerified as is_verified, createdAt as created_at
+        FROM users WHERE id = ?
+      `, [userId], (err, user) => {
+        if (err) {
+          console.error('Error fetching updated user:', err);
+          return res.status(500).json({ detail: 'Failed to fetch updated user data' });
+        }
+
+        res.json(user);
+      });
+    });
+  });
+});
+
+// Update user email
+app.put('/api/users/:id/email', authenticate, (req, res) => {
+  const userId = req.params.id;
+  const { email } = req.body;
+  
+  // Check if user is updating their own email
+  if (userId !== req.user.id) {
+    return res.status(403).json({ detail: 'You can only update your own email' });
+  }
+
+  // Validate email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    return res.status(400).json({ detail: 'Please enter a valid email address' });
+  }
+
+  const trimmedEmail = email.trim().toLowerCase();
+
+  // Check if email already exists
+  db.get('SELECT id FROM users WHERE email = ? AND id != ?', [trimmedEmail, userId], (err, existingUser) => {
+    if (err) {
+      console.error('Error checking email:', err);
+      return res.status(500).json({ detail: 'Database error' });
+    }
+
+    if (existingUser) {
+      return res.status(400).json({ detail: 'Email already exists. Please use a different email address.' });
+    }
+
+    // Generate verification code
+    const verificationCode = generateVerificationCode();
+    
+    // Update email and set as unverified
+    db.run('UPDATE users SET email = ?, isVerified = 0, verificationCode = ? WHERE id = ?', 
+      [trimmedEmail, verificationCode, userId], function(err) {
+      if (err) {
+        console.error('Error updating email:', err);
+        return res.status(500).json({ detail: 'Failed to update email' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ detail: 'User not found' });
+      }
+
+      // Send verification email
+      const transporter = nodemailer.createTransporter({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: trimmedEmail,
+        subject: 'Verify Your New Email - King 7 Offsuit',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1976d2;">Email Verification Required</h2>
+            <p>You have updated your email address. Please verify your new email by entering the following code:</p>
+            <div style="background: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
+              <h1 style="color: #1976d2; font-size: 32px; margin: 0;">${verificationCode}</h1>
+            </div>
+            <p>This code will expire in 10 minutes.</p>
+            <p>If you didn't request this change, please contact support immediately.</p>
+          </div>
+        `
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error('Error sending verification email:', error);
+          return res.status(500).json({ detail: 'Failed to send verification email' });
+        }
+
+        // Get updated user data
+        db.get(`
+          SELECT id, username, email, role, isVerified as is_verified, createdAt as created_at
+          FROM users WHERE id = ?
+        `, [userId], (err, user) => {
+          if (err) {
+            console.error('Error fetching updated user:', err);
+            return res.status(500).json({ detail: 'Failed to fetch updated user data' });
+          }
+
+          res.json(user);
+        });
+      });
+    });
+  });
+});
+
+// Get current user statistics
