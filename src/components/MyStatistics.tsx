@@ -139,27 +139,24 @@ const MyStatistics: React.FC = () => {
           if (blob) {
             const file = new File([blob], 'poker-statistics.png', { type: 'image/png' });
             
-            // Check if Web Share API is supported and available
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            // Try Web Share API first (works on Safari and some Android browsers)
+            if (navigator.share) {
               try {
                 await navigator.share({
                   title: 'My Poker Statistics',
                   text: 'Check out my poker statistics!',
                   files: [file]
                 });
+                return; // Success, exit early
               } catch (shareError) {
                 console.error('Share cancelled or failed:', shareError);
-                // Fallback to download if share fails
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `poker-statistics-${new Date().toISOString().split('T')[0]}.png`;
-                link.click();
-                URL.revokeObjectURL(url);
-                setSnackbarMessage('Statistics image downloaded successfully!');
+                // Don't fallback to download on mobile - let user try again
+                return;
               }
-            } else {
-              // Fallback for browsers that don't support Web Share API (like Chrome on iOS)
+            }
+            
+            // If Web Share API is not available, only download on desktop
+            if (!isMobile()) {
               const url = URL.createObjectURL(blob);
               const link = document.createElement('a');
               link.href = url;
