@@ -1504,8 +1504,8 @@ app.get('/api/users', authenticate, authorize(['admin']), (req, res) => {
   });
 });
 
-// Delete user
-app.delete('/api/users/:id', authenticate, authorize(['admin']), (req, res) => {
+// Delete user (admin only)
+app.delete('/api/users/:id/admin', authenticate, authorize(['admin']), (req, res) => {
   const userId = req.params.id;
 
 
@@ -1591,7 +1591,7 @@ app.put('/api/users/:id/password', authenticate, authorize(['admin']), (req, res
 });
 
 // Update user email (admin only)
-app.put('/api/users/:id/email', authenticate, authorize(['admin']), (req, res) => {
+app.put('/api/users/:id/email/admin', authenticate, authorize(['admin']), (req, res) => {
   const userId = req.params.id;
   const { email } = req.body;
 
