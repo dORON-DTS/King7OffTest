@@ -213,7 +213,7 @@ const MyStatistics: React.FC = () => {
               }
             }
             
-            // Method 6: Try to force Safari sharing for iOS Chrome
+            // Method 6: Special handling for iOS Chrome
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             const isChrome = /Chrome/.test(navigator.userAgent);
             
@@ -221,16 +221,95 @@ const MyStatistics: React.FC = () => {
               try {
                 const dataUrl = canvas.toDataURL('image/png');
                 
-                // Method 6a: Try to open Safari using data URL directly
-                const safariDataUrl = `data:text/html,<html><head><title>Share Statistics</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;background:#1a1a1a;color:white;font-family:Arial,sans-serif;text-align:center}img{max-width:100%;height:auto;border-radius:10px;margin:20px 0}</style></head><body><h1>My Poker Statistics</h1><img src="${dataUrl}" alt="Poker Statistics"><script>setTimeout(()=>{const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);canvas.toBlob(blob=>{const file=new File([blob],'statistics.png',{type:'image/png'});if(navigator.share){navigator.share({title:'My Poker Statistics',text:'Check out my poker statistics!',files:[file]})}else{alert('Sharing not supported')}},{type:'image/png'})};img.src='${dataUrl}'},1000)</script></body></html>`;
+                // Create a data URL with the sharing page
+                const dataUrlContent = `data:text/html;base64,${btoa(`
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Share Statistics</title>
+                    <style>
+                      body { 
+                        margin: 0; 
+                        padding: 20px; 
+                        background: #1a1a1a; 
+                        color: white; 
+                        font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+                        text-align: center;
+                        min-height: 100vh;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                      }
+                      .container { 
+                        max-width: 600px; 
+                        margin: 0 auto; 
+                      }
+                      img { 
+                        max-width: 100%; 
+                        height: auto; 
+                        border-radius: 10px; 
+                        margin: 20px 0;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                      }
+                      .share-btn { 
+                        background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%); 
+                        color: white; 
+                        border: none; 
+                        padding: 15px 30px; 
+                        border-radius: 25px; 
+                        font-size: 16px; 
+                        font-weight: 600;
+                        cursor: pointer; 
+                        margin: 20px 0;
+                        box-shadow: 0 4px 15px rgba(0,122,255,0.3);
+                      }
+                      .share-btn:active {
+                        transform: scale(0.98);
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <h1>My Poker Statistics</h1>
+                      <img src="${dataUrl}" alt="Poker Statistics">
+                      <br>
+                      <button class="share-btn" onclick="shareImage()">Share Statistics</button>
+                    </div>
+                    <script>
+                      async function shareImage() {
+                        try {
+                          const response = await fetch('${dataUrl}');
+                          const blob = await response.blob();
+                          const file = new File([blob], 'poker-statistics.png', { type: 'image/png' });
+                          
+                          if (navigator.share) {
+                            await navigator.share({
+                              title: 'My Poker Statistics',
+                              text: 'Check out my poker statistics!',
+                              files: [file]
+                            });
+                          } else {
+                            alert('Sharing not supported in this browser. Please use Safari.');
+                          }
+                        } catch (error) {
+                          console.error('Sharing failed:', error);
+                          alert('Sharing failed. Please try again or use Safari.');
+                        }
+                      }
+                      
+                      // Auto-share on page load after a short delay
+                      window.onload = function() {
+                        setTimeout(shareImage, 1000);
+                      };
+                    </script>
+                  </body>
+                  </html>
+                `)}`;
                 
-                // Try to open in Safari using window.open
-                const newWindow = window.open(safariDataUrl, '_blank');
-                
-                // If that doesn't work, try using location.href
-                if (!newWindow) {
-                  window.location.href = safariDataUrl;
-                }
+                // Try to open the data URL directly
+                window.location.href = dataUrlContent;
                 
                 return;
               } catch (safariError) {
