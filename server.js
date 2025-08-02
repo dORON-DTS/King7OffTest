@@ -1302,59 +1302,178 @@ app.get('/api/users/profile', authenticate, (req, res) => {
 app.get('/api/users/statistics', authenticate, (req, res) => {
   const userId = req.user.id;
   
-  // Get comprehensive user statistics
-  db.get(`
-    SELECT 
-      COUNT(DISTINCT t.id) as total_tables,
-      COUNT(DISTINCT p.tableId) as total_games,
-      COUNT(CASE WHEN p.cashOut > p.buyIn THEN 1 END) as games_won,
-      COUNT(CASE WHEN p.cashOut < p.buyIn THEN 1 END) as games_lost,
-      COALESCE(SUM(CASE WHEN p.cashOut > p.buyIn THEN p.cashOut - p.buyIn ELSE 0 END), 0) as total_earnings,
-      COALESCE(SUM(CASE WHEN p.cashOut < p.buyIn THEN p.buyIn - p.cashOut ELSE 0 END), 0) as total_losses,
-      COALESCE(AVG(t.duration), 0) as average_game_duration
-    FROM users u
-    LEFT JOIN tables t ON u.id = t.creatorId
-    LEFT JOIN players p ON t.id = p.tableId
-    WHERE u.id = ?
-  `, [userId], (err, stats) => {
+  // First get all groups where user is owner or member
+  db.all(`
+    SELECT DISTINCT g.id as group_id
+    FROM groups g
+    LEFT JOIN group_members gm ON g.id = gm.group_id
+    WHERE g.createdBy = ? OR gm.user_id = ?
+  `, [userId, userId], (err, userGroups) => {
     if (err) {
-      console.error('Error fetching user statistics:', err);
+      console.error('Error fetching user groups:', err);
       return res.status(500).json({ message: 'Database error' });
     }
 
-    // Calculate win rate
-    const totalGames = (stats.games_won || 0) + (stats.games_lost || 0);
-    const winRate = totalGames > 0 ? ((stats.games_won || 0) / totalGames) * 100 : 0;
+    if (!userGroups || userGroups.length === 0) {
+      return res.json({
+        total_games: 0,
+        games_won: 0,
+        games_lost: 0,
+        total_earnings: 0,
+        total_losses: 0,
+        last_game_date: null
+      });
+    }
 
-    // Get favorite table type (most common table type)
-    db.get(`
-      SELECT t.name as favorite_table_type
-      FROM tables t
-      WHERE t.creatorId = ?
-      GROUP BY t.name
-      ORDER BY COUNT(*) DESC
-      LIMIT 1
-    `, [userId], (err, favoriteType) => {
-      // Get last game date
-      db.get(`
-        SELECT MAX(t.createdAt) as last_game_date
-        FROM tables t
-        WHERE t.creatorId = ?
-      `, [userId], (err, lastGame) => {
-        const statistics = {
-          total_games: stats.total_games || 0,
-          total_tables: stats.total_tables || 0,
-          games_won: stats.games_won || 0,
-          games_lost: stats.games_lost || 0,
-          total_earnings: stats.total_earnings || 0,
-          total_losses: stats.total_losses || 0,
-          average_game_duration: Math.round(stats.average_game_duration || 0),
-          win_rate: Math.round(winRate * 10) / 10, // Round to 1 decimal place
-          favorite_table_type: favoriteType?.favorite_table_type || null,
-          last_game_date: lastGame?.last_game_date || null
-        };
+    const groupIds = userGroups.map(g => g.group_id);
+    const placeholders = groupIds.map(() => '?').join(',');
+    
+    // Get user's username
+    db.get('SELECT username FROM users WHERE id = ?', [userId], (err, user) => {
+      if (err) {
+        console.error('Error fetching user:', err);
+        return res.status(500).json({ message: 'Database error' });
+      }
 
-        res.json(statistics);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const username = user.username;
+
+      // Get all player aliases for this user in these groups
+      db.all(`
+        SELECT DISTINCT pa.player_name
+        FROM player_aliases pa
+        WHERE pa.group_id IN (${placeholders})
+        AND pa.user_id = ?
+        AND pa.is_active = 1
+      `, [...groupIds, userId], (err, aliases) => {
+        if (err) {
+          console.error('Error fetching player aliases:', err);
+          aliases = [{ player_name: username }];
+        }
+
+        if (!aliases || aliases.length === 0) {
+          aliases = [{ player_name: username }];
+        }
+
+        const playerNames = aliases.map(a => a.player_name);
+        const playerNamePlaceholders = playerNames.map(() => '?').join(',');
+
+        // Get all player records for these aliases in the user's groups
+        const query = `
+          SELECT 
+            t.id as table_id, t.name as table_name, t.createdAt as table_created_at,
+            p.id as player_id, p.name as player_name, p.totalBuyIn, p.chips, p.active
+          FROM tables t
+          INNER JOIN players p ON t.id = p.tableId
+          WHERE t.groupId IN (${placeholders})
+          AND p.name IN (${playerNamePlaceholders})
+        `;
+        
+        db.all(query, [...groupIds, ...playerNames], (err, playerRecords) => {
+          if (err) {
+            console.error('Error fetching user player records:', err);
+            return res.status(500).json({ message: 'Database error' });
+          }
+
+          if (playerRecords && playerRecords.length > 0) {
+            const playerIds = playerRecords.map(r => r.player_id);
+            
+            if (playerIds.length > 0) {
+              const playerIdPlaceholders = playerIds.map(() => '?').join(',');
+              
+              // Get cashouts for these players
+              db.all(`
+                SELECT playerId, SUM(amount) as total_cashouts
+                FROM cashouts 
+                WHERE playerId IN (${playerIdPlaceholders})
+                GROUP BY playerId
+              `, playerIds, (err, cashoutData) => {
+                if (err) {
+                  console.error('Error fetching cashout data:', err);
+                  cashoutData = [];
+                }
+
+                const cashoutMap = {};
+                cashoutData.forEach(c => {
+                  cashoutMap[c.playerId] = c.total_cashouts;
+                });
+
+                playerRecords.forEach(record => {
+                  record.total_cashouts = cashoutMap[record.player_id] || 0;
+                });
+
+                const total_games = playerRecords.length;
+                let total_buy_in = 0;
+                let total_cash_out = 0;
+                let games_won = 0;
+                let games_lost = 0;
+                let total_earnings = 0;
+                let total_losses = 0;
+                let lastGameDate = null;
+
+                playerRecords.forEach(record => {
+                  const buyIn = record.totalBuyIn || 0;
+                  const totalCashouts = record.total_cashouts || 0;
+                  const currentChips = record.active ? (record.chips || 0) : 0;
+                  const cashOut = totalCashouts + currentChips;
+                  
+                  const netResult = cashOut - buyIn;
+                  
+                  total_buy_in += buyIn;
+                  total_cash_out += cashOut;
+                  
+                  if (netResult > 0) {
+                    games_won++;
+                    total_earnings += netResult;
+                  } else if (netResult < 0) {
+                    games_lost++;
+                    total_losses += Math.abs(netResult);
+                  }
+
+                  if (record.table_created_at) {
+                    if (!lastGameDate || new Date(record.table_created_at) > new Date(lastGameDate)) {
+                      lastGameDate = record.table_created_at;
+                    }
+                  }
+                });
+
+                const statistics = {
+                  total_games: total_games,
+                  games_won: games_won,
+                  games_lost: games_lost,
+                  total_earnings: total_earnings,
+                  total_losses: total_losses,
+                  last_game_date: lastGameDate
+                };
+
+                res.json(statistics);
+              });
+            } else {
+              const statistics = {
+                total_games: 0,
+                games_won: 0,
+                games_lost: 0,
+                total_earnings: 0,
+                total_losses: 0,
+                last_game_date: null
+              };
+              res.json(statistics);
+            }
+          } else {
+            const statistics = {
+              total_games: 0,
+              games_won: 0,
+              games_lost: 0,
+              total_earnings: 0,
+              total_losses: 0,
+              last_game_date: null
+            };
+            res.json(statistics);
+          }
+        });
       });
     });
   });

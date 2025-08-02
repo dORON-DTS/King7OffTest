@@ -12,25 +12,19 @@ import {
   Divider
 } from '@mui/material';
 import {
-  BarChart as BarChartIcon,
-  TrendingUp as TrendingUpIcon,
   Casino as CasinoIcon,
-  Group as GroupIcon,
   AccessTime as AccessTimeIcon,
+  AccountBalance as AccountBalanceIcon,
   EmojiEvents as EmojiEventsIcon
 } from '@mui/icons-material';
 
 interface UserStatistics {
   total_games: number;
-  total_tables: number;
   games_won: number;
   games_lost: number;
   total_earnings: number;
   total_losses: number;
-  average_game_duration: number;
-  favorite_table_type?: string;
   last_game_date?: string;
-  win_rate: number;
 }
 
 const MyStatistics: React.FC = () => {
@@ -70,15 +64,6 @@ const MyStatistics: React.FC = () => {
 
     fetchStatistics();
   }, []);
-
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -125,6 +110,8 @@ const MyStatistics: React.FC = () => {
     );
   }
 
+  const totalBalance = statistics.total_earnings - statistics.total_losses;
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography
@@ -154,9 +141,8 @@ const MyStatistics: React.FC = () => {
           border: '1px solid rgba(255, 255, 255, 0.1)'
         }}
       >
-        {/* Overview Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Total Games */}
+        <Grid container spacing={3}>
+          {/* Total Games Played */}
           <Grid item xs={12} sm={6} md={3}>
             <Card
               sx={{
@@ -173,13 +159,59 @@ const MyStatistics: React.FC = () => {
                   {statistics.total_games}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                                     Total Games
+                  Total Games Played
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
 
-          {/* Win Rate */}
+          {/* Last Game */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                background: 'linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(186, 104, 200, 0.1) 100%)',
+                border: '1px solid rgba(156, 39, 176, 0.2)',
+                borderRadius: 2,
+                textAlign: 'center',
+                p: 2
+              }}
+            >
+              <CardContent>
+                <AccessTimeIcon sx={{ fontSize: 40, color: 'secondary.main', mb: 1 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'secondary.main', mb: 1 }}>
+                  {statistics.last_game_date ? formatDate(statistics.last_game_date) : 'No games yet'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Last Game
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Total Money Balance */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 235, 59, 0.1) 100%)',
+                border: '1px solid rgba(255, 193, 7, 0.2)',
+                borderRadius: 2,
+                textAlign: 'center',
+                p: 2
+              }}
+            >
+              <CardContent>
+                <AccountBalanceIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'warning.main', mb: 1 }}>
+                  {formatCurrency(totalBalance)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Total Balance
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Wins vs Losses */}
           <Grid item xs={12} sm={6} md={3}>
             <Card
               sx={{
@@ -192,269 +224,88 @@ const MyStatistics: React.FC = () => {
             >
               <CardContent>
                 <EmojiEventsIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main', mb: 1 }}>
-                  {statistics.win_rate.toFixed(1)}%
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main', mb: 1 }}>
+                  {statistics.games_won} / {statistics.games_lost}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                                     Win Rate
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Total Earnings */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 235, 59, 0.1) 100%)',
-                border: '1px solid rgba(255, 193, 7, 0.2)',
-                borderRadius: 2,
-                textAlign: 'center',
-                p: 2
-              }}
-            >
-              <CardContent>
-                <TrendingUpIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
-                <Typography variant="h6" sx={{ fontWeight: 700, color: 'warning.main', mb: 1 }}>
-                  {formatCurrency(statistics.total_earnings)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                                     Total Earnings
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Total Tables */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Card
-              sx={{
-                background: 'linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(186, 104, 200, 0.1) 100%)',
-                border: '1px solid rgba(156, 39, 176, 0.2)',
-                borderRadius: 2,
-                textAlign: 'center',
-                p: 2
-              }}
-            >
-              <CardContent>
-                <GroupIcon sx={{ fontSize: 40, color: 'secondary.main', mb: 1 }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'secondary.main', mb: 1 }}>
-                  {statistics.total_tables}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                                     Tables Created
+                  Wins / Losses
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
 
-        <Divider sx={{ mb: 4 }} />
+        <Divider sx={{ my: 4 }} />
 
-        {/* Detailed Statistics */}
-        <Grid container spacing={3}>
-          {/* Game Performance */}
-          <Grid item xs={12} md={6}>
-            <Card
+        {/* Detailed Balance Breakdown */}
+        <Card
+          sx={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 2
+          }}
+        >
+          <CardContent>
+            <Typography
+              variant="h6"
+              component="h3"
+              gutterBottom
               sx={{
-                height: '100%',
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: 2
+                fontWeight: 600,
+                color: 'primary.main',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
               }}
             >
-              <CardContent>
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 600,
-                    color: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}
-                >
-                  <BarChartIcon />
-                                     Game Performance
-                </Typography>
-                
-                <Divider sx={{ mb: 2 }} />
-                
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                                             Games Won
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main' }}>
-                      {statistics.games_won}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                                             Games Lost
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'error.main' }}>
-                      {statistics.games_lost}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                                             Average Game
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                      {formatDuration(statistics.average_game_duration)}
-                    </Typography>
-                  </Box>
+              <AccountBalanceIcon />
+              Balance Breakdown
+            </Typography>
+            
+            <Divider sx={{ mb: 2 }} />
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Earnings
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main' }}>
+                    {formatCurrency(statistics.total_earnings)}
+                  </Typography>
                 </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Financial Summary */}
-          <Grid item xs={12} md={6}>
-            <Card
-              sx={{
-                height: '100%',
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: 2
-              }}
-            >
-              <CardContent>
-                <Typography
-                  variant="h6"
-                  component="h3"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 600,
-                    color: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}
-                >
-                  <TrendingUpIcon />
-                                     Financial Summary
-                </Typography>
-                
-                <Divider sx={{ mb: 2 }} />
-                
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                                             Earnings
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main' }}>
-                      {formatCurrency(statistics.total_earnings)}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                                             Losses
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'error.main' }}>
-                      {formatCurrency(statistics.total_losses)}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                                             Net Profit
-                    </Typography>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        fontWeight: 700, 
-                        color: (statistics.total_earnings - statistics.total_losses) >= 0 ? 'success.main' : 'error.main'
-                      }}
-                    >
-                      {formatCurrency(statistics.total_earnings - statistics.total_losses)}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Additional Info */}
-        {(statistics.favorite_table_type || statistics.last_game_date) && (
-          <>
-            <Divider sx={{ my: 4 }} />
-            <Grid container spacing={3}>
-              {statistics.favorite_table_type && (
-                <Grid item xs={12} md={6}>
-                  <Card
-                    sx={{
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: 2
-                    }}
-                  >
-                    <CardContent>
-                      <Typography
-                        variant="h6"
-                        component="h3"
-                        gutterBottom
-                        sx={{
-                          fontWeight: 600,
-                          color: 'primary.main',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1
-                        }}
-                      >
-                        <CasinoIcon />
-                                                 Favorite Table Type
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                        {statistics.favorite_table_type}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              )}
+              </Grid>
               
-              {statistics.last_game_date && (
-                <Grid item xs={12} md={6}>
-                  <Card
-                    sx={{
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: 2
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Losses
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: 'error.main' }}>
+                    {formatCurrency(statistics.total_losses)}
+                  </Typography>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Net Balance
+                  </Typography>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: totalBalance >= 0 ? 'success.main' : 'error.main'
                     }}
                   >
-                    <CardContent>
-                      <Typography
-                        variant="h6"
-                        component="h3"
-                        gutterBottom
-                        sx={{
-                          fontWeight: 600,
-                          color: 'primary.main',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1
-                        }}
-                      >
-                        <AccessTimeIcon />
-                                                 Last Game
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                        {formatDate(statistics.last_game_date)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              )}
+                    {formatCurrency(totalBalance)}
+                  </Typography>
+                </Box>
+              </Grid>
             </Grid>
-          </>
-        )}
+          </CardContent>
+        </Card>
       </Paper>
     </Container>
   );
