@@ -302,10 +302,14 @@ const MyStatistics: React.FC = () => {
                 border: '1px solid rgba(25, 118, 210, 0.2)',
                 borderRadius: 2,
                 textAlign: 'center',
-                p: 2
+                p: 2,
+                height: { xs: 160, sm: 160, md: 'auto' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
               }}
             >
-              <CardContent>
+              <CardContent sx={{ p: 1 }}>
                                  <CasinoIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
                  <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>
                    {statistics.total_games}
@@ -325,10 +329,14 @@ const MyStatistics: React.FC = () => {
                 border: '1px solid rgba(156, 39, 176, 0.2)',
                 borderRadius: 2,
                 textAlign: 'center',
-                p: 2
+                p: 2,
+                height: { xs: 160, sm: 160, md: 'auto' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
               }}
             >
-              <CardContent>
+              <CardContent sx={{ p: 1 }}>
                 <AccessTimeIcon sx={{ fontSize: 40, color: 'secondary.main', mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'secondary.main', mb: 1 }}>
                   {statistics.last_game_date ? formatDate(statistics.last_game_date) : 'No games yet'}
@@ -348,10 +356,14 @@ const MyStatistics: React.FC = () => {
                 border: '1px solid rgba(255, 193, 7, 0.2)',
                 borderRadius: 2,
                 textAlign: 'center',
-                p: 2
+                p: 2,
+                height: { xs: 160, sm: 160, md: 'auto' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
               }}
             >
-              <CardContent>
+              <CardContent sx={{ p: 1 }}>
                 <AccountBalanceIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'warning.main', mb: 1 }}>
                   {formatCurrency(statistics.total_buy_in)}
@@ -371,10 +383,14 @@ const MyStatistics: React.FC = () => {
                 border: '1px solid rgba(76, 175, 80, 0.2)',
                 borderRadius: 2,
                 textAlign: 'center',
-                p: 2
+                p: 2,
+                height: { xs: 160, sm: 160, md: 'auto' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
               }}
             >
-              <CardContent>
+              <CardContent sx={{ p: 1 }}>
                 <EmojiEventsIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main', mb: 1 }}>
                   {statistics.games_won} / {statistics.games_lost}
