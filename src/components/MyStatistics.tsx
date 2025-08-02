@@ -221,7 +221,59 @@ const MyStatistics: React.FC = () => {
               try {
                 const dataUrl = canvas.toDataURL('image/png');
                 
-                // Create a data URL with the sharing page
+                // Method 6a: Try to force Web Share API with a different approach
+                const response = await fetch(dataUrl);
+                const blob = await response.blob();
+                const file = new File([blob], 'poker-statistics.png', { type: 'image/png' });
+                
+                // Try to trigger share using a different method
+                if (navigator.share) {
+                  // Create a temporary element to trigger share
+                  const tempDiv = document.createElement('div');
+                  tempDiv.style.position = 'fixed';
+                  tempDiv.style.top = '0';
+                  tempDiv.style.left = '0';
+                  tempDiv.style.width = '1px';
+                  tempDiv.style.height = '1px';
+                  tempDiv.style.opacity = '0';
+                  tempDiv.style.pointerEvents = 'none';
+                  document.body.appendChild(tempDiv);
+                  
+                  // Try to share with files
+                  try {
+                    await navigator.share({
+                      title: 'My Poker Statistics',
+                      text: 'Check out my poker statistics!',
+                      files: [file]
+                    });
+                    document.body.removeChild(tempDiv);
+                    return; // Success
+                  } catch (shareError) {
+                    console.error('Direct share failed:', shareError);
+                    document.body.removeChild(tempDiv);
+                  }
+                }
+                
+                // Method 6b: Try to create a temporary link and share it
+                const url = URL.createObjectURL(blob);
+                try {
+                  await navigator.share({
+                    title: 'My Poker Statistics',
+                    text: 'Check out my poker statistics!',
+                    url: url
+                  });
+                  URL.revokeObjectURL(url);
+                  return; // Success
+                } catch (urlShareError) {
+                  console.error('URL share failed:', urlShareError);
+                  URL.revokeObjectURL(url);
+                }
+                
+                // Method 6c: Try to open Safari using Universal Links
+                const safariUrl = 'https://www.apple.com/safari/';
+                window.open(safariUrl, '_blank');
+                
+                // Method 6d: Create a data URL with the sharing page
                 const dataUrlContent = `data:text/html;base64,${btoa(`
                   <!DOCTYPE html>
                   <html>
@@ -308,8 +360,10 @@ const MyStatistics: React.FC = () => {
                   </html>
                 `)}`;
                 
-                // Try to open the data URL directly
-                window.location.href = dataUrlContent;
+                // Try to open the data URL
+                setTimeout(() => {
+                  window.location.href = dataUrlContent;
+                }, 1000);
                 
                 return;
               } catch (safariError) {
