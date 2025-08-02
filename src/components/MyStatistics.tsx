@@ -155,10 +155,10 @@ const MyStatistics: React.FC = () => {
               }}
             >
               <CardContent>
-                <CasinoIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>
-                  {statistics.total_games}
-                </Typography>
+                                 <CasinoIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>
+                   {statistics.total_games}
+                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Total Games Played
                 </Typography>
