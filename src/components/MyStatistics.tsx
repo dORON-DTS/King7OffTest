@@ -139,39 +139,40 @@ const MyStatistics: React.FC = () => {
           if (blob) {
             const file = new File([blob], 'poker-statistics.png', { type: 'image/png' });
             
-            // First check if Web Share API exists
+            // Try Web Share API with files first
             if (navigator.share) {
-              // Try to share with files first
               try {
+                // Check if we can share files
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                   await navigator.share({
                     title: 'My Poker Statistics',
                     text: 'Check out my poker statistics!',
                     files: [file]
                   });
-                  return; // Success, exit early
-                } else {
-                  // Try sharing without files (text only)
-                  await navigator.share({
-                    title: 'My Poker Statistics',
-                    text: 'Check out my poker statistics!'
-                  });
-                  return; // Success, exit early
+                  return; // Success
                 }
-              } catch (shareError) {
-                console.error('Share cancelled or failed:', shareError);
-                // Don't fallback to download on mobile - let user try again
-                return;
+              } catch (fileShareError) {
+                console.error('File sharing failed:', fileShareError);
               }
-            } else {
-              // Web Share API not supported
-              setSnackbarMessage('Sharing not supported in this browser. Try Safari or download the image.');
-              return;
+              
+              // Try text-only sharing as fallback
+              try {
+                await navigator.share({
+                  title: 'My Poker Statistics',
+                  text: 'Check out my poker statistics!'
+                });
+                return; // Success
+              } catch (textShareError) {
+                console.error('Text sharing failed:', textShareError);
+              }
             }
+            
+            // If all sharing attempts failed, show message
+            setSnackbarMessage('Sharing not supported in this browser. Try Safari or download the image.');
           }
         }, 'image/png');
       } catch (error) {
-        console.error('Error sharing:', error);
+        console.error('Error generating image:', error);
         setSnackbarMessage('Error sharing statistics');
       }
     } else {
