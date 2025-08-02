@@ -1304,10 +1304,17 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
   
   // First get all groups where user is owner or member
   db.all(`
-    SELECT DISTINCT gm.group_id, gm.user_id as member_user_id
-    FROM group_members gm
-    WHERE gm.user_id = ?
-  `, [userId], (err, userGroups) => {
+    SELECT DISTINCT group_id, user_id as member_user_id
+    FROM (
+      SELECT gm.group_id, gm.user_id
+      FROM group_members gm
+      WHERE gm.user_id = ?
+      UNION
+      SELECT g.id as group_id, g.owner_id as user_id
+      FROM groups g
+      WHERE g.owner_id = ?
+    )
+  `, [userId, userId], (err, userGroups) => {
     if (err) {
       console.error('Error fetching user groups:', err);
       return res.status(500).json({ message: 'Database error' });
@@ -1340,7 +1347,7 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
 
       const username = user.username;
 
-      // Get all player aliases for this user in these groups
+      // Get all player aliases for this user in these groups, plus the username as fallback
       db.all(`
         SELECT DISTINCT pa.player_name
         FROM player_aliases pa
@@ -1350,14 +1357,18 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
       `, [...groupIds, userId], (err, aliases) => {
         if (err) {
           console.error('Error fetching player aliases:', err);
-          aliases = [{ player_name: username }];
+          aliases = [];
         }
 
-        if (!aliases || aliases.length === 0) {
-          aliases = [{ player_name: username }];
+        // Always include the username as a fallback
+        const playerNames = [username];
+        if (aliases && aliases.length > 0) {
+          aliases.forEach(a => {
+            if (!playerNames.includes(a.player_name)) {
+              playerNames.push(a.player_name);
+            }
+          });
         }
-
-        const playerNames = aliases.map(a => a.player_name);
         const playerNamePlaceholders = playerNames.map(() => '?').join(',');
         
         // Get all player records for these aliases in the user's groups
