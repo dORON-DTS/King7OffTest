@@ -4493,4 +4493,60 @@ app.put('/api/users/:id/email', authenticate, (req, res) => {
   });
 });
 
+// Delete user account
+app.delete('/api/users/:id', authenticate, (req, res) => {
+  const userId = req.params.id;
+  
+  // Check if user is deleting their own account
+  if (userId !== req.user.id) {
+    return res.status(403).json({ detail: 'You can only delete your own account' });
+  }
+
+  // Start a transaction to ensure data consistency
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+
+    // Remove user from all groups
+    db.run('DELETE FROM group_members WHERE user_id = ?', [userId], (err) => {
+      if (err) {
+        console.error('Error removing user from groups:', err);
+        db.run('ROLLBACK');
+        return res.status(500).json({ detail: 'Failed to delete account' });
+      }
+    });
+
+    // Remove user's player aliases
+    db.run('DELETE FROM player_aliases WHERE user_id = ?', [userId], (err) => {
+      if (err) {
+        console.error('Error removing player aliases:', err);
+        // Don't fail the entire operation for this, just log it
+      }
+    });
+
+    // Delete the user
+    db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
+      if (err) {
+        console.error('Error deleting user:', err);
+        db.run('ROLLBACK');
+        return res.status(500).json({ detail: 'Failed to delete account' });
+      }
+
+      if (this.changes === 0) {
+        db.run('ROLLBACK');
+        return res.status(404).json({ detail: 'User not found' });
+      }
+
+      // Commit the transaction
+      db.run('COMMIT', (err) => {
+        if (err) {
+          console.error('Error committing transaction:', err);
+          return res.status(500).json({ detail: 'Failed to delete account' });
+        }
+
+        res.json({ message: 'Account deleted successfully' });
+      });
+    });
+  });
+});
+
 // Get current user statistics

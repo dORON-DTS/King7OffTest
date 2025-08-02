@@ -12,7 +12,13 @@ import {
   Alert,
   TextField,
   IconButton,
-  Snackbar
+  Snackbar,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -21,7 +27,9 @@ import {
   AccessTime as AccessTimeIcon,
   Edit as EditIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  Delete as DeleteIcon,
+  Warning as WarningIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
@@ -48,6 +56,8 @@ const MyProfile: React.FC = () => {
   const [newEmail, setNewEmail] = useState('');
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('info');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const { user } = useUser();
   const navigate = useNavigate();
@@ -198,6 +208,58 @@ const MyProfile: React.FC = () => {
       return;
     }
     setSnackbarMessage('');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    setDeletingAccount(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSnackbarMessage('No authentication token found');
+        setSnackbarSeverity('error');
+        return;
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${user.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Account deleted successfully
+        localStorage.removeItem('token');
+        setSnackbarMessage('Account deleted successfully');
+        setSnackbarSeverity('success');
+        
+        // Redirect to login page
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } else {
+        const errorData = await response.json();
+        setSnackbarMessage(errorData.detail || 'Failed to delete account');
+        setSnackbarSeverity('error');
+      }
+    } catch (err) {
+      setSnackbarMessage('Error deleting account');
+      setSnackbarSeverity('error');
+      console.error('Error deleting account:', err);
+    } finally {
+      setDeletingAccount(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const handleOpenDeleteDialog = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
   };
 
 
@@ -416,6 +478,69 @@ const MyProfile: React.FC = () => {
           </Card>
         </Paper>
       </Box>
+
+      {/* Delete Account Section */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Button
+          variant="outlined"
+          color="error"
+          startIcon={<DeleteIcon />}
+          onClick={handleOpenDeleteDialog}
+          sx={{
+            borderColor: '#d32f2f',
+            color: '#d32f2f',
+            '&:hover': {
+              borderColor: '#b71c1c',
+              backgroundColor: 'rgba(211, 47, 47, 0.04)'
+            }
+          }}
+        >
+          Delete Account
+        </Button>
+      </Box>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        aria-labelledby="delete-account-dialog-title"
+        aria-describedby="delete-account-dialog-description"
+      >
+        <DialogTitle id="delete-account-dialog-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <WarningIcon color="error" />
+          Delete Account
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-account-dialog-description">
+            <strong>Warning: This action cannot be undone!</strong>
+            <br /><br />
+            By deleting your account, you will:
+            <ul>
+              <li>Permanently lose access to all your groups and data</li>
+              <li>Be removed from all groups you're a member of</li>
+              <li>Have your account completely deleted from the system</li>
+            </ul>
+            <br />
+            <strong>Note:</strong> Your player data in existing tables and statistics will remain visible, but will no longer be linked to your account.
+            <br /><br />
+            Are you absolutely sure you want to delete your account?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} color="primary">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteAccount} 
+            color="error" 
+            variant="contained"
+            disabled={deletingAccount}
+            startIcon={deletingAccount ? <CircularProgress size={16} /> : <DeleteIcon />}
+          >
+            {deletingAccount ? 'Deleting...' : 'Delete Account'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar for notifications */}
       <Snackbar
