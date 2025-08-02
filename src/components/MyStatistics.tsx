@@ -24,6 +24,7 @@ interface UserStatistics {
   games_lost: number;
   total_earnings: number;
   total_losses: number;
+  total_buy_in: number;
   last_game_date?: string;
 }
 
@@ -188,7 +189,7 @@ const MyStatistics: React.FC = () => {
             </Card>
           </Grid>
 
-          {/* Total Money Balance */}
+          {/* Total Buy In */}
           <Grid item xs={12} sm={6} md={3}>
             <Card
               sx={{
@@ -202,10 +203,10 @@ const MyStatistics: React.FC = () => {
               <CardContent>
                 <AccountBalanceIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'warning.main', mb: 1 }}>
-                  {formatCurrency(totalBalance)}
+                  {formatCurrency(statistics.total_buy_in)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Total Balance
+                  Total Buy In
                 </Typography>
               </CardContent>
             </Card>

@@ -1456,6 +1456,7 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
                   games_lost: games_lost,
                   total_earnings: total_earnings,
                   total_losses: total_losses,
+                  total_buy_in: total_buy_in,
                   last_game_date: lastGameDate
                 };
 
@@ -1468,6 +1469,7 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
                 games_lost: 0,
                 total_earnings: 0,
                 total_losses: 0,
+                total_buy_in: 0,
                 last_game_date: null
               };
               res.json(statistics);
@@ -1479,6 +1481,7 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
               games_lost: 0,
               total_earnings: 0,
               total_losses: 0,
+              total_buy_in: 0,
               last_game_date: null
             };
             res.json(statistics);
