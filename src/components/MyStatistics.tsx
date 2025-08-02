@@ -302,7 +302,7 @@ const MyStatistics: React.FC = () => {
       >
         <Grid container spacing={3}>
           {/* Total Games Played */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card
               sx={{
                 background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(33, 203, 243, 0.1) 100%)',
@@ -325,7 +325,7 @@ const MyStatistics: React.FC = () => {
           </Grid>
 
           {/* Last Game */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card
               sx={{
                 background: 'linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(186, 104, 200, 0.1) 100%)',
@@ -348,7 +348,7 @@ const MyStatistics: React.FC = () => {
           </Grid>
 
           {/* Total Buy In */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card
               sx={{
                 background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 235, 59, 0.1) 100%)',
@@ -371,7 +371,7 @@ const MyStatistics: React.FC = () => {
           </Grid>
 
           {/* Wins vs Losses */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card
               sx={{
                 background: 'linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(129, 199, 132, 0.1) 100%)',
