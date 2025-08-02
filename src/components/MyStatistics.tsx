@@ -142,7 +142,19 @@ const MyStatistics: React.FC = () => {
             // Try Web Share API with files first
             if (navigator.share) {
               try {
-                // Check if we can share files
+                // Method 1: Try with files directly
+                await navigator.share({
+                  title: 'My Poker Statistics',
+                  text: 'Check out my poker statistics!',
+                  files: [file]
+                });
+                return; // Success
+              } catch (fileShareError) {
+                console.error('File sharing failed:', fileShareError);
+              }
+              
+              // Method 2: Try with canShare check first
+              try {
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                   await navigator.share({
                     title: 'My Poker Statistics',
@@ -151,11 +163,45 @@ const MyStatistics: React.FC = () => {
                   });
                   return; // Success
                 }
-              } catch (fileShareError) {
-                console.error('File sharing failed:', fileShareError);
+              } catch (canShareError) {
+                console.error('CanShare check failed:', canShareError);
               }
               
-              // Try text-only sharing as fallback
+              // Method 3: Try with different file type (JPEG)
+              try {
+                const jpegBlob = await new Promise<Blob>((resolve) => {
+                  canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.9);
+                });
+                const jpegFile = new File([jpegBlob], 'poker-statistics.jpg', { type: 'image/jpeg' });
+                
+                await navigator.share({
+                  title: 'My Poker Statistics',
+                  text: 'Check out my poker statistics!',
+                  files: [jpegFile]
+                });
+                return; // Success
+              } catch (jpegShareError) {
+                console.error('JPEG sharing failed:', jpegShareError);
+              }
+              
+              // Method 4: Try with data URL
+              try {
+                const dataUrl = canvas.toDataURL('image/png');
+                const response = await fetch(dataUrl);
+                const dataBlob = await response.blob();
+                const dataFile = new File([dataBlob], 'poker-statistics.png', { type: 'image/png' });
+                
+                await navigator.share({
+                  title: 'My Poker Statistics',
+                  text: 'Check out my poker statistics!',
+                  files: [dataFile]
+                });
+                return; // Success
+              } catch (dataUrlShareError) {
+                console.error('Data URL sharing failed:', dataUrlShareError);
+              }
+              
+              // Method 5: Try text-only sharing as fallback
               try {
                 await navigator.share({
                   title: 'My Poker Statistics',
@@ -164,6 +210,31 @@ const MyStatistics: React.FC = () => {
                 return; // Success
               } catch (textShareError) {
                 console.error('Text sharing failed:', textShareError);
+              }
+            }
+            
+            // Method 6: Try to force Safari sharing for iOS Chrome
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isChrome = /Chrome/.test(navigator.userAgent);
+            
+            if (isIOS && isChrome) {
+              try {
+                const dataUrl = canvas.toDataURL('image/png');
+                
+                // Method 6a: Try to open Safari using data URL directly
+                const safariDataUrl = `data:text/html,<html><head><title>Share Statistics</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;background:#1a1a1a;color:white;font-family:Arial,sans-serif;text-align:center}img{max-width:100%;height:auto;border-radius:10px;margin:20px 0}</style></head><body><h1>My Poker Statistics</h1><img src="${dataUrl}" alt="Poker Statistics"><script>setTimeout(()=>{const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);canvas.toBlob(blob=>{const file=new File([blob],'statistics.png',{type:'image/png'});if(navigator.share){navigator.share({title:'My Poker Statistics',text:'Check out my poker statistics!',files:[file]})}else{alert('Sharing not supported')}},{type:'image/png'})};img.src='${dataUrl}'},1000)</script></body></html>`;
+                
+                // Try to open in Safari using window.open
+                const newWindow = window.open(safariDataUrl, '_blank');
+                
+                // If that doesn't work, try using location.href
+                if (!newWindow) {
+                  window.location.href = safariDataUrl;
+                }
+                
+                return;
+              } catch (safariError) {
+                console.error('Safari sharing failed:', safariError);
               }
             }
             
