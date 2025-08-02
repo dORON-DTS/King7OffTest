@@ -1302,8 +1302,6 @@ app.get('/api/users/profile', authenticate, (req, res) => {
 app.get('/api/users/statistics', authenticate, (req, res) => {
   const userId = req.user.id;
   
-  console.log('Fetching statistics for user ID:', userId);
-  
   // First get all groups where user is owner or member
   db.all(`
     SELECT DISTINCT gm.group_id, gm.user_id as member_user_id
@@ -1315,23 +1313,7 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
       return res.status(500).json({ message: 'Database error' });
     }
 
-    console.log('User groups found:', userGroups);
-
-    // Debug: Check all groups and memberships separately
-    db.all('SELECT * FROM groups', [], (err, allGroups) => {
-      console.log('All groups in database:', allGroups);
-      
-      db.all('SELECT * FROM group_members WHERE user_id = ?', [userId], (err, userMemberships) => {
-        console.log('User memberships:', userMemberships);
-        
-        db.all('SELECT * FROM groups WHERE createdBy = ?', [userId], (err, ownedGroups) => {
-          console.log('Groups owned by user:', ownedGroups);
-        });
-      });
-    });
-
     if (!userGroups || userGroups.length === 0) {
-      console.log('No groups found for user');
       return res.json({
         total_games: 0,
         games_won: 0,
@@ -1344,8 +1326,6 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
 
     const groupIds = userGroups.map(g => g.group_id);
     const placeholders = groupIds.map(() => '?').join(',');
-    
-    console.log('Group IDs:', groupIds);
     
     // Get user's username
     db.get('SELECT username FROM users WHERE id = ?', [userId], (err, user) => {
@@ -1373,18 +1353,13 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
           aliases = [{ player_name: username }];
         }
 
-        console.log('Player aliases found:', aliases);
-
         if (!aliases || aliases.length === 0) {
-          console.log('No aliases found, using username:', username);
           aliases = [{ player_name: username }];
         }
 
         const playerNames = aliases.map(a => a.player_name);
         const playerNamePlaceholders = playerNames.map(() => '?').join(',');
         
-        console.log('Player names to search for:', playerNames);
-
         // Get all player records for these aliases in the user's groups
         const query = `
           SELECT 
@@ -1396,16 +1371,11 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
           AND p.name IN (${playerNamePlaceholders})
         `;
         
-        console.log('Query:', query);
-        console.log('Query parameters:', [...groupIds, ...playerNames]);
-        
         db.all(query, [...groupIds, ...playerNames], (err, playerRecords) => {
           if (err) {
             console.error('Error fetching user player records:', err);
             return res.status(500).json({ message: 'Database error' });
           }
-
-          console.log('Player records found:', playerRecords);
 
           if (playerRecords && playerRecords.length > 0) {
             const playerIds = playerRecords.map(r => r.player_id);
