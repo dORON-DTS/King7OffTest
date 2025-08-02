@@ -1306,7 +1306,7 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
   
   // First get all groups where user is owner or member
   db.all(`
-    SELECT DISTINCT g.id as group_id
+    SELECT DISTINCT g.id as group_id, g.name as group_name, g.createdBy, gm.user_id as member_user_id
     FROM groups g
     LEFT JOIN group_members gm ON g.id = gm.group_id
     WHERE g.createdBy = ? OR gm.user_id = ?
@@ -1317,6 +1317,19 @@ app.get('/api/users/statistics', authenticate, (req, res) => {
     }
 
     console.log('User groups found:', userGroups);
+
+    // Debug: Check all groups and memberships separately
+    db.all('SELECT * FROM groups', [], (err, allGroups) => {
+      console.log('All groups in database:', allGroups);
+      
+      db.all('SELECT * FROM group_members WHERE user_id = ?', [userId], (err, userMemberships) => {
+        console.log('User memberships:', userMemberships);
+        
+        db.all('SELECT * FROM groups WHERE createdBy = ?', [userId], (err, ownedGroups) => {
+          console.log('Groups owned by user:', ownedGroups);
+        });
+      });
+    });
 
     if (!userGroups || userGroups.length === 0) {
       console.log('No groups found for user');
