@@ -139,7 +139,8 @@ const MyStatistics: React.FC = () => {
           if (blob) {
             const file = new File([blob], 'poker-statistics.png', { type: 'image/png' });
             
-            if (navigator.share) {
+            // Check if Web Share API is supported and available
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
               try {
                 await navigator.share({
                   title: 'My Poker Statistics',
@@ -148,9 +149,17 @@ const MyStatistics: React.FC = () => {
                 });
               } catch (shareError) {
                 console.error('Share cancelled or failed:', shareError);
+                // Fallback to download if share fails
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `poker-statistics-${new Date().toISOString().split('T')[0]}.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+                setSnackbarMessage('Statistics image downloaded successfully!');
               }
             } else {
-              // Fallback for browsers that don't support Web Share API
+              // Fallback for browsers that don't support Web Share API (like Chrome on iOS)
               const url = URL.createObjectURL(blob);
               const link = document.createElement('a');
               link.href = url;
