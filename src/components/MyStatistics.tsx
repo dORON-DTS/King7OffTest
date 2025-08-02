@@ -21,12 +21,7 @@ import {
   Share as ShareIcon
 } from '@mui/icons-material';
 import html2canvas from 'html2canvas';
-import { 
-  FacebookIcon,
-  TwitterIcon,
-  WhatsappIcon,
-  TelegramIcon
-} from 'react-share';
+
 
 interface UserStatistics {
   total_games: number;
@@ -43,7 +38,6 @@ const MyStatistics: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
-  const [showShareOptions, setShowShareOptions] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const statisticsRef = useRef<HTMLDivElement>(null);
 
@@ -132,53 +126,51 @@ const MyStatistics: React.FC = () => {
 
   const handleShare = async () => {
     if (isMobile()) {
-      setShowShareOptions(true);
+      // Use Web Share API directly on mobile
+      try {
+        const canvas = await html2canvas(statisticsRef.current!, {
+          backgroundColor: '#1a1a1a',
+          scale: 2,
+          useCORS: true,
+          allowTaint: true
+        });
+        
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            const file = new File([blob], 'poker-statistics.png', { type: 'image/png' });
+            
+            if (navigator.share) {
+              try {
+                await navigator.share({
+                  title: 'My Poker Statistics',
+                  text: 'Check out my poker statistics!',
+                  files: [file]
+                });
+              } catch (shareError) {
+                console.error('Share cancelled or failed:', shareError);
+              }
+            } else {
+              // Fallback for browsers that don't support Web Share API
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `poker-statistics-${new Date().toISOString().split('T')[0]}.png`;
+              link.click();
+              URL.revokeObjectURL(url);
+              setSnackbarMessage('Statistics image downloaded successfully!');
+            }
+          }
+        }, 'image/png');
+      } catch (error) {
+        console.error('Error sharing:', error);
+        setSnackbarMessage('Error sharing statistics');
+      }
     } else {
       await generateStatisticsImage();
     }
   };
 
-  const handleSocialShare = async (platform: string) => {
-    try {
-      const canvas = await html2canvas(statisticsRef.current!, {
-        backgroundColor: '#1a1a1a',
-        scale: 2,
-        useCORS: true,
-        allowTaint: true
-      });
-      
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          const file = new File([blob], 'poker-statistics.png', { type: 'image/png' });
-          
-          if (navigator.share) {
-            try {
-              await navigator.share({
-                title: 'My Poker Statistics',
-                text: 'Check out my poker statistics!',
-                files: [file]
-              });
-            } catch (shareError) {
-              console.error('Share cancelled or failed:', shareError);
-            }
-          } else {
-            // Fallback for browsers that don't support Web Share API
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `poker-statistics-${new Date().toISOString().split('T')[0]}.png`;
-            link.click();
-            URL.revokeObjectURL(url);
-            setSnackbarMessage('Statistics image downloaded successfully!');
-          }
-        }
-      }, 'image/png');
-    } catch (error) {
-      console.error('Error sharing:', error);
-      setSnackbarMessage('Error sharing statistics');
-    }
-    setShowShareOptions(false);
-  };
+
 
   if (loading) {
     return (
@@ -214,7 +206,13 @@ const MyStatistics: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+      {/* Desktop Layout */}
+      <Box sx={{ 
+        display: { xs: 'none', md: 'flex' }, 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: 4 
+      }}>
         <Typography
           variant="h3"
           component="h1"
@@ -244,6 +242,46 @@ const MyStatistics: React.FC = () => {
         >
           {sharing ? 'Generating...' : 'Share Statistics'}
         </Button>
+      </Box>
+
+      {/* Mobile Layout */}
+      <Box sx={{ 
+        display: { xs: 'block', md: 'none' }, 
+        mb: 4 
+      }}>
+        <Typography
+          variant="h3"
+          component="h1"
+          sx={{
+            fontWeight: 700,
+            background: 'linear-gradient(90deg, #1976d2 0%, #21cbf3 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            textFillColor: 'transparent',
+            textAlign: 'center',
+            mb: 2
+          }}
+        >
+          My Statistics
+        </Typography>
+        
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            startIcon={<ShareIcon />}
+            onClick={handleShare}
+            disabled={sharing}
+            sx={{
+              background: 'linear-gradient(135deg, #1976d2 0%, #21cbf3 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #1565c0 0%, #1e88e5 100%)'
+              }
+            }}
+          >
+            {sharing ? 'Generating...' : 'Share Statistics'}
+          </Button>
+        </Box>
       </Box>
 
       <Paper
@@ -423,80 +461,7 @@ const MyStatistics: React.FC = () => {
         </Card>
       </Paper>
 
-      {/* Share Options Dialog */}
-      {showShareOptions && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            bgcolor: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1300
-          }}
-          onClick={() => setShowShareOptions(false)}
-        >
-          <Paper
-            sx={{
-              p: 3,
-              borderRadius: 2,
-              maxWidth: 300,
-              width: '90%',
-              textAlign: 'center'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Typography variant="h6" gutterBottom>
-              Share Statistics
-            </Typography>
-                         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
-               <Button
-                 variant="outlined"
-                 onClick={() => handleSocialShare('whatsapp')}
-                 sx={{ minWidth: 'auto', p: 1 }}
-               >
-                 <WhatsappIcon size={32} round />
-               </Button>
-               
-               <Button
-                 variant="outlined"
-                 onClick={() => handleSocialShare('telegram')}
-                 sx={{ minWidth: 'auto', p: 1 }}
-               >
-                 <TelegramIcon size={32} round />
-               </Button>
-               
-               <Button
-                 variant="outlined"
-                 onClick={() => handleSocialShare('facebook')}
-                 sx={{ minWidth: 'auto', p: 1 }}
-               >
-                 <FacebookIcon size={32} round />
-               </Button>
-               
-               <Button
-                 variant="outlined"
-                 onClick={() => handleSocialShare('twitter')}
-                 sx={{ minWidth: 'auto', p: 1 }}
-               >
-                 <TwitterIcon size={32} round />
-               </Button>
-             </Box>
-            
-            <Button
-              variant="outlined"
-              onClick={() => setShowShareOptions(false)}
-              sx={{ mt: 2 }}
-            >
-              Cancel
-            </Button>
-          </Paper>
-        </Box>
-      )}
+      
 
       {/* Snackbar for notifications */}
       <Snackbar
